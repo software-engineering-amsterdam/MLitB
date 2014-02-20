@@ -1,13 +1,13 @@
 Temporary product back-log
 ==========================
 
-- replicate ConvNetJS UI with D3
+- replace ConvNetJS UI with D3
 
-- refactor ConvNetJS calculations
+- refactor ConvNetJS calculation component(s)
 
 - choose and configure a cooperation tool (Basecamp or Trello or something else)
 
-- put Remco's stuff on GitHub
+- put Remco's intial infrastructure on GitHub
 
 
 Definition of done
@@ -21,8 +21,8 @@ Meetings
 
 Sprint review & planning: each third Thursday of the month, 13:00 - 15:00 in C3.247.
 
-Sprint
-======
+Sprints
+=======
 
 Sprint 0 (20/2/2014 - 20/3/2014)
 Goal: Getting started. Learn ConvNetJS's code and change it. Setup some cooperation tools.
