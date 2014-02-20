@@ -1,10 +1,17 @@
 Temporary product back-log
 ==========================
 
-- replicate UI ConvNetJS with D3
+- replicate ConvNetJS UI with D3
 
-- refactor ConvNetJS
+- refactor ConvNetJS calculations
 
-- cooperation tool (Basecamp or Trello or something else)
+- choose and configure a cooperation tool (Basecamp or Trello or something else)
+
+- put Remco's stuff on GitHub
 
 
+Definition of done
+==================
+
+1. Code is on GitHub
+2. Code runs and works
