@@ -1,0 +1,9 @@
+#boundaryGraph {
+    font: 10px sans-serif;
+}
+
+path { 
+    stroke: black;
+    stroke-width: 2;
+    fill: none;
+}
