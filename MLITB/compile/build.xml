@@ -1,0 +1,26 @@
+<project name="Build" default="compress">
+  <target name="concatenate">
+    <concat destfile="../build/mlitb.js" encoding="UTF-8" outputencoding="UTF-8" fixlastline="true">
+      <filelist id="filelist" dir="../src">
+        <file name="mlitb_global_param.js"/>
+        <file name="mlitb_util.js" />
+        <file name="mlitb_act_function.js" />
+        <file name="mlitb_layer.js" />
+        <file name="mlitb_net.js" />
+        <file name="mlitb_sgd.js" />
+        <file name="test.js" />
+      </filelist>
+    </concat>
+  </target>
+  <target name="compress" depends="concatenate" description="Minify mlitb.js to mlitb-min.js">
+    <apply executable="java" parallel="false">
+      <filelist dir="../build" files="mlitb.js" />
+      <arg line="-jar" />
+      <arg path="yuicompressor-2.4.8.jar" />
+      <srcfile />
+      <arg line="-o" />
+      <mapper type="glob" from="*.js" to="../build/*-min.js" />
+      <targetfile />
+    </apply>
+  </target>
+</project>
