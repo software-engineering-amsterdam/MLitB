@@ -4,8 +4,11 @@
       <filelist id="filelist" dir="../src">
         <file name="mlitb_global_param.js"/>
         <file name="mlitb_util.js" />
-        <file name="mlitb_act_function.js" />
-        <file name="mlitb_layer.js" />
+        <file name="mlitb_container.js" />
+        <file name="mlitb_layer_conv.js" />
+        <file name="mlitb_layer_fullConn.js" />
+        <file name="mlitb_layer_activation.js" />
+        <file name="mlitb_layer_pooling.js" />
         <file name="mlitb_net.js" />
         <file name="mlitb_sgd.js" />
         <file name="test.js" />

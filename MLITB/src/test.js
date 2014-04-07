@@ -21,30 +21,42 @@ label = mlitb.normalize(y, 0.1, 0.9)
 console.log(x);
 console.log(label);
 
-//create network configuration
-var conf = []
-conf.push({n_neuron : 2})
-conf.push({n_neuron : 20, act_fn : 'sigmoid'})
-conf.push({n_neuron : 1, act_fn : 'linear'})
+var V = new mlitb.Vol(1,1,2, 1);
+var FC = new mlitb.FullConnLayer({'in_neurons':2,'n_neurons' : 3});
+var FCfw = FC.forward(V);
+console.log(FCfw);
+var SIG = new mlitb.SigmoidLayer({'out_sx':1,'out_sy' : 1, 'out_depth' : 3});
+var SIGfw = SIG.forward(FCfw);
+console.log(SIGfw);
+SIG.V_out.data = [0.5, 0.5, 0.5];
+var target = [1.0, 1.0, 1.0];
+var SIGbw = SIG.backward(target);
+console.log(SIG.V_in);
+console.log(SIGbw);
+var FCbw = FC.backward();
+console.log(FC.weights);
+console.log(FC.V_in);
 
-//console.log(conf[1].afn);
+var inputpool = [1, 2, 3, 4, 5, 
+								 5, 4, 3, 2, 1, 
+								 9, 0, 0, 9, 0, 
+								 0, 0, 0, 0, 0,
+								 0, 0, 0, 0, 0, 
 
-//create network as many as number of client
-//create new mlitb.Net(conf)
-var Net = new mlitb.Net();
-Net.initWeight(conf);
-Net.createLayers(conf);
-var SGD = new mlitb.SGD(Net,{learning_rate : 0.25});
-for (var i=0; i<1000; i++){
-	idx = parseInt((Math.random() * (x.length)), 10); //random index
-	console.log("input "+x[idx]);
-	//SGD.train([x[idx]], [label[idx]])
-	SGD.train(x[idx], [label[idx]])
-}
-SGD.checkGrad(x[3],[y[3]])
+								 1, 2, 3, 4, 5, 
+								 5, 4, 3, 2, 1, 
+								 9, 0, 0, 9, 0, 
+								 0, 0, 0, 0, 0,
+								 0, 0, 0, 0, 0,]
 
-//console.log(mlitb.W);
+var Vpool = new mlitb.Vol(5,5,2);
 
-//console.log(mlitb.zeros(2,4));
+Vpool.data = inputpool;
+console.log(Vpool.get(0,0,0));
+console.log(Vpool.getIndex(1,1,1))
+var pool = new mlitb.PoolLayer({'sx': 2,'in_sx' : 5, 'in_sy':5, 'in_depth': 2, 'stride':1});
+var rp = pool.forward(Vpool)
+console.log(rp.data);
+
 
 //train network

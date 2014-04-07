@@ -23,9 +23,6 @@
     this.out_depth = this.in_depth;
     this.out_sx = Math.floor(this.in_sx / this.stride); // compute size of output volume
     this.out_sy = Math.floor(this.in_sy / this.stride);
-    // store switches for x,y coordinates for where the max comes from, for each output neuron
-    // this.switchx = global.zeros(this.out_sx*this.out_sy*this.out_depth);
-    // this.switchy = global.zeros(this.out_sx*this.out_sy*this.out_depth);
     // save position at filter from which max value comes from
     this.max_pos_x = global.zeros(this.out_sx*this.out_sy*this.out_depth);
     this.max_pos_y = global.zeros(this.out_sx*this.out_sy*this.out_depth);
