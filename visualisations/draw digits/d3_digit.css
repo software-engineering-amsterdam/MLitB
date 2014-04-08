@@ -1,0 +1,15 @@
+#graphloss {
+    font: 10px sans-serif;
+}
+
+path.domain { 
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+
+path#lossline { 
+    stroke: black;
+    stroke-width: 2;
+    fill: none;
+}
