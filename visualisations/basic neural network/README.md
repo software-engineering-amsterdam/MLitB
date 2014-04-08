@@ -1,4 +1,4 @@
-Visualisation of structure of a basic (non-convolutional) neural network. Shows how the weights and activations change over time for the last example the user added. Basis of a framework for more complex visualisations of network structure.
+Visualisation of structure of a basic (standard/non-convolutional) neural network. Shows how the weights and activations change over time for the last example the user added. Basis of a framework for more complex visualisations of network structure.
 
 Adding visualisation to network: 
 * Include files starting with d3
