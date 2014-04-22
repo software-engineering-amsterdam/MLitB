@@ -1,0 +1,112 @@
+<html>
+
+<head>
+    <title>SGD in JS</title>
+
+    <script src="jquery.js"></script>
+    <script src="sylvester.js"></script>
+</head>
+
+<body>
+    
+    <h3>Parallel SGD processor</h3>
+    <p>Calculates theta and display them. No reducer function.</p>
+    <form action="javascript:start();">
+    Iterations: <input type="number" step="1" id="iters" value="100" /><br />
+    Learning rate: <input type="float" id="a" value="0.001" /><br />
+    Workers (cpu count): <input type="number" step="1" id="workers" value="2" /><br />
+    <input type="submit" value="start" /><br />
+    </form>
+    <p id="working">Working...</p>
+    <p id="timer">Time: <span id="time"></span></p>
+    <div id="done">
+    </div>
+
+    <script type="text/javascript">
+        var x, y;
+
+        var num_workers;
+        var timer;
+        
+        workerDone = function(e) {
+
+            var theta = $M(JSON.parse(e.data.d));
+            var msg = "<p>Worker " + e.data.id + ":<br />";
+            msg += theta.inspect();
+            msg += "</p>";
+
+            $('#done').append(msg);
+
+            if(e.data.id == (num_workers - 1)) {
+                $('#working').hide();
+                $('#time').html(window.performance.now() - timer);
+                $('#timer').show();
+            }
+        }
+
+        end = function(x,y) {
+
+            var a  = $('#a').val();
+            var iters = $('#iters').val();
+            num_workers = $('#workers').val();
+
+            var size = x.elements.length;
+
+            var worker;
+
+            timer = window.performance.now();
+
+            for (i = 0; i < num_workers; i++) {
+                worker = new Worker('sgd.js');
+
+                var fro = (size/num_workers * i);
+                var to = (size/num_workers * (i + 1));
+
+                var job = {
+                    'x': x.elements.slice(fro, to),
+                    'y': y.elements.slice(fro, to),
+                    'a': a,
+                    'iter': iters
+                }
+
+                var JSONjob = JSON.stringify(job);
+
+                worker.onmessage = workerDone;
+                worker.postMessage({id: i, d: JSONjob});
+            }
+
+        }
+
+        step = function(x) {
+
+            $.getJSON('y.json',function(data){
+                y = $M(data);
+                end(x,y);
+            }).error(function(){
+                console.log('error');
+            });
+
+        }
+
+        start = function() {
+
+            $('#working').show();
+            $('#timer').hide();
+            $('#done').html('');
+
+            $.getJSON('x.json',function(data){
+                x = $M(data);
+                step(x);
+            }).error(function(){
+                console.log('error');
+            });
+
+        }
+
+        $('#working').hide();
+        $('#timer').hide();
+
+    </script>
+
+</body>
+</html>
