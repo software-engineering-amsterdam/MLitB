@@ -4,11 +4,11 @@
 	var FullConnLayer = function (conf) {
 		// assume conf contains information about the number of neurons and also the number connection come to each neuron
 		this.in_neurons = conf.in_neurons; //now we use in_neuron first, probably next we will use in_sx, in_sy, in_depth directly
-		this.out_depth = conf.n_neurons;
+		this.out_depth = conf.num_neurons;
 		this.out_sx = 1;
 		this.out_sy = 1;
 		this.weights = new global.Vol(1, this.in_neurons, this.out_depth); // we assume y as the number of connection come to this layer
-		this.biases = new global.Vol(1,1, this.out_depth, 1.0);
+		this.biases = new global.Vol(1,1, this.out_depth, 0.1);
 		this.layer_type = 'fc';
 	}
 
@@ -55,6 +55,12 @@
 				db[i] += delta;
 			};
 
+		},
+		getParamsAndGrads : function () {
+			var out = []
+			out.push({params : this.weights.data, grads : this.weights.drv});
+			out.push({params : this.biases.data, grads : this.biases.drv});
+			return out;
 		}
 	};
 	global.FullConnLayer = FullConnLayer;

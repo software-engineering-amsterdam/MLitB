@@ -221,26 +221,59 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 	};
 	global.Vol = Vol;
 })(mlitb);
+(function(global) {
+  "use strict";
+  var Vol = global.Vol; // convenience
+  
+  var InputLayer = function(conf) {
+
+    var conf = conf || {};
+
+    // required
+    this.out_sx = conf.sx;
+    this.out_sy = conf.sy;
+    this.out_depth = conf.depth;
+    this.layer_type = 'input';
+  }
+
+  InputLayer.prototype = {
+    forward: function(V, is_training) {
+      this.V_in = V;
+      this.V_out = V;
+      return this.V_out;
+    },
+    backward: function() { 
+    },
+    getParamsAndGrads : function () {
+      return [];
+    }
+  }
+
+  global.InputLayer = InputLayer;
+
+})(mlitb);
 (function (global) {
 	"use strict";
 	var Vol = global.Vol;
 	var ConvLayer = function (conf) {
+		//required
 		this.sx = conf.sx;
 		this.in_sx = conf.in_sx;
 		this.in_sy = conf.in_sy;
-		this.in_depth = conf.depth;		
-		
+		this.in_depth = conf.in_depth;		
+		this.out_depth = conf.filters;
+
 		//optional
 		this.sy = typeof conf.sy !== 'undefined' ? conf.sy : conf.sx; //default is the same size with x
 		this.stride = (typeof conf.stride !== 'undefined' && conf.stride <= Math.min(this.sx,this.sy)) ? conf.stride : 1; //default stride is 1 
 
-		this.out_depth = conf.filters;
-		this.out_sx = Math.floor(conf.in_sx/this.stride);
-		this.out_sy = Math.floor(conf.in_sy/this.stride);
+		
+		this.out_sx = Math.ceil(conf.in_sx/this.stride); //could be floor for valid conv
+		this.out_sy = Math.ceil(conf.in_sy/this.stride);
 
-		this.filters = [] //
+		this.filters = []; //
 		for (var i = 0; i < conf.filters; i++) {
-			this.filters.push(new Vol(this.sx, this.sy, this.in_depth));
+			this.filters.push(new Vol(this.sx, this.sy, this.in_depth, 1));
 		};
 		this.biases = new global.Vol(1,1, this.out_depth, 1.0);
 
@@ -252,77 +285,87 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 	ConvLayer.prototype = {
 		forward : function (V, is_training) {
 			this.V_in = V;
-			// console.log("V");
-			// console.log(V);
-			// console.log("W");
-			// console.log(this.weights);
 			var hx = Math.floor(this.sx/2.0);
-			var hx = Math.floor(this.sy/2.0);
+			var hy = Math.floor(this.sy/2.0);
+			var dim = this.out_sx*this.out_sy;
 
-			// var in_sx = V.sx; //used when compute index instead of call get function
-      // var in_sy = V.sy;
-
-			var in_data = V.data; //since full conn, dimension is not important, can traverse and calculate directly without get method
 			var A = new global.Vol(this.out_sx, this.out_sy, this.out_depth,0.0);
 			var A_data = A.data;
-			var filters = this.filters;
-			var biases = this.biases;
-			var idx = 0;
-			var sx = this.sx;
-			var sy = this.sy;
-			
-			for (var od = 0; od < this.out_depth; od++) {
-				var filter = filters[i].data; //filter/weight data
-				var ix_out = od*this.out_sx*this.out_sy; //index for output data
-				for (var id = 0; id < this.in_depth; id++){
-					
-					for (var oy = 0, sty=0; oy < this.out_y; oy++, sty+=this.stride) {
-						for (var ox = 0, stx=0; ox < this.out_x; ox++, stx+=this.stride) {
-							var a = 0;
-							var ix_f =id*sx*sy; //index for filter data
-							for (var fy = sty, fyy=0; fy < sy+sty; fyy++, fy++) {
-								for (var fx = stx, fxx=0; fx < sx+stx; fxx++, fx++, ix_f++) {
-									var ix = fy-hy;
-									var iy = fx-hx;
-									var v = 0; //if outside image
-									if (ix >= 0 && iy >=0 && ix < this.in_sx && iy < this.in_sy){
-										v = V.get(ix, iy, id); //try function call here
-										// v = V.data[((in_sx * fy)+fx)+in_sx*in_sy*d];  //alternative of function call
+			//this one is faster
+			for (var i=0,ij=0;i<A.depth;i++) {
+				var b=this.biases.data[i];
+				for (var j=0;j<A.sx*A.sy;j++,ij++){A_data[ij]=b}
+			};
+			for (var od=0;od<A.depth;od++) {
+				var f=this.filters[od]; //filter/weight data
+				for (var id=0,oi=od*dim;id<f.depth;id++,oi=od*dim){ //reset index of output data. we want to refill from x=0 y=0 again
+					for (var cy=0;cy<V.sy;cy+=this.stride) { //if use floor stride, then add an index here
+						for (var cx=0;cx<V.sx; cx+=this.stride,oi++) {
+							var a=0.0;
+							var fi=id*f.sx*f.sy; //index for filter data
+							for (var fy=cy;fy<f.sy+cy;fy++) {
+								for (var fx=cx;fx<f.sx+cx;fx++,fi++) {
+									var iy=fy-hy;
+									var ix=fx-hx;
+									if (ix>=0&&iy>=0&&ix<V.sx&&iy<V.sy){
+										// a+=f.data[fi]*V.get(ix,iy,id); //try function call here
+										a+=f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
 									}
-									a += v* filter[ix_f];
 								};
 							};
-							A_data[ix_out] += a;
-							ix_out++;
+							// if(id==0){a+=this.biases.data[od]} //slower
+							A_data[oi]+=a;
 						};
 					};	
-					//reset index of output data
-					ix_out = od*this.out_sx*this.out_sy;
 				}
-				
 			};
-
-
-
-			this.V_out = Out;
+			this.V_out = A;
 			return this.V_out;
 		},
 		backward : function () {
-			// var drv = this.V_in.drv;
-			// var w = this.weights.data;
-			// var dw = this.weights.drv
-			// var db = this.biases.drv;
-			// var in_data = this.V_in.data
-			// var idx = 0;
-			// for (var i = 0, m = this.out_depth; i < m; i++) {
-			// 	var delta = this.V_out.drv[i];
-			// 	for (var j = 0, n=this.in_neurons; j< n; j++,idx++) {
-			// 		drv[j] += delta*w[idx]; //delta * w  why do we accumulate this one?
-			// 		dw[idx] += delta*in_data[j]; //derivative w.r.t weights = delta*z -- accumulate for batch learning
-			// 	};
-			// 	db[i] += delta;
-			// };
+			var V_in = this.V_in;
+			var hx = Math.floor(this.sx/2.0);
+			var hy = Math.floor(this.sy/2.0);
+			var dim = this.out_sx*this.out_sy;
 
+			var V_out = this.V_out;
+			//this one is faster
+			for (var i=0,ij=0;i<V_out.depth;i++) {
+				for (var j=0;j<V_out.sx*V_out.sy;j++,ij++){this.biases.data[i]+=V_out.data[ij]}
+			};
+			for (var od=0;od<V_out.depth;od++) {
+				var f=this.filters[od]; //filter/weight data
+				for (var id=0,oi=od*dim;id<f.depth;id++,oi=od*dim){ //reset index of output data. we want to refill from x=0 y=0 again
+					for (var cy=0;cy<V_in.sy;cy+=this.stride) { //if use floor stride, then add an index here
+						for (var cx=0;cx<V_in.sx; cx+=this.stride,oi++) {
+							var fi=id*f.sx*f.sy; //index for filter data
+							for (var fy=cy;fy<f.sy+cy;fy++) {
+								for (var fx=cx;fx<f.sx+cx;fx++,fi++) {
+									var iy=fy-hy;
+									var ix=fx-hx;
+									
+									if (ix>=0&&iy>=0&&ix<V_in.sx&&iy<V_in.sy){
+										// a+=f.data[fi]*V.get(ix,iy,id); //try function call here
+										// a+=f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
+										// console.log(ix,iy,id);
+										V_in.drv[((V_in.sx * iy)+ix)+V_in.sx*V_in.sy*id] += f.data[fi]*V_out.drv[oi];
+										f.drv[fi]+= V_in.data[((V.sx * iy)+ix)+V.sx*V.sy*id]*V_out.drv[oi];
+									}
+								};
+							};
+							// if(id==0){a+=this.biases.data[od]} //slower
+						};
+					};	
+				}
+			};
+		},
+		getParamsAndGrads : function () {
+			var out = [];
+			for (var i = 0; i < this.filters.length; i++) {
+				out.push({params : this.filters[i].data, grads : this.filters[i].drv});
+			};
+			out.push({params : this.biases.data, grads : this.biases.drv});
+			return out;
 		}
 	};
 	global.ConvLayer = ConvLayer;
@@ -333,11 +376,11 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 	var FullConnLayer = function (conf) {
 		// assume conf contains information about the number of neurons and also the number connection come to each neuron
 		this.in_neurons = conf.in_neurons; //now we use in_neuron first, probably next we will use in_sx, in_sy, in_depth directly
-		this.out_depth = conf.n_neurons;
+		this.out_depth = conf.num_neurons;
 		this.out_sx = 1;
 		this.out_sy = 1;
 		this.weights = new global.Vol(1, this.in_neurons, this.out_depth); // we assume y as the number of connection come to this layer
-		this.biases = new global.Vol(1,1, this.out_depth, 1.0);
+		this.biases = new global.Vol(1,1, this.out_depth);
 		this.layer_type = 'fc';
 	}
 
@@ -384,6 +427,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 				db[i] += delta;
 			};
 
+		},
+		getParamsAndGrads : function () {
+			var out = []
+			out.push({params : this.weights.data, grads : this.weights.drv});
+			out.push({params : this.biases.data, grads : this.biases.drv});
+			return out;
 		}
 	};
 	global.FullConnLayer = FullConnLayer;
@@ -423,9 +472,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
 	var SigmoidLayer = function (conf) {
 		// assume conf contains information about the number of neurons and also the number connection come to each neuron
-		this.out_sx = conf.out_sx;
-		this.out_sy = conf.out_sy;
-		this.out_depth = conf.out_depth;
+		this.out_sx = conf.in_sx;
+		this.out_sy = conf.in_sy;
+		this.out_depth = conf.in_depth;
 		this.layer_type = 'sigmoid';
 	}
 
@@ -467,14 +516,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 				return loss;
 			}
       
+		},
+		getParamsAndGrads : function () {
+			return [];
 		}
 	};
 
 	var ReLuLayer = function (conf) {
 		//need information about neuron dimension, from the previous layer
-		this.out_sx = conf.out_sx;
-		this.out_sy = conf.out_sy;
-		this.out_depth = conf.out_depth;
+		this.out_sx = conf.in_sx;
+		this.out_sy = conf.in_sy;
+		this.out_depth = conf.in_depth;
 		this.layer_type = 'relu';
 	}
 
@@ -494,14 +546,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
 		backward : function (Y) {
       var Z_drv = this.V_out.drv; // contains inf about error/sensitivity from next layer
-      var Z_data = this.V_out_data;
-      var N = V_in.data.length;
+      var Z_data = this.V_out.data;
+      var N = this.V_in.data.length;
       var V_in_drv = global.zeros(N); // zero out gradient wrt data
       for(var i=0;i<N;i++) {
         if(Z_data[i] <= 0) V_in_drv[i] = 0; // threshold
         else V_in_drv[i] = Z_drv[i];
       }
       this.V_in.drv = V_in_drv;
+		},
+		getParamsAndGrads : function () {
+			return [];
 		}
 	};
 
@@ -560,12 +615,15 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       // loss is the class negative log likelihood
       return -Math.log(this.V_out.data[y]);
     },
+    getParamsAndGrads : function () {
+			return [];
+		}
   };
 
   var LinearLayer = function (conf) {
-  	this.out_sx = conf.out_sx;
-		this.out_sy = conf.out_sy;
-		this.out_depth = conf.out_depth;
+  	this.out_sx = conf.in_sx;
+		this.out_sy = conf.in_sy;
+		this.out_depth = conf.in_depth;
 		this.layer_type = 'linear';
   }
 
@@ -578,19 +636,34 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 		},
 
 		backward : function (Y) {
+			// console.log('Y : '+Y);
 			var Z_data = this.V_out.data;
       var V_in_drv = global.zeros(N); // zero out gradient wrt data
 			var N = this.V_in.data.length;
-			Y = typeof Y === "number" ? [Y] : Y;
-			var loss = 0.0;
-			for(var i=0;i<N;i++) {
-	      var drv = Z_data[i] - Y[i];
-        V_in_drv[i] = drv;
-        loss += (drv*drv)/2.0
-      }
-      this.V_in.drv = V_in_drv;
-			return loss;
+			if (typeof Y ==='undefined') {
+				var drv = this.V_out.drv;
+				for(var i=0;i<N;i++) {
+					V_in_drv[i] = drv[i];
+				}
+				this.V_in.drv = V_in_drv;
+				
+			} else {
+				var Y = typeof Y === "number" ? [Y] : Y;
+
+				var loss = 0.0;
+				for(var i=0;i<N;i++) {
+					var drv = Z_data[i] - Y[i];
+					V_in_drv[i] = drv;
+					loss += (drv*drv)/2.0
+				}
+				this.V_in.drv = V_in_drv;
+				return loss;	
+			}
+		},
+		getParamsAndGrads : function () {
+			return [];
 		}
+			
 	};
 
 	global.LinearLayer = LinearLayer;
@@ -625,9 +698,6 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.out_depth = this.in_depth;
     this.out_sx = Math.floor(this.in_sx / this.stride); // compute size of output volume
     this.out_sy = Math.floor(this.in_sy / this.stride);
-    // store switches for x,y coordinates for where the max comes from, for each output neuron
-    // this.switchx = global.zeros(this.out_sx*this.out_sy*this.out_depth);
-    // this.switchy = global.zeros(this.out_sx*this.out_sy*this.out_depth);
     // save position at filter from which max value comes from
     this.max_pos_x = global.zeros(this.out_sx*this.out_sy*this.out_depth);
     this.max_pos_y = global.zeros(this.out_sx*this.out_sy*this.out_depth);
@@ -647,7 +717,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       var hy = Math.floor(this.sy/2.0);
       // var in_sx = V.sx; //used when compute index instead of call get function
       // var in_sy = V.sy;
-      var n = 0; //index for max_pos;
+      var n = 0; //index for output data;
       for (var d = 0; d < this.out_depth; d++) {
         for (var sty = 0, oy=0; oy < this.out_sy; sty+=this.stride, oy++) {
           for (var stx = 0, ox=0; ox < this.out_sx; stx+=this.stride, ox++,n++){
@@ -659,7 +729,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
                 var v = -999999999.0;
                 if (fx < this.in_sx && fy < this.in_sy){
                   v = V.get(fx,fy,d); // try function call here. compared with non function call later
-                  // v = V.data[((in_sx * fy)+fx)+in_sx*in_sy*d];
+                  // v = V.data[((V.sx * fy)+fx)+V.sx*V.sy*d];
                 }
                 if (v> max_v){
                   max_v = v;
@@ -670,7 +740,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
             };
             // we can create 1 function to return index
             // var idx = Z.getIndex(ox,oy,d);
-            Z.set(ox,oy,d, max_v);
+            Z.data[n] = max_v;
             // Z_data[idx] = max_v;
             max_pos_x[n] = max_x;
             max_pos_y[n] = max_y;
@@ -700,7 +770,11 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         };
       }
     },
-  }
+    getParamsAndGrads : function () {
+      return [];
+    }
+  },
+
 
   global.PoolLayer = PoolLayer;
 
@@ -708,57 +782,123 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 (function(global){
 	var Net = function () {
 		this.layers = [];
+		this.layer_conf = [];
 		
 	}
 	Net.prototype = {
-		initWeight : function (conf) {
-			//initiate weight connecting each layer, now assume full connected
-			//number of weight matrices are n_layer -1
-			for (var i=0; i<conf.length-1;i++){
-				//weight matrix dimesnion = n_neuron in layer i times n_neuron in layer i+1
-				//global.W.push(global.zeros(conf[i].n_neuron,conf[i+1].n_neuron, 'random'));
-				global.W.push(global.zeros(conf[i].n_neuron+1,conf[i+1].n_neuron, 'random')); //--------------------------------
-			}
-		},
 		createLayers : function (conf) {
+			//make sure the first layer is input type
+			if (conf[0].type !== 'input'){console.log('ERROR : First layer should be an input type layer')}
+			var layer_conf = [];
+			//add input, activation, and output layer
 			for (var i = 0; i < conf.length; i++) {
-				if (i == 0) //input layer
-					this.layers.push(new global.InputLayer(conf[i]));
-				else if (i == conf.length-1) //output layer
-					this.layers.push(new global.OutputLayer(conf[i]));
-				else
-					this.layers.push(new global.HiddenLayer(conf[i]));
+				var c = conf[i]
+				layer_conf.push(c);
+
+				if (c.type === 'conv'){
+					if (typeof c.activation !== 'undefined'){
+						layer_conf.push({type : c.activation});
+					} else {
+						layer_conf.push({type : 'relu'}); //default activation function for conv
+					}
+				} else if (c.type === 'fc'){
+					if (typeof c.num_neurons === 'undefined'){
+						console.log("ERROR : number of neuron parameter \'num_neurons\' is not defined")
+					}
+					if (typeof c.activation !== 'undefined'){
+						layer_conf.push({type : c.activation});
+					} else {
+						layer_conf.push({type : 'linear'}); //default activation function for fc
+					}
+				} else if (c.type === 'pool'){
+					if (typeof c.sx === 'undefined'){console.log('ERROR : pool size parameter \'sx\' is not defined')}
+					if (typeof c.stride === 'number'){
+						var sz = typeof c.sy === 'number' ? Math.min(c.sx,c.sy) : c.sx;
+						if (c.stride > sz){console.log('BAD PARAMETER : stride should <= pooling size')}
+					} else {
+						console.log("WARNING : \'stride\' parameter is not defined. Using default = 1")
+					}
+				}
+			};
+			this.layer_conf = layer_conf; //this structure can be saved and loaded in the future
+			this.constructNetwork();
+		},
+
+		constructNetwork : function(){
+			//layer_conf is a list outputed by createLayers function
+			//This function will construct Network as defined in this.layer_conf
+			//This function can be called directly if we want to load prevous saved configuration
+			var layer_conf = this.layer_conf;
+			//create input layer
+			this.layers.push(new global.InputLayer(layer_conf[0]))
+			for (var i = 1; i < layer_conf.length; i++) {
+				//complete the configuration details
+				var pl = this.layers[i-1]; //previous layer
+				var conf = layer_conf[i];
+				conf.in_sx = pl.out_sx;
+				conf.in_sy = pl.out_sy
+				conf.in_depth = pl.out_depth;
+				conf.in_neurons = pl.out_sx*pl.out_sy*pl.out_depth;
+				
+				// switch(conf.type){
+				// 	case 'fc' : this.layers.push(new global.FullConnLayer(conf)); break;
+				// }
+				if (conf.type === 'fc'){this.layers.push(new global.FullConnLayer(conf));}
+				else if (conf.type === 'conv'){this.layers.push(new global.ConvLayer(conf));}
+				else if (conf.type === 'sigmoid'){this.layers.push(new global.SigmoidLayer(conf));}
+				else if (conf.type === 'softmax'){this.layers.push(new global.SoftmaxLayer(conf));}
+				else if (conf.type === 'linear'){this.layers.push(new global.LinearLayer(conf));}
+				else if (conf.type === 'relu'){this.layers.push(new global.ReLuLayer(conf));}
+				else if (conf.type === 'pool'){this.layers.push(new global.PoolLayer(conf));}
+				// else if (conf.type === 'dropout'){this.layers.push(new global.DropOutLayer(conf));}
 			};
 		},
 
 		forward : function (X) {
-			//when the data is augmented into input layer?
-			var W = global.W;
-			this.layers[0].outs = global.clone(X)
-			this.layers[0].outs.push(1) //add bias for input ------------------------------------------
-			for (var i = 0; i < this.layers.length-1; i++) {
-				console.log("W ");
-				console.log(W[i]);
-
-				this.layers[i+1].ins = global.dot(this.layers[i].outs, W[i]);
-				this.layers[i+1].forward();
-				console.log("outs ");
-				console.log(this.layers[i+1].outs);
+			var Prev_out = X;
+			for (var i = 0; i < this.layers.length; i++) {
+				var V_out = this.layers[i].forward(Prev_out);
+				Prev_out = V_out;
+				// console.log('V_out '+i);
+				// console.log(V_out);
 			};
+			console.log("predict  : "+Prev_out.data);
+			
 		},
 
 		backward : function (Y) {
-			var W = global.W;
-			this.der = global.zeros(global.W.length)
-			console.log("target "+Y);
-			//this.layers[this.layers.length-1].backward(Y)
-			//this.layers[this.layers.length-2].back_in = global.dot(this.layers[this.layers.length-1].delta, W[this.layers.length-2],'r'); //delta * w
-			for (var i = this.layers.length - 1; i > 0; i--) {
-				this.layers[i].backward(Y);
-				//console.log(global.dot(this.layers[i].delta, W[i-1],'r'));
-				this.layers[i-1].back_in = global.dot(this.layers[i].delta, W[i-1],'r'); //delta * w
-				this.der[i-1] = global.dot(this.layers[i-1].outs, this.layers[i].delta, 'l'); //delta * z
+			// console.log(" Y inside backward");
+			// console.log(Y);
+			var loss = this.layers[this.layers.length-1].backward(Y);
+			for (var i = this.layers.length - 2; i >= 0; i--) {
+				this.layers[i].backward();
 			};
+			return loss;
+		},
+
+		saveNetwork : function (){
+			var json = {}
+			json.layer_conf = this.layer_conf;
+			return json;
+		},
+
+		loadNetwork : function(json){
+			this.layer_conf = json.layer_conf;
+			this.constructNetwork();
+		},
+
+		getParamsAndGrads : function(){
+			var out = [];
+			for (var i = 0; i < this.layers.length; i++) {
+				var o = this.layers[i].getParamsAndGrads();
+
+				for (var j = 0; j < o.length; j++) {
+					out.push(o[j]);
+				};
+			};
+			// console.log("get params");
+			// console.log(out);
+			return out;
 		}
 	}
 	global.Net = Net;
@@ -830,6 +970,82 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 	};
 	mlitb.SGD = SGD;
 })(mlitb);
+(function (global) {
+	"use strict";
+	var SGDTrainer = function (net, conf) {
+		this.net = net;
+		console.log(conf);
+
+		this.learning_rate = typeof conf.learning_rate !== 'undefined' ? conf.learning_rate : 0.01;
+    this.l1_decay = typeof conf.l1_decay !== 'undefined' ? conf.l1_decay : 0.0;
+    this.l2_decay = typeof conf.l2_decay !== 'undefined' ? conf.l2_decay : 0.0;
+    this.batch_size = typeof conf.batch_size !== 'undefined' ? conf.batch_size : 1;
+    this.momentum = typeof conf.momentum !== 'undefined' ? conf.momentum : 0.9;
+    this.iteration = 0;
+    this.last_grads = [];
+	}
+	
+
+	SGDTrainer.prototype = {
+		train : function (X, Y) {
+			this.net.forward(X, true);
+			var loss = this.net.backward(Y);
+			console.log('loss : '+loss);
+			this.iteration++;
+			if (this.iteration % this.batch_size == 0){
+				//perform the update
+
+				// console.log("initialize last grad");
+				//initialize the last gradient for the first time
+				var pgs = this.net.getParamsAndGrads();
+				
+				if (this.last_grads.length == 0 && this.momentum > 0.0){
+					for (var i = 0; i < pgs.length; i++) {
+						// console.log(global.zeros(6));
+						// console.log(global.zeros(pgs[i].grads.length));
+						this.last_grads.push(global.zeros(pgs[i].grads.length));
+					};
+				}
+
+				// console.log("update param");
+				// console.log(this.last_grads);
+				//iterate over each param and grad vector
+				for (var i = 0; i < pgs.length; i++) {
+					var pg = pgs[i];
+					var p = pg.params;
+					var g = pg.grads;
+					
+					var plen = p.length;
+					var lg = this.last_grads[i];
+					for (var j = 0; j < plen; j++) {
+						//use normal equation for momentum.
+						// console.log("i,j : "+i+" -- "+j)
+						// console.log("get params");
+						// console.log(g);
+						var lgj = lg[j];
+						// if (isNaN(g[j])){
+						// 	console.log("NaN Value here");
+						// 	console.log(i+" "+j);
+						// 	console.log(g[j]);
+						// }
+						// console.log("lr "+this.learning_rate);
+						// console.log("g "+g[j]);
+						// console.log("batch "+this.batch_size);
+						// console.log("momentum "+this.momentum);
+						// console.log("lgj "+lgj);
+						var grad = -this.learning_rate*(g[j]/this.batch_size);
+						var dw = (1.0-this.momentum)*grad+this.momentum*lgj;
+						p[j] += dw;
+						lg[j] = dw;
+						g[j] = 0.0;
+					};
+				};
+			}
+
+		}
+	};
+	global.SGDTrainer = SGDTrainer;
+})(mlitb);
 //document.write('<script type="text/javascript" src="../src/mlitb_global_param.js"></script>');
 //document.write('<script type="text/javascript" src="../src/mlitb_layer.js"></script>');
 //document.write('<script type="text/javascript" src="../src/mlitb_net.js"></script>');
@@ -850,45 +1066,100 @@ label = mlitb.normalize(label, 0.1, 0.9)
 x = [[0,0],[0,1],[1,0],[1,1]]
 y = [0, 0, 0, 1]
 label = mlitb.normalize(y, 0.1, 0.9)
-console.log(x);
-console.log(label);
+// console.log(x);
+// console.log(label);
 
 var V = new mlitb.Vol(1,1,2, 1);
-var FC = new mlitb.FullConnLayer({'in_neurons':2,'n_neurons' : 3});
+var FC = new mlitb.FullConnLayer({'in_neurons':2,'num_neurons' : 3});
 var FCfw = FC.forward(V);
-console.log(FCfw);
+// console.log(FCfw);
 var SIG = new mlitb.SigmoidLayer({'out_sx':1,'out_sy' : 1, 'out_depth' : 3});
 var SIGfw = SIG.forward(FCfw);
-console.log(SIGfw);
+// console.log(SIGfw);
 SIG.V_out.data = [0.5, 0.5, 0.5];
 var target = [1.0, 1.0, 1.0];
 var SIGbw = SIG.backward(target);
-console.log(SIG.V_in);
-console.log(SIGbw);
+// console.log(SIG.V_in);
+// console.log(SIGbw);
 var FCbw = FC.backward();
-console.log(FC.weights);
-console.log(FC.V_in);
+// console.log(FC.weights);
+// console.log(FC.V_in);
 
-var inputpool = [1, 2, 3, 4, 5, 
-								 5, 4, 3, 2, 1, 
-								 9, 0, 0, 9, 0, 
+var inputpool = [1, 1, 2, 2, 3, 
+								 0, 0, 0, 0, 0, 
+								 1, 1, 1, 1, 1, 
 								 0, 0, 0, 0, 0,
 								 0, 0, 0, 0, 0, 
 
-								 1, 2, 3, 4, 5, 
-								 5, 4, 3, 2, 1, 
-								 9, 0, 0, 9, 0, 
-								 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0,]
+								 0, 0, 0, 0, 0, 
+								 0, 0, 0, 0, 0, 
+								 0, 0, 0, 0, 0, 
+								 1, 2, 3, 4, 5,
+								 1, 1, 1, 1, 1,]
 
 var Vpool = new mlitb.Vol(5,5,2);
 
 Vpool.data = inputpool;
-console.log(Vpool.get(0,0,0));
-console.log(Vpool.getIndex(1,1,1))
-var pool = new mlitb.PoolLayer({'sx': 2,'in_sx' : 5, 'in_sy':5, 'in_depth': 2, 'stride':1});
-var rp = pool.forward(Vpool)
-console.log(rp.data);
+// console.log(Vpool.get(0,0,0));
+// console.log(Vpool.getIndex(1,1,1))
+// var pool = new mlitb.PoolLayer({'sx': 2,'in_sx' : 5, 'in_sy':5, 'in_depth': 2, 'stride':1});
+// var rp = pool.forward(Vpool)
+// console.log(rp.data);
+
+var conv = new mlitb.ConvLayer({'stride':2,'sx':3, 'in_sx':5, 'in_sy' :5, 'in_depth' : 2, 'filters':2});
+var start = new Date().getTime();
+// for (var i = 0; i < 1000000; i++) {
+	// var rc = conv.forward(Vpool);
+	// conv.V_out.drv = [ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 ]
+// };
+
+// console.log(rc)
+// conv.backward()
+// console.log(conv.V_in)
+// var end = new Date().getTime();
+// var time = end - start;
+// console.log('Execution time: ' + time);
 
 
-//train network
+x = [[0,0],[0,1],[1,0],[1,1]];
+y = [0, 0, 0, 1];
+y = mlitb.normalize(y, 0.1, 0.9)
+
+var x = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1];
+x = mlitb.dot(x,Math.PI)[0]
+var label = (function(x){
+	var r = [];
+	for (var i in x){
+		r.push(Math.sin(x[i]));
+	} 
+	return r
+})(x);
+
+y = mlitb.normalize(label, 0.1, 0.9)
+
+var conf = []
+
+conf.push({type : 'input', sx : 1, sy:1, depth :1});
+conf.push({type : 'fc', num_neurons : 20, activation : 'relu'});
+conf.push({type : 'fc', num_neurons : 20, activation : 'relu'});
+conf.push({type : 'fc', num_neurons : 1, activation : 'linear'});
+
+var Net = new mlitb.Net();
+Net.createLayers(conf);
+var SGD = new mlitb.SGDTrainer(Net, {learning_rate : 0.1, batch_size : 1});
+
+for (var i = 0; i < 10000; i++) {
+	var idx = Math.floor(Math.random() * 4) + 0;
+	// var idx = i%4;
+	var xi = x[idx];
+	var yi = y[idx];
+	var Input = new mlitb.Vol(1,1,1);
+	console.log("xi : ");
+	console.log(xi);
+	console.log("y");
+	console.log(yi);
+	Input.data = [xi];
+	SGD.train(Input,yi);
+}
+// Net.forward(Vpool);
+// Net.backward([1]);

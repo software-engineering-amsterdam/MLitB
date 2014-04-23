@@ -33,9 +33,9 @@
 
 	var SigmoidLayer = function (conf) {
 		// assume conf contains information about the number of neurons and also the number connection come to each neuron
-		this.out_sx = conf.out_sx;
-		this.out_sy = conf.out_sy;
-		this.out_depth = conf.out_depth;
+		this.out_sx = conf.in_sx;
+		this.out_sy = conf.in_sy;
+		this.out_depth = conf.in_depth;
 		this.layer_type = 'sigmoid';
 	}
 
@@ -77,14 +77,17 @@
 				return loss;
 			}
       
+		},
+		getParamsAndGrads : function () {
+			return [];
 		}
 	};
 
 	var ReLuLayer = function (conf) {
 		//need information about neuron dimension, from the previous layer
-		this.out_sx = conf.out_sx;
-		this.out_sy = conf.out_sy;
-		this.out_depth = conf.out_depth;
+		this.out_sx = conf.in_sx;
+		this.out_sy = conf.in_sy;
+		this.out_depth = conf.in_depth;
 		this.layer_type = 'relu';
 	}
 
@@ -104,14 +107,17 @@
 
 		backward : function (Y) {
       var Z_drv = this.V_out.drv; // contains inf about error/sensitivity from next layer
-      var Z_data = this.V_out_data;
-      var N = V_in.data.length;
+      var Z_data = this.V_out.data;
+      var N = this.V_in.data.length;
       var V_in_drv = global.zeros(N); // zero out gradient wrt data
       for(var i=0;i<N;i++) {
         if(Z_data[i] <= 0) V_in_drv[i] = 0; // threshold
         else V_in_drv[i] = Z_drv[i];
       }
       this.V_in.drv = V_in_drv;
+		},
+		getParamsAndGrads : function () {
+			return [];
 		}
 	};
 
@@ -170,12 +176,15 @@
       // loss is the class negative log likelihood
       return -Math.log(this.V_out.data[y]);
     },
+    getParamsAndGrads : function () {
+			return [];
+		}
   };
 
   var LinearLayer = function (conf) {
-  	this.out_sx = conf.out_sx;
-		this.out_sy = conf.out_sy;
-		this.out_depth = conf.out_depth;
+  	this.out_sx = conf.in_sx;
+		this.out_sy = conf.in_sy;
+		this.out_depth = conf.in_depth;
 		this.layer_type = 'linear';
   }
 
@@ -188,19 +197,34 @@
 		},
 
 		backward : function (Y) {
+			// console.log('Y : '+Y);
 			var Z_data = this.V_out.data;
       var V_in_drv = global.zeros(N); // zero out gradient wrt data
 			var N = this.V_in.data.length;
-			Y = typeof Y === "number" ? [Y] : Y;
-			var loss = 0.0;
-			for(var i=0;i<N;i++) {
-	      var drv = Z_data[i] - Y[i];
-        V_in_drv[i] = drv;
-        loss += (drv*drv)/2.0
-      }
-      this.V_in.drv = V_in_drv;
-			return loss;
+			if (typeof Y ==='undefined') {
+				var drv = this.V_out.drv;
+				for(var i=0;i<N;i++) {
+					V_in_drv[i] = drv[i];
+				}
+				this.V_in.drv = V_in_drv;
+				
+			} else {
+				var Y = typeof Y === "number" ? [Y] : Y;
+
+				var loss = 0.0;
+				for(var i=0;i<N;i++) {
+					var drv = Z_data[i] - Y[i];
+					V_in_drv[i] = drv;
+					loss += (drv*drv)/2.0
+				}
+				this.V_in.drv = V_in_drv;
+				return loss;	
+			}
+		},
+		getParamsAndGrads : function () {
+			return [];
 		}
+			
 	};
 
 	global.LinearLayer = LinearLayer;
