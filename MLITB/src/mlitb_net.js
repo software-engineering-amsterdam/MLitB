@@ -81,7 +81,7 @@
 				// console.log('V_out '+i);
 				// console.log(V_out);
 			};
-			console.log("predict  : "+Prev_out.data);
+			// console.log("predict  : "+Prev_out.data);
 			
 		},
 
@@ -104,6 +104,10 @@
 		loadNetwork : function(json){
 			this.layer_conf = json.layer_conf;
 			this.constructNetwork();
+		},
+
+		getPrediction : function(){
+			return this.layers[this.layers.length-1].V_out;
 		},
 
 		getParamsAndGrads : function(){

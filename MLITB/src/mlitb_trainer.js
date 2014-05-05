@@ -2,7 +2,7 @@
 	"use strict";
 	var SGDTrainer = function (net, conf) {
 		this.net = net;
-		console.log(conf);
+		this.loss =0;
 
 		this.learning_rate = typeof conf.learning_rate !== 'undefined' ? conf.learning_rate : 0.01;
     this.l1_decay = typeof conf.l1_decay !== 'undefined' ? conf.l1_decay : 0.0;
@@ -17,10 +17,12 @@
 	SGDTrainer.prototype = {
 		train : function (X, Y) {
 			this.net.forward(X, true);
-			var loss = this.net.backward(Y);
-			console.log('loss : '+loss);
+			this.loss += this.net.backward(Y);
+			// console.log('loss : '+loss);
 			this.iteration++;
 			if (this.iteration % this.batch_size == 0){
+				console.log('loss : '+this.loss/this.batch_size);
+				this.loss = 0;
 				//perform the update
 
 				// console.log("initialize last grad");

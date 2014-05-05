@@ -19,9 +19,9 @@
 
 		this.filters = []; //
 		for (var i = 0; i < conf.filters; i++) {
-			this.filters.push(new Vol(this.sx, this.sy, this.in_depth, 1));
+			this.filters.push(new Vol(this.sx, this.sy, this.in_depth));
 		};
-		this.biases = new global.Vol(1,1, this.out_depth, 1.0);
+		this.biases = new global.Vol(1,1, this.out_depth, 0.1);
 
 		this.conv_type = typeof conf.conv_type !=='undefined' ? conf.conv_type : 'same'; //probably for the future we want to try 'valid' and 'full' option. 
 		
@@ -77,7 +77,7 @@
 			var V_out = this.V_out;
 			//this one is faster
 			for (var i=0,ij=0;i<V_out.depth;i++) {
-				for (var j=0;j<V_out.sx*V_out.sy;j++,ij++){this.biases.data[i]+=V_out.data[ij]}
+				for (var j=0;j<V_out.sx*V_out.sy;j++,ij++){this.biases.drv[i]+=V_out.drv[ij]}
 			};
 			for (var od=0;od<V_out.depth;od++) {
 				var f=this.filters[od]; //filter/weight data
@@ -95,7 +95,7 @@
 										// a+=f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
 										// console.log(ix,iy,id);
 										V_in.drv[((V_in.sx * iy)+ix)+V_in.sx*V_in.sy*id] += f.data[fi]*V_out.drv[oi];
-										f.drv[fi]+= V_in.data[((V.sx * iy)+ix)+V.sx*V.sy*id]*V_out.drv[oi];
+										f.drv[fi]+= V_in.data[((V_in.sx * iy)+ix)+V_in.sx*V_in.sy*id]*V_out.drv[oi];
 									}
 								};
 							};

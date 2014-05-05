@@ -164,7 +164,7 @@
     },
     backward: function(y) {
 
-      V_in_drv = global.zeros(this.V_in.data.length); // zero out the gradient of input Vol
+      var V_in_drv = global.zeros(this.V_in.data.length); // zero out the gradient of input Vol
 
       for(var i=0;i<this.out_depth;i++) {
         var indicator = i === y ? 1.0 : 0.0;
