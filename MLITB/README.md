@@ -39,14 +39,21 @@
 
 ####How to Test :
 
-Currently the test case is fitting Sin function.
+- Sin function :
 
-run >> nodejs /build/mlitb.js 
+ - run >> nodejs /build/mlitb_sin.js 
+
+- Mnist dataset :
+
+ - run >> nodejs /build/mlitb_mnist.js
+
 
 ####To do List :
 
-- Try MNIST dataset
+- Try MNIST dataset (done)
 
 - Implement Dropout layer (usually used for deep network)
+
+- Implement weight and learning rate decay
 
 - Implement functions to save and load network architecture and parameter
