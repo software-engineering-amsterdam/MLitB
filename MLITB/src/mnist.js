@@ -4,13 +4,13 @@ conf.push({type : 'input', sx : 28, sy:28, depth :1});
 conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
 conf.push({type : 'pool', sx : 2, stride : 2});
 conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
-conf.push({type : 'pool', sx : 3, stride : 3});
+conf.push({type : 'pool', sx : 3, stride : 3, drop_prob : 0.5});
 // conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
 conf.push({type : 'fc', num_neurons : 10, activation : 'softmax'});
 
 var Net = new mlitb.Net();
 Net.createLayers(conf);
-var SGD = new mlitb.SGDTrainer(Net, {learning_rate : 0.1, batch_size : 16});
+var SGD = new mlitb.SGDTrainer(Net, {learning_rate : 0.1, batch_size : 16, l2_decay : 0.001});
 
 
 var PNG = require('png-js');
@@ -30,15 +30,15 @@ var parsePNG = function(filename, ln, storage, isGrayscale){
     var nImages = pixels.length/4/ln; //4 is rgba
     var n = ln;
     for (var i = 0; i< nImages; i++) {
-      var image = []
-      for (var j = i*n*4; j < (i+1)*n*4; j+=4) {
+      var image = mlitb.zeros(784);
+      for (var k=0,j = i*n*4; j < (i+1)*n*4; j+=4,k++) {
         //for grayscale, RGB have the same value
         R = pixels[j]/255.0;
         // console.log(R);
         // G = pixels[j+1];
         // B = pixels[j+2];
         // A = pixels[j+3];
-        image.push(R);
+        image[k]=R;
       };
       storage.push(image);
     };
@@ -64,15 +64,18 @@ var sampleAndTrainBatches = function () {
   var bi = Math.floor(Math.random()*20);
   var startIndex = bi*3000;
   var epoch = 100;
+  var nTest = 100;
+  var nTrain = 100;
+  var correctTrain = 0;
   // var labelSI = bi*3000
   var it=1;
-  for (var i = 0; i < epoch; i++) {
-    console.log('Epoch '+i);
-    for (var j = startIndex; j < startIndex+3000; j++,it++) {
-      // console.log(j);
+  for (var ep = 0; ep < epoch; ep++) {
+    console.log('Epoch '+ep);
+    for (var idx = startIndex; idx < startIndex+3000; idx++,it++) {
+      // console.log(idx);
       var Input = new mlitb.Vol(28,28,1, 0.0);
-      var xi = loadedImages[j];
-      var yi = train_labels[j];
+      var xi = loadedImages[idx];
+      var yi = train_labels[idx];
       // console.log("xi : ");
       // console.log(xi);
       // console.log("y");
@@ -80,19 +83,55 @@ var sampleAndTrainBatches = function () {
       Input.data = xi;
       // console.log(yi);
       SGD.train(Input,yi);    
+      var arr = Net.getPrediction().data;
+      var max = 0;
+      for (var j = 1; j < arr.length; j++) {
+        if (arr[j]>arr[max]){max = j}
+      };
+      // console.log('label : ',yi,' output : ',arr.indexOf(Math.max.apply(Math, arr)));
+      // console.log('label : ',yi,' output : ',max);
+      if(yi===max){correctTrain+=1}
+
+
       if (it %16==0){
+        correctTest = 0;
+        // correctTrain = 0;
         // choose 10 random test images
-        for (var i = 0; i < 10; i++) {
-          var idx = Math.floor(Math.random()*testImages.length);
+        for (var i = 0; i < nTest; i++) {
+          var ix = Math.floor(Math.random()*testImages.length);
           var Input = new mlitb.Vol(28,28,1, 0.0);
-          var xi = testImages[idx];
-          var yi = test_labels[idx];
+          var xi = testImages[ix];
+          var yi = test_labels[ix];
           Input.data = xi;
           Net.forward(Input);
           var arr = Net.getPrediction().data;
-          console.log('label : ',yi,' output : ',arr.indexOf(Math.max.apply(Math, arr)));
+          var max = 0;
+          for (var j = 1; j < arr.length; j++) {
+            if (arr[j]>arr[max]){max = j}
+          };
+          // console.log('label : ',yi,' output : ',arr.indexOf(Math.max.apply(Math, arr)));
+          // console.log('label : ',yi,' output : ',max);
+          if(yi===max){correctTest+=1}
         };
-        
+        // for (var i = 0; i < nTrain; i++) {
+        //   var idx = Math.floor(Math.random()*train_labels.length);
+        //   var Input = new mlitb.Vol(28,28,1, 0.0);
+        //   var xi = loadedImages[idx];
+        //   var yi = train_labels[idx];
+        //   Input.data = xi;
+        //   Net.forward(Input);
+        //   var arr = Net.getPrediction().data;
+        //   var max = 0;
+        //   for (var j = 1; j < arr.length; j++) {
+        //     if (arr[j]>arr[max]){max = j}
+        //   };
+        //   // console.log('label : ',yi,' output : ',arr.indexOf(Math.max.apply(Math, arr)));
+        //   // console.log('label : ',yi,' output : ',max);
+        //   if(yi===max){correctTrain+=1}
+        // };
+        console.log('Train accuracy : ',correctTrain/SGD.iteration);
+        console.log('Test accuracy : ',correctTest/nTest);
+      
       }
     };
     

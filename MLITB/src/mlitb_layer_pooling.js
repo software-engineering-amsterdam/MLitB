@@ -53,8 +53,8 @@
               for (var fx = stx; fx < this.sx+stx; fx++) {
                 var v = -999999999.0;
                 if (fx < this.in_sx && fy < this.in_sy){
-                  v = V.get(fx,fy,d); // try function call here. compared with non function call later
-                  // v = V.data[((V.sx * fy)+fx)+V.sx*V.sy*d];
+                  // v = V.get(fx,fy,d); // try function call here. compared with non function call later
+                  v = V.data[((V.sx * fy)+fx)+V.sx*V.sy*d];
                 }
                 if (v> max_v){
                   max_v = v;

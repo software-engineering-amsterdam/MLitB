@@ -10,10 +10,11 @@
         <file name="mlitb_layer_fullConn.js" />
         <file name="mlitb_layer_activation.js" />
         <file name="mlitb_layer_pooling.js" />
+        <file name="mlitb_layer_dropout.js" />
         <file name="mlitb_net.js" />
         <file name="mlitb_sgd.js" />
         <file name="mlitb_trainer.js" />
-        <file name="test.js" />
+        <file name="mnist.js" />
       </filelist>
     </concat>
   </target>

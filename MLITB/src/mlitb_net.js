@@ -37,6 +37,9 @@
 					} else {
 						console.log("WARNING : \'stride\' parameter is not defined. Using default = 1")
 					}
+					if (typeof drop_prob !== 'undefined'){
+						layer_conf.push({type : 'dropout', drop_prob : drop_prob})
+					}
 				}
 			};
 			this.layer_conf = layer_conf; //this structure can be saved and loaded in the future
@@ -69,7 +72,7 @@
 				else if (conf.type === 'linear'){this.layers.push(new global.LinearLayer(conf));}
 				else if (conf.type === 'relu'){this.layers.push(new global.ReLuLayer(conf));}
 				else if (conf.type === 'pool'){this.layers.push(new global.PoolLayer(conf));}
-				// else if (conf.type === 'dropout'){this.layers.push(new global.DropOutLayer(conf));}
+				else if (conf.type === 'dropout'){this.layers.push(new global.DropOutLayer(conf));}
 			};
 		},
 

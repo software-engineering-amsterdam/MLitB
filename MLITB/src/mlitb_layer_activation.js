@@ -168,7 +168,7 @@
 
       for(var i=0;i<this.out_depth;i++) {
         var indicator = i === y ? 1.0 : 0.0;
-        V_in_drv[i] = -(indicator - this.Z_data[i]);
+        V_in_drv[i] = this.Z_data[i]-indicator;
       }
       // compute and accumulate gradient wrt weights and bias of V_in layer (previous layer)
       this.V_in.drv = V_in_drv;
