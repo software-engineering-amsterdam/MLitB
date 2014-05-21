@@ -81,6 +81,9 @@ start = function() {
 
     $.getJSON('x.json',function(data){
         x = $M(data);
+
+        window.profiler = x;
+        return;
         step(x);
     }).error(function(){
         console.log('error');
