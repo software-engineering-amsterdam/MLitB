@@ -42,7 +42,7 @@
       var hy = Math.floor(this.sy/2.0);
       // var in_sx = V.sx; //used when compute index instead of call get function
       // var in_sy = V.sy;
-      var n = 0; //index for max_pos;
+      var n = 0; //index for output data;
       for (var d = 0; d < this.out_depth; d++) {
         for (var sty = 0, oy=0; oy < this.out_sy; sty+=this.stride, oy++) {
           for (var stx = 0, ox=0; ox < this.out_sx; stx+=this.stride, ox++,n++){
@@ -53,8 +53,8 @@
               for (var fx = stx; fx < this.sx+stx; fx++) {
                 var v = -999999999.0;
                 if (fx < this.in_sx && fy < this.in_sy){
-                  v = V.get(fx,fy,d); // try function call here. compared with non function call later
-                  // v = V.data[((in_sx * fy)+fx)+in_sx*in_sy*d];
+                  // v = V.get(fx,fy,d); // try function call here. compared with non function call later
+                  v = V.data[((V.sx * fy)+fx)+V.sx*V.sy*d];
                 }
                 if (v> max_v){
                   max_v = v;
@@ -65,7 +65,7 @@
             };
             // we can create 1 function to return index
             // var idx = Z.getIndex(ox,oy,d);
-            Z.set(ox,oy,d, max_v);
+            Z.data[n] = max_v;
             // Z_data[idx] = max_v;
             max_pos_x[n] = max_x;
             max_pos_y[n] = max_y;
@@ -95,7 +95,11 @@
         };
       }
     },
-  }
+    getParamsAndGrads : function () {
+      return [];
+    }
+  },
+
 
   global.PoolLayer = PoolLayer;
 

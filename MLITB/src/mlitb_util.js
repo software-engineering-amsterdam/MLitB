@@ -16,29 +16,42 @@
 		}
 		
 	}
-	var zero = function (n, getVal) {
-		var res = [];
-		for (var i = 0; i < n; i++) {
-			res[i]=getVal();
-		}
-		return res;
-	}
-	var zeros = function (m,n, opt) {
-		var test = typeof n == 'number' ? opt : n;
-		var getVal = {};
-		if (typeof test === 'undefined' || test === 'zero')
-			getVal = function () {return 0;}
-		else if (test === 'random')
-			getVal = function () {return Math.random();}
+	// var zero = function (n, getVal) {
+	// 	var res = [];
+	// 	for (var i = 0; i < n; i++) {
+	// 		res[i]=getVal();
+	// 	}
+	// 	return res;
+	// }
+	// var zeros = function (m,n, opt) {
+	// 	var test = typeof n == 'number' ? opt : n;
+	// 	var getVal = {};
+	// 	if (typeof test === 'undefined' || test === 'zero')
+	// 		getVal = function () {return 0;}
+	// 	else if (test === 'random')
+	// 		getVal = function () {return Math.random();}
 
-		if (typeof n === 'number'){
-			var res = [];
-			for (var i = 0; i < m; i++)
-				res[i] = zero(n,getVal)
-			return res;	
-		} else
-			return zero(m, getVal);
-	}
+	// 	if (typeof n === 'number'){
+	// 		var res = [];
+	// 		for (var i = 0; i < m; i++)
+	// 			res[i] = zero(n,getVal)
+	// 		return res;	
+	// 	} else
+	// 		return zero(m, getVal);
+	// }
+
+
+	var zeros = function(n) {
+    if(typeof(n)==='undefined' || isNaN(n)) { return []; }
+    if(typeof ArrayBuffer === 'undefined') {
+      // lacking browser support
+      var arr = new Array(n);
+      for(var i=0;i<n;i++) { arr[i]= 0; }
+      return arr;
+    } else {
+      return new Float64Array(n);
+    }
+  }
 
 	var add = function (A, B) {
 		if (typeof A === 'object' && typeof B === 'object'){

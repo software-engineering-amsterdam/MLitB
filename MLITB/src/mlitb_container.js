@@ -8,11 +8,17 @@
 		var n = sx*sy*depth;
 		this.data = global.zeros(n);
 		this.drv = global.zeros(n);
-		if (typeof c ==='number'){
+		if (typeof c ==='number' || typeof c === 'boolean'){
 			for (var i = 0; i < n; i++) {
 				this.data[i] = c
 			};
-		} else {
+		} else if(typeof c ==='object'){
+      var prob = c.prob;
+      for (var i = 0; i < n; i++) {
+        this.data[i] = (Math.random()<prob ? 0 : 1);
+      };
+    } 
+    else {
 			var scale = Math.sqrt(1.0/(sx*sy*depth));
       for(var i=0;i<n;i++) { 
         this.data[i] = global.randn(0.0, scale);
