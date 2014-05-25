@@ -1,0 +1,18 @@
+{
+  "name": "emitter-component",
+  "description": "Event emitter",
+  "version": "0.0.1",
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*"
+  },
+  "component": {
+    "scripts": {
+      "emitter": "index.js"
+    }
+  },
+  "readme": "\n# Emitter\n\n  Event emitter component.\n\n## Installation\n\n```\n$ npm install emitter-component\n```\n\n## API\n  \n### Emitter#on(event, fn)\n\n  Register an `event` handler `fn`.\n\n### Emitter#once(event, fn)\n\n  Register a single-shot `event` handler `fn`,\n  removed immediately after it is invoked the\n  first time.\n\n### Emitter#off(event, fn)\n\n  Remove `event` handler `fn`, or pass only the `event`\n  name to remove all handlers for `event`.\n\n### Emitter#emit(event, ...)\n\n  Emit an `event` with variable option args.\n",
+  "readmeFilename": "Readme.md",
+  "_id": "emitter-component@0.0.1",
+  "_from": "emitter-component@0.0.1"
+}
