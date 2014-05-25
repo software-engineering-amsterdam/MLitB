@@ -37,7 +37,7 @@ var nodeSettings = {
 
 // make this a online setting
 var normalizeFactor;
-var markovChain;
+var markovChain = [];
 var markovLength;
 var markovResults;
 var markovFirstResult;
