@@ -265,51 +265,55 @@ var removeClient = function(datamap, req) {
   // determine if this client is/was working
 
   i = currentChain.length;
-  var set, j, piece, node;
-  while(i--) {
-    
-    chainClient = currentChain[i];
-    if(chainClient.client == client) {
-      // the client is currently operating.
-      // HELL BREAKS LOOSE!
 
-      // difficult issue.
-      // other nodes could pick up the dropped client, but would stall the whole operation.
+  if(i) {
+    var set, j, piece, node;
+    while(i--) {
+      
+      chainClient = currentChain[i];
+      if(chainClient.client == client) {
+        // the client is currently operating.
+        // HELL BREAKS LOOSE!
 
-      // two viable options (for now):
-      // 1. Accept the current chain for what is is, without output of the dropped node.
-      //    Continue with the reduction step, and after that the next reduction step.
-      // 2. Drop the current chain and do it all over again with a new chain.
+        // difficult issue.
+        // other nodes could pick up the dropped client, but would stall the whole operation.
 
-      // Option 1 gives the least overhead as the system can keep on processing.
-      // It gives bias as the entire shard is unprocessed.
-      // It is probably possible to mitigate this by some smart reduction function
-      // which can handle lost clients.
+        // two viable options (for now):
+        // 1. Accept the current chain for what is is, without output of the dropped node.
+        //    Continue with the reduction step, and after that the next reduction step.
+        // 2. Drop the current chain and do it all over again with a new chain.
 
-      // Option 2 gives the least bias, but it stalls the chain operation by at least 1 step.
-      // The most fair, but potentially very distruptive.
-      // Many nodes could join and leave in a short time, causing to lose many chain iterations.
-      // But could be viable.
+        // Option 1 gives the least overhead as the system can keep on processing.
+        // It gives bias as the entire shard is unprocessed.
+        // It is probably possible to mitigate this by some smart reduction function
+        // which can handle lost clients.
 
-      // We choose option 1 for now. The perceived bias is not as much as probably many other
-      // chain iterations are done.
+        // Option 2 gives the least bias, but it stalls the chain operation by at least 1 step.
+        // The most fair, but potentially very distruptive.
+        // Many nodes could join and leave in a short time, causing to lose many chain iterations.
+        // But could be viable.
 
-      console.log('-> Client was currently processing, cleaning up.');
+        // We choose option 1 for now. The perceived bias is not as much as probably many other
+        // chain iterations are done.
 
-      markovLength--;
+        console.log('-> Client was currently processing, cleaning up.');
 
-      if(markovResults.length == markovLength) {
+        markovLength--;
 
-        console.log('-> Last client, continue with reduction');
+        if(markovResults.length == markovLength) {
 
-        parameter = reduce(markovResults);
+          console.log('-> Last client, continue with reduction');
 
-        // run next chain
-        distributor(parameter);
+          parameter = reduce(markovResults);
 
-      } else {
+          // run next chain
+          distributor(parameter);
 
-        console.log('-> NOT last client, other client will initiate reduction.');
+        } else {
+
+          console.log('-> NOT last client, other client will initiate reduction.');
+
+        }
 
       }
 
