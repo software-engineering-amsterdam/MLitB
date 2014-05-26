@@ -23,6 +23,12 @@ app.use(express.static(__dirname + '/public'))
 
 
 // STATICS
+
+// Type of system
+// true = Parallel Markov Chain Monte Carlo
+// false = Parallel Stochastic Gradient Descent (no markov chains)
+var P_MCMC = true;
+
 var MAX_DESKTOP = 800,
     MAX_MOBILE  = 200,
     COVERAGE_EQ = 3;
@@ -217,86 +223,98 @@ var removeClient = function(datamap, req) {
 
   reallocate(datamap);
 
-  if(markovChain.length) {
-    // check if there is a markovchain running with this client in.
+  // NB.
+  // ONLY FOR P-MCMC
 
-    // fix markovChain if the client is in there
-    i = markovChain.length;
+  if(P_MCMC) {
 
-    var chain, j, set;
+    if(markovChain.length) {
+      // check if there is a markovchain running with this client in.
 
-    while(i--) {
-      chain = markovChain[i];
+      // fix markovChain if the client is in there
+      i = markovChain.length;
 
-      j = chain.length;
+      var chain, j, set;
 
-      while(j--) {
+      while(i--) {
+        chain = markovChain[i];
 
-        set = chain[j];
+        j = chain.length;
 
-        if(set.client == client) {
+        while(j--) {
 
-          console.log("-> Dropped client from planned job in chain.");
+          set = chain[j];
 
-          // remove from chain.
-          chain.splice(j, 1);
+          if(set.client == client) {
 
-        }
+            console.log("-> Dropped client from planned job in chain.");
+
+            // remove from chain.
+            chain.splice(j, 1);
+
+          }
+
+        }      
 
       }
-      
 
     }
 
   }
 
   // determine if this client is/was working
-  i = currentChain.length;
-  var set, j, piece, node;
-  while(i--) {
-    
-    chainClient = currentChain[i];
-    if(chainClient.client == client) {
-      // the client is currently operating.
-      // HELL BREAKS LOOSE!
+  // NB.
+  // ONLY FOR P-SGD
+  if(!P_MCMC) {
 
-      // difficult issue.
-      // other nodes could pick up the dropped client, but would stall the whole operation.
+    i = currentChain.length;
+    var set, j, piece, node;
+    while(i--) {
+      
+      chainClient = currentChain[i];
+      if(chainClient.client == client) {
+        // the client is currently operating.
+        // HELL BREAKS LOOSE!
 
-      // two viable options (for now):
-      // 1. Accept the current chain for what is is, without output of the dropped node.
-      //    Continue with the reduction step, and after that the next reduction step.
-      // 2. Drop the current chain and do it all over again with a new chain.
+        // difficult issue.
+        // other nodes could pick up the dropped client, but would stall the whole operation.
 
-      // Option 1 gives the least overhead as the system can keep on processing.
-      // It gives bias as the entire shard is unprocessed.
-      // It is probably possible to mitigate this by some smart reduction function
-      // which can handle lost clients.
+        // two viable options (for now):
+        // 1. Accept the current chain for what is is, without output of the dropped node.
+        //    Continue with the reduction step, and after that the next reduction step.
+        // 2. Drop the current chain and do it all over again with a new chain.
 
-      // Option 2 gives the least bias, but it stalls the chain operation by at least 1 step.
-      // The most fair, but potentially very distruptive.
-      // Many nodes could join and leave in a short time, causing to lose many chain iterations.
-      // But could be viable.
+        // Option 1 gives the least overhead as the system can keep on processing.
+        // It gives bias as the entire shard is unprocessed.
+        // It is probably possible to mitigate this by some smart reduction function
+        // which can handle lost clients.
 
-      // We choose option 1 for now. The perceived bias is not as much as probably many other
-      // chain iterations are done.
+        // Option 2 gives the least bias, but it stalls the chain operation by at least 1 step.
+        // The most fair, but potentially very distruptive.
+        // Many nodes could join and leave in a short time, causing to lose many chain iterations.
+        // But could be viable.
 
-      console.log('-> Client was currently processing, cleaning up.');
+        // We choose option 1 for now. The perceived bias is not as much as probably many other
+        // chain iterations are done.
+        
+        console.log('-> Client was currently processing, cleaning up.');
 
-      markovLength--;
+        markovLength--;
 
-      if(markovResults.length == markovLength) {
+        if(markovResults.length == markovLength) {
 
-        console.log('-> Last client, continue with reduction');
+          console.log('-> Last client, continue with reduction');
 
-        parameter = reduce(markovResults);
+          parameter = reduce(markovResults);
 
-        // run next chain
-        distributor(parameter);
+          // run next chain
+          distributor(parameter);
 
-      } else {
+        } else {
 
-        console.log('-> NOT last client, other client will initiate reduction.');
+          console.log('-> NOT last client, other client will initiate reduction.');
+
+        }
 
       }
 
@@ -510,6 +528,11 @@ var initiator = function(datamap, req) {
   var clientId;
   i = n;
 
+  if(!P_MCMC) {
+    // P-SGD is just one iteration, no chain.
+    i = 1;
+  }
+
   while(i--) {
     // first dim
 
@@ -530,15 +553,14 @@ var initiator = function(datamap, req) {
   }
 
   // store chain
-  markovChain = chain;
-
-  // run distributor.
-  distributor(0);
+  return chain;
 
 }
 
 var run = function(datamap) {
   // run sample embedded job
+
+  var chain;
 
   console.log('run job, sample markov chain');
   if(!datamap.length) {
@@ -554,7 +576,9 @@ var run = function(datamap) {
   // done to redistribute client power.
   reallocate(datamap);
 
-  initiator(datamap);
+  markovChain = initiator(datamap);
+
+  distributor(0);
 
 }
 
