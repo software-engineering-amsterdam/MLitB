@@ -23,6 +23,12 @@ app.use(express.static(__dirname + '/public'))
 
 
 // STATICS
+
+// Type of system
+// true = Parallel Markov Chain Monte Carlo
+// false = Parallel Stochastic Gradient Descent (no markov chains)
+var P_MCMC = true;
+
 var MAX_DESKTOP = 800,
     MAX_MOBILE  = 200,
     COVERAGE_EQ = 3;
@@ -32,7 +38,7 @@ var settings = {
 }
 
 var nodeSettings = {
-  'runtime': 3000
+  'runtime': 300
 }
 
 // make this a online setting
@@ -217,40 +223,47 @@ var removeClient = function(datamap, req) {
 
   reallocate(datamap);
 
-  if(markovChain.length) {
-    // check if there is a markovchain running with this client in.
+  // NB.
+  // ONLY FOR P-MCMC
 
-    // fix markovChain if the client is in there
-    i = markovChain.length;
+  if(P_MCMC) {
 
-    var chain, j, set;
+    if(markovChain.length) {
+      // check if there is a markovchain running with this client in.
 
-    while(i--) {
-      chain = markovChain[i];
+      // fix markovChain if the client is in there
+      i = markovChain.length;
 
-      j = chain.length;
+      var chain, j, set;
 
-      while(j--) {
+      while(i--) {
+        chain = markovChain[i];
 
-        set = chain[j];
+        j = chain.length;
 
-        if(set.client == client) {
+        while(j--) {
 
-          console.log("-> Dropped client from planned job in chain.");
+          set = chain[j];
 
-          // remove from chain.
-          chain.splice(j, 1);
+          if(set.client == client) {
 
-        }
+            console.log("-> Dropped client from planned job in chain.");
+
+            // remove from chain.
+            chain.splice(j, 1);
+
+          }
+
+        }      
 
       }
-      
 
     }
 
   }
 
   // determine if this client is/was working
+
   i = currentChain.length;
   var set, j, piece, node;
   while(i--) {
@@ -434,6 +447,8 @@ var distributor = function(parameter) {
 
   markovResults = [];
 
+  // currentChain is like a vertical map.
+  // i.e. not a timeline, but for this timestamp, this list of nodes.
   currentChain = markovChain.pop();
 
   var i = currentChain.length;
@@ -510,6 +525,11 @@ var initiator = function(datamap, req) {
   var clientId;
   i = n;
 
+  if(!P_MCMC) {
+    // P-SGD is just one iteration, no chain.
+    i = 1;
+  }
+
   while(i--) {
     // first dim
 
@@ -530,15 +550,14 @@ var initiator = function(datamap, req) {
   }
 
   // store chain
-  markovChain = chain;
-
-  // run distributor.
-  distributor(0);
+  return chain;
 
 }
 
 var run = function(datamap) {
   // run sample embedded job
+
+  var chain;
 
   console.log('run job, sample markov chain');
   if(!datamap.length) {
@@ -554,7 +573,9 @@ var run = function(datamap) {
   // done to redistribute client power.
   reallocate(datamap);
 
-  initiator(datamap);
+  markovChain = initiator(datamap);
+
+  distributor(0);
 
 }
 
