@@ -41,7 +41,7 @@ var markovChain = [];
 var markovLength;
 var markovResults;
 var markovFirstResult;
-var currentChain;
+var currentChain = [];
 
 var logger = function(req, text) {
   req.io.emit('log', text);
@@ -354,7 +354,7 @@ var shortage = function(datamap) {
 var reduce = function(res) {
 
   // SAMPLE REDUCTION
-  // ONLY CONCATENATE
+  // ONLY ADD UP
   var i = markovResults.length;
   var total = 0;
   var piece;
