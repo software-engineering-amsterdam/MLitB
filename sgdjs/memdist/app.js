@@ -38,7 +38,7 @@ var settings = {
 }
 
 var nodeSettings = {
-  'runtime': 300
+  'runtime': 1000
 }
 
 // make this a online setting
