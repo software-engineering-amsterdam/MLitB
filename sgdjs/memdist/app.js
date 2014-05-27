@@ -191,6 +191,8 @@ var removeClient = function(datamap, req) {
   console.log('Dropped client:', client);
 
   var i = datamap.length;
+  var lostData = 0;
+
   while(i--){ 
     var item = datamap[i];
 
@@ -215,8 +217,12 @@ var removeClient = function(datamap, req) {
     // when there is no redundancy, remove.
     if(!item.data.length) {
       datamap.splice(i, 1);
-      console.log('data lost')
+      lostData++;
     }
+  }
+
+  if(lostData) {
+    console.log('Lost', lostData, 'data vectors from the network.');
   }
 
   req.io.leave('room');
@@ -271,6 +277,11 @@ var removeClient = function(datamap, req) {
     while(i--) {
       
       chainClient = currentChain[i];
+
+      console.log('## FAILURE?');
+      console.log(chainClient);
+      console.log(chainClient.client);
+
       if(chainClient.client == client) {
         // the client is currently operating.
         // HELL BREAKS LOOSE!
@@ -867,19 +878,14 @@ var join = function(req, datamap, settings) {
     var max_data = MAX_MOBILE;
   }
 
-  // just fill op the 'holes' in the datamap.
-  // items of a shard do not need to be adjacent.
-
-  // first: determine lowest coverage number.
-  // order datamap by NR of clients.
-  if(!datamap.length && clientsOnline() > 0) {
-    logger(req, 'Cannot join network. No data available. First add data, then clients.');
-    return;
-  }
-
   req.io.join('room');
 
-  reallocate(datamap);
+  // do not allocate data yet.
+  // you could change this in the future to allow for quicker
+  // data assignment.
+
+  // data (re)allocation happens when the problem set is run.
+  // then this client will get data too.
 
 }
 
