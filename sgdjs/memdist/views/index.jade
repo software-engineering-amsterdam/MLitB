@@ -9,15 +9,13 @@ html
   body
     div.container
         div.row
-            div.col-xs-6
+            div.col-md-6
                 h1 P-MCMC
                 p Press connect to connect.
                 p 
                     input#start(type="button" value="connect")
                 p 
                     input#runjob(type="button" value="run sample embedded job")
-                p 
-                    input#datamap(type="button" value="datamap in console")
                 p Upload file:                    
                 input#files(type="file" name="files")
                 span#download 0%
@@ -29,14 +27,22 @@ html
                     span#vsec 0
                     span  vectors / 1000 iterations / sec
                 p
-                    span#working 0
-                    span  vectors in working set
-                p
                     span#wtime 0
                     span  MS working time
-                script(src='/js/jquery.js')
-                script(src='//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js')
-                script(src='/js/client.js')
-            div.col-xs-6
-                h3 Log
-                pre.log 
+            div.col-md-6
+                h3 Data
+                p#processinglegend Processing: 
+                    span#working 0  
+                    span  vectors
+                p#restlegend Spare: 
+                    span#spare 0  
+                    span  vectors
+                p#totalVectors Total: 
+                    span#total 0  
+                    span  vectors                    
+                div#datachart
+
+    script(src='/js/jquery.js')
+    script(src='//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js')
+    script(src='//mbostock.github.com/d3/d3.js')
+    script(src='/js/client.js')

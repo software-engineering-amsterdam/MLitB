@@ -1,3 +1,13 @@
 #download, #upload {
 	display: none;
 }
+
+#processinglegend {
+	font-weight: 800;
+	color: rgb(49, 130, 189);
+}
+
+#restlegend {
+	font-weight: 800;
+	color: rgb(107, 174, 214);
+}

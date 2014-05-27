@@ -278,7 +278,7 @@ var removeClient = function(datamap, req) {
     chainClient = currentChain[i];
 
     if(!chainClient) {
-      console.log('client mystically disappeared')
+      console.log('Last client left the network.');
       continue;
     }
 
@@ -933,21 +933,6 @@ app.io.route('reduce', function(req) {
   prereduce(req);
 });
 
-app.io.route('datamap', function(req) {
-  console.log(datamap);
-  console.log('normalization factor', normalizeFactor);
-  console.log('shortage:', shortage(datamap));
-  var i = clientsOnline();
-  var client;
-  var total = 0;
-  while(i--) {
-    client = app.io.sockets.clients('room')[i]; 
-    console.log('client, power', client.id, client.allocatedPower);
-    total += client.allocatedPower;
-  }
-  console.log('power coverage:', total);
-
-});
 
 // Send the client html.
 app.get('/', function(req, res) {
