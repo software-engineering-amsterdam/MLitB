@@ -232,6 +232,10 @@ map = function(obj) {
   $('#vsec').html(vsec.toFixed(3));
   $('#isec').html(isec.toFixed(3));
 
+  if(vsec <= 1.0) {
+    vsec = 1.0;
+  }
+
   // reduce
   io.emit('reduce', {
     'parameters': parameters,
