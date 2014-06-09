@@ -1,247 +1,243 @@
-var io;
+var io, device, dataworkerId, dataworker, processworker, processworkers, channel;
 
-$('#start').click(function() {
+var processWorkerCounter = 1;
 
-	io = io.connect()
+var performance = {};
 
-  var device = "desktop";
+var logger = function(text) {
+
+  var val = $('pre.log').html();
+  $('pre.log').html(text + '\n' + val);
+
+}
+
+var dataworkerMessage = function(e) {
+
+  if(e.data.type == 'log') {
+
+    logger('DW >> ' + e.data.data); 
+
+  } else if(e.data.type == 'dataworkerid') {
+
+    dataworkerId = e.data.data;
+
+  } else if(e.data.type == 'data') {
+
+    dataworker.postMessage({
+      type: 'data',
+      data: e.data
+    });
+
+  }
+  
+}
+
+var measurePerformance = function(data) {
+  id = data.id;
+  vsec = data.vsec;
+  isec = data.isec;
+
+  // update visuals
+  if(! $('#' + id).length ) {
+    // insert table
+    $('#performance').append(' \
+      <tr id="' + id + '"> \
+        <td>' + processWorkerCounter + '</td> \
+        <td class="vsec"></td> \
+        <td class="vsecdelta"></td> \
+        <td class="isec"></td> \
+        <td class="isecdelta"></td> \
+      </tr> \
+      ');
+
+    processWorkerCounter++;
+
+    performance[id] = {
+      vsec: vsec,
+      vsecHistory: [],
+      isec: isec,
+      isecHistory: []
+    }
+
+  }
+
+  prevVsec = performance[id].vsec;
+  prevIsec = performance[id].isec;
+
+  vsecDelta = vsec - prevVsec;
+  isecDelta = isec - prevIsec;
+
+  $('#' + id + ' .vsec').html(vsec.toFixed(3));
+  $('#' + id + ' .isec').html(isec.toFixed(3));
+  $('#' + id + ' .vsecdelta').html(vsecDelta.toFixed(3));
+  $('#' + id + ' .isecdelta').html(isecDelta.toFixed(3));
+
+  // number of workers
+  $('#nrworkers').html(processWorkerCounter - 1);
+
+  performance[id].vsec = vsec;
+  performance[id].isec = isec;
+
+  var vsecAverage = 0.0;
+  var isecAverage = 0.0;
+  for(k in performance) {
+    vsecAverage += performance[k].vsec;
+    isecAverage += performance[k].isec;
+  }
+
+  vsecAverage /= processWorkerCounter -1;
+  isecAverage /= processWorkerCounter -1
+
+  $('.vsecaverage').html(vsecAverage.toFixed(3));
+  $('.isecaverage').html(isecAverage.toFixed(3));
+
+
+}
+
+var processworkerMessage = function(e) {
+
+  if(e.data.type == 'log') {
+
+    logger('PW >> ' + e.data.data); 
+
+  } else if(e.data.type == 'performance') {
+    measurePerformance(e.data);
+  }
+  
+}
+
+var start = function() {
+
+  device = "desktop";
   if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
     device = "mobile";
   }
 
-	// Emit ready event.
-	io.emit('ready', device) 
+  processworkers = [];
 
-	// Listen for the talk event.
-	io.on('talk', function(data) {
-	    logger(data.message);
-	})  
+  dataworker = new Worker('/js/dataworker.js');
 
-  io.on('assignedData', function(data) {
-      downloadData(data);
-  });
-
-  io.on('dataFirstIndex', function(data) {
-      updateNewDataIndices(data);
-  });
-
-  io.on('proxyDataClient', function(obj) {
-      proxyData(obj);
-  });
-
-  io.on('uploadData', function(obj) {
-      uploadData(obj);
-  });
-
-  io.on('map', function(obj) {
-      map(obj);
-  });
-
-  io.on('log', function(text) {
-      logger(text);
-  });
-
-});
-
-$('#runjob').click(function() {
-  io.emit('run');
-});
-
-// the DATA (with indexes)
-var data = [];
-
-// new uploaded data
-var newData = [];
-
-var dataStart = 0;
-var dataToGo = 0;
-
-logger = function(text) {
-  // can be used for any display logging facility
-  //var val = $('pre.log').html();
-  //$('pre.log').html(val + text + '\n');
-}
-
-getDataByid = function(id) {
-
-  var r = jQuery.grep(data, function( a ) {
-    return a.id == id;
-  });
-
-  return r[0];
-
-}
-
-updateProgressBar = function() {
-  var value = 100 - parseInt((dataToGo/dataStart) * 100);
-  $('#download').html('Downloading data: ' + value + '%');
-
-  if(value == 100) {
-    setTimeout(function(){ $('#download').fadeOut(); } , 1000);
-  }
-}
-
-proxyData = function(obj) {
-  // other client requests data from YOU.
-  // send to server, it will proxy the data to the recipient.
-
-  io.emit('proxyData', {
-    data: getDataByid(obj.id),
-    recipient: obj.recipient
+  dataworker.onmessage = dataworkerMessage;
+  dataworker.postMessage({
+    type: 'start',
+    data: device
   });
 
 }
 
-uploadData = function(obj) {
-  // this is the ACTUAL DATA. save it.
-  data.push(obj);
-
-  dataToGo--;
-
-  if(!dataToGo) {
-    io.emit('downloadDone');
-  }
-  updateProgressBar();
-
-}
-
-downloadData = function(data) {
-  // this client needs to download the data according to the indices.
-  // data contains ID and list of clients.
-
-  // this can be implemented in two ways:
-  // 1. request server to proxy the data.
-  // 2. peer-to-peer request the data (peerJS could do that.)
-
-  // we do option 1 for now.
-  // this means we just send the data package back.
-  // dull, but good for performance.
-  // why? because we want to send separate JS events initiated by the client
-  // instead of letting the server block on the sends (at allocation time).
-
-  // some visual awesomeness
-  dataToGo = data.length;
-  dataStart = dataToGo;
-
-  $('#download').show();
-  io.emit('downloadData', data);
-
-}
-
-updateNewDataIndices = function(index) {
-  // add indices to newData starting from index.
-  var i;
-
-  for(i = 0; i < newData.length; i++) {
-    newData[i].id = index;
-    index++;
+var addworker = function() {
+  
+  if(!dataworker) {
+    logger('No dataworker connected, do this first.');
+    return;
   }
 
-  data = data.concat(newData);
-  newData = [];
+  processworker = new Worker('/js/processworker.js');
+
+  processworker.onmessage = processworkerMessage;
+
+  channel = new MessageChannel();
+
+  message = {
+    device: device,
+    dataworker: dataworkerId
+  }
+
+  processworker.postMessage({
+    type: 'start',
+    data: message
+  },[
+    channel.port2
+  ]);
+
+  processworkers.push(processworker);
+
+  dataworker.postMessage({
+    type: 'addprocessworker'
+  }, [
+    channel.port1
+  ]);
 
 }
 
-processUploadedData = function(file) {
+var run = function() {
+  // clients like this should not be able to run.
+  // this needs to move to /master
+  dataworker.postMessage({
+    type: 'run'
+  });
+}
+
+var processUploadedData = function(file) {
 
   newData = JSON.parse(file.target.result);
-  var msg = "NOT OK";
+  var msg = "Upload data file not OK.";
   if(newData) {
-    msg = "OK, length: " + newData.length * 1000;
+    msg = "Upload data file OK, length: " + newData.length * 1000;
   }
-
-  // tell the server this client offers data of length newData.length
-  io.emit('offerData', newData.length);
 
   logger(msg);
 
+  dataworker.postMessage({
+    type: 'fileupload',
+    data: newData
+  });
+
 }
 
-map = function(obj) {
+var clearFileInput = function() 
+{ 
+    var oldInput = document.getElementById("files"); 
+    var newInput = document.createElement("input"); 
+     
+    newInput.type = "file"; 
+    newInput.id = oldInput.id; 
+    newInput.name = oldInput.name; 
+    newInput.className = oldInput.className; 
+    newInput.style.cssText = oldInput.style.cssText; 
+    // copy any other relevant attributes 
+     
+    oldInput.parentNode.replaceChild(newInput, oldInput);
+    newInput.addEventListener('change', handleFileSelect, false);
+}
 
-  var list = obj.list;
-  var parameters = obj.parameters;
-  var settings = obj.settings;
+var handleFileSelect = function(evt) {
+  var files = evt.target.files; // FileList object
 
-  $('#total').html(data.length);
-  $('#working').html(list.length);
-  $('#spare').html(data.length - list.length);
-  $('#wtime').html(settings.runtime);
+  // Loop through the FileList and render image files as thumbnails.
+  for (var i = 0, f; f = files[i]; i++) {
 
-  // chart variables
-  var percentile = 100 / data.length;
-  var processingPart = list.length * percentile;
-  var restPart = 100 - processingPart;
+    var reader = new FileReader();
 
-  var processLabel = processingPart.toFixed(3) + '%';
-  var restLabel = restPart.toFixed(3) + '%';
+    // Closure to capture the file information.
+    reader.onload = (function(theFile) {
+      return function(e) {
+        processUploadedData(e);
+        clearFileInput();
+      };
+    })(f);
 
-  // make nice chart
-  chartData = [{"label":processLabel, "value":processingPart}, 
-          {"label":restLabel, "value":restPart}];
-
-  datachart(chartData);
-
-  // get working set from local data set
-  var workingset = data.filter(function(e) {
-    return (list.indexOf(e.id) > -1);
-  });
-
-  // do computation
-  var running = true;
-  var start = Date.now();
-  var end = Date.now() + settings.runtime;
-  var piece, i, j, vector, now;
-  var total = 0;
-  var iterations = 0;
-
-  while(running) {
-
-    i = workingset.length;
-    while(i--) {
-
-      piece = workingset[i];
-
-      // SAMPLE COMPUTATION.
-      // ADD ALL NUMBERS AND DIVIDE
-      j = piece.data.length;
-      while(j--) {
-        vector = piece.data[j];
-        parameters += vector;
-        total++;
-      }
-
-    }
-
-    parameters /= total;
-
-    now = Date.now()
-    if(now >= end) {
-      running = false;
-    }
-
-    iterations++;
- 
+    // Read in the image file as a data URL.
+    reader.readAsText(f);
   }
+}
 
-  // calculate speed v / 1000i
+$('#start').click(start);
+$('#addworker').click(addworker);
+$('#runjob').click(run);
+document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
-  var vsec = ((iterations / 1000) * list.length) / (settings.runtime / 1000);
-  var isec = iterations / (settings.runtime / 1000);
 
-  $('#vsec').html(vsec.toFixed(3));
-  $('#isec').html(isec.toFixed(3));
+/*
 
-  if(vsec <= 1.0) {
-    vsec = 1.0;
+});
+
+updateProgressBar = function() {
+  $('#download').html('Downloading data...');
+
+  if(dataToGo == 0) {
+    setTimeout(function(){ $('#download').fadeOut(); } , 1000);
   }
-
-  // reduce
-  io.emit('reduce', {
-    'parameters': parameters,
-    'speed': vsec
-  });
-
 }
 
 function datachart(data) {
@@ -290,24 +286,4 @@ function datachart(data) {
 
 }
 
-function handleFileSelect(evt) {
-  var files = evt.target.files; // FileList object
-
-  // Loop through the FileList and render image files as thumbnails.
-  for (var i = 0, f; f = files[i]; i++) {
-
-    var reader = new FileReader();
-
-    // Closure to capture the file information.
-    reader.onload = (function(theFile) {
-      return function(e) {
-        processUploadedData(e);
-      };
-    })(f);
-
-    // Read in the image file as a data URL.
-    reader.readAsText(f);
-  }
-}
-
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
+*/

@@ -22,6 +22,14 @@ app.use(stylus.middleware(
 app.use(express.static(__dirname + '/public'))
 
 
+Array.prototype.average = function () {
+    var sum = 0, j = 0; 
+   for (var i = 0; i < this.length, isFinite(this[i]); i++) { 
+          sum += parseFloat(this[i]); ++j; 
+    } 
+   return j ? sum / j : 0; 
+};
+
 // STATICS
 
 // Type of system
@@ -29,16 +37,19 @@ app.use(express.static(__dirname + '/public'))
 // false = Parallel Stochastic Gradient Descent (no markov chains)
 var P_MCMC = true;
 
-var MAX_DESKTOP = 800,
-    MAX_MOBILE  = 200,
-    COVERAGE_EQ = 3;
+var MAX_DESKTOP       = 800,
+    MAX_MOBILE        = 200,
+    COVERAGE_EQ       = 3,
+    POWER_MEAN        = 10,
+    LAG_HISTORY       = 10,
+    INITIAL_PARAMETER = 0.0;
 
 var settings = {
   'currentPower' : 400
 }
 
 var nodeSettings = {
-  'runtime': 1000
+  'runtime': 2000
 }
 
 // make this a online setting
@@ -47,10 +58,18 @@ var markovChain = [];
 var markovLength;
 var markovResults;
 var markovFirstResult;
-var currentChain = [];
+var parameters = [];
+var markovRotationID = 0;
+var parameterRotationID = 0;
+
+var timeouts = {};
 
 var logger = function(req, text) {
   req.io.emit('log', text);
+}
+
+var dataworkersOnline = function() {
+  return app.io.sockets.clients('dataworkers').length;
 }
 
 // returns number of clients connected
@@ -58,10 +77,11 @@ var clientsOnline = function() {
   return app.io.sockets.clients('room').length;
 }
 
-var getClientById = function(id) {
+var getNodeById = function(id, fn, room) {
   var client;
-  var i = clientsOnline();
-  var clients = app.io.sockets.clients('room');
+  var i = fn();
+  var clients = app.io.sockets.clients(room);
+
   while(i--) {
     client = clients[i];
     if(client.id == id) {
@@ -69,6 +89,14 @@ var getClientById = function(id) {
     }
   }
   return;
+}
+
+var getClientById = function(id) {
+  return getNodeById(id, clientsOnline, 'room');
+}
+
+var getDataworkerById = function(id) {
+  return getNodeById(id, dataworkersOnline, 'dataworkers');
 }
 
 var getDataById = function(datamap, id) {
@@ -118,39 +146,97 @@ var nextIndex = 1;
   ]
 */
 
-var proxyData = function(datamap, req) {
+var dataToProxy = [];
+var proxyTimeout;
 
-  var client = getClientById(req.recipient);
+var registerdata = function(req) {
 
-  client.emit('uploadData', req.data);
+  var data = req.data.data;
+  var client = getClientById(req.data.client);
+  var i = data.length;
+  var piece;
 
-  // make sure to register this!
-  var data = getDataById(datamap, req.data.id);
-  data.data.push(req.recipient);
+  if(client.powertesting) {
+    return;
+  }
+
+  while(i--) {
+
+    piece = data[i];
+
+    part = getDataById(datamap, piece);
+    part.data.push(client.id);
+
+  }
+
+}
+
+var proxyData = function(req) {
+
+  item = req.data;
+
+  var client = getClientById(item.recipient);
+
+  // check if client is alive
+  if(client) {
+
+  var dataworkerForClient = getDataworkerById(client.dataworker);
+
+    dataworkerForClient.emit('downloadData', item);
+
+  }
 
 }
 
 var uploadDataToClient = function(datamap, req) {
   var id, client;
-  var dataIds = req.data;
+  var dataIds = req.data.data;
+  var recipient = req.data.worker;
   var i = dataIds.length;
+  var dataset;
 
-  // handle PER DATA ITEM.
+  var clientsets = {};
+
   while(i--) {
     id = dataIds[i];
 
     // just get first client for now.
     // implement any function here to determine fastest client.
-    client = getClientById(id.clients[0]);
+    clientId = id.clients[0];
 
     obj = {
       id: id.id,
-      recipient: req.io.socket.id
+      recipient: recipient
     };
 
-    // ask client to send the data to the server, to proxy to the recipient.
-    client.emit('proxyDataClient', obj);
+    if(!(clientId in clientsets)) {
+      clientsets[clientId] = [];
+    }
 
+    clientsets[clientId].push(obj);
+
+  }
+
+  // send per client.
+  for(var z in clientsets) {
+
+    client = getClientById(z);
+
+    if(client) {
+      dataworkerOfClient = getDataworkerById(client.dataworker);
+
+      dataset = clientsets[z];
+
+      if(dataworkerOfClient) {
+
+        dataworkerOfClient.emit('proxyDataToServer', {
+          source: client.id,
+          data: dataset
+        });
+
+      }
+
+    }
   }
 
 }
@@ -158,37 +244,42 @@ var uploadDataToClient = function(datamap, req) {
 var addIndices = function(datamap, req) {
   // adds indexes of remote data objects to server datamap.
 
+  var client = getClientById(req.data.id);
+
   // from nextIndex, add length number of indices
   var i, index, newObject;
   var firstIndex = nextIndex;
 
-  for(i = 0; i < req.data; i++) {
+  for(i = 0; i < req.data.data; i++) {
     index = i + nextIndex;
     newObject = {
       id: index,
-      data: [req.io.socket.id],
-      allocated: [req.io.socket.id],
+      data: [client.id],
+      allocated: [client.id],
       processors: []
     }
     datamap.push(newObject);
   }
 
-  req.io.socket.allocation += req.data;
+  client.allocation += req.data.data;
 
   nextIndex = index + 1;
 
   // communicate firstIndex to the client.
-  req.io.emit('dataFirstIndex', firstIndex);
+  req.io.emit('dataFirstIndex', {
+    index: firstIndex,
+    client: client.id
+  });
 
   reallocate(datamap);
 
 }
 
-var removeClient = function(datamap, req) {
+var removeClient = function(datamap, client) {
 
-  client = req.io.socket.id;
+  console.log('Dropped client:', client.id);
 
-  console.log('Dropped client:', client);
+  client.leave('room');
 
   var i = datamap.length;
   var lostData = 0;
@@ -197,19 +288,19 @@ var removeClient = function(datamap, req) {
     var item = datamap[i];
 
     // dump data
-    var index = item.data.indexOf(client);
+    var index = item.data.indexOf(client.id);
     if(index > -1) {
       item.data.splice(index, 1);
     }
 
     // dump allocated
-    index = item.allocated.indexOf(client);
+    index = item.allocated.indexOf(client.id);
     if(index > -1) {
       item.allocated.splice(index, 1);
     }
 
     // dump as processor
-    index = item.processors.indexOf(client);
+    index = item.processors.indexOf(client.id);
     if(index > -1) {
       item.processors.splice(index, 1);
     }
@@ -225,88 +316,27 @@ var removeClient = function(datamap, req) {
     console.log('Lost', lostData, 'data vectors from the network.');
   }
 
-  req.io.leave('room');
-
   reallocate(datamap);
-
-  // NB.
-  // ONLY FOR P-MCMC
-
-  if(P_MCMC) {
-
-    if(markovChain.length) {
-      // check if there is a markovchain running with this client in.
-
-      // fix markovChain if the client is in there
-      i = markovChain.length;
-
-      var chain, j, set;
-
-      while(i--) {
-        chain = markovChain[i];
-
-        j = chain.length;
-
-        while(j--) {
-
-          set = chain[j];
-
-          if(set.client == client) {
-
-            console.log("-> Dropped client from planned job in chain.");
-
-            // remove from chain.
-            chain.splice(j, 1);
-
-          }
-
-        }      
-
-      }
-
-    }
-
-  }
 
   // determine if this client is/was working
 
-  i = currentChain.length;
+  i = markovChain.length;
 
   var set, j, piece, node;
   while(i--) {
     
-    chainClient = currentChain[i];
+    chainClient = markovChain[i];
 
     if(!chainClient) {
       console.log('Last client left the network.');
       continue;
     }
 
-    if(chainClient.client == client) {
+    if(chainClient.client == client.id) {
       // the client is currently operating.
-      // HELL BREAKS LOOSE!
-
-      // difficult issue.
-      // other nodes could pick up the dropped client, but would stall the whole operation.
-
-      // two viable options (for now):
-      // 1. Accept the current chain for what is is, without output of the dropped node.
-      //    Continue with the reduction step, and after that the next reduction step.
-      // 2. Drop the current chain and do it all over again with a new chain.
-
-      // Option 1 gives the least overhead as the system can keep on processing.
-      // It gives bias as the entire shard is unprocessed.
-      // It is probably possible to mitigate this by some smart reduction function
-      // which can handle lost clients.
-
-      // Option 2 gives the least bias, but it stalls the chain operation by at least 1 step.
-      // The most fair, but potentially very distruptive.
-      // Many nodes could join and leave in a short time, causing to lose many chain iterations.
-      // But could be viable.
-
-      // We choose option 1 for now. The perceived bias is not as much as probably many other
-      // chain iterations are done.
-
+      // drop from the chain, it will be picked up later on
+      // (when a new node joins, or at redistribution)
+      
       console.log('-> Client was currently processing, cleaning up.');
 
       markovLength--;
@@ -318,7 +348,7 @@ var removeClient = function(datamap, req) {
         parameter = reduce(markovResults);
 
         // run next chain
-        distributor(parameter);
+        run(parameters);
 
       } else {
 
@@ -377,117 +407,131 @@ var shortage = function(datamap) {
   return total;
 }
 
-var reduce = function(res) {
+var reduce = function(markovResults) {
 
-  // SAMPLE REDUCTION
-  // ONLY ADD UP
+  // SAMPLE REDUCTION for P-MCMC
+  // AVERAGE PARAMETERS
   var i = markovResults.length;
-  var total = 0;
   var piece;
   while(i--) {
     piece = markovResults[i];
 
-    total += piece;
-  }
+    parameter = piece.parameter;
+    parameterId = piece.parameterId;
 
-  return total;
+    previousParameter = parameters[parameterId];
+
+    newParameter = (previousParameter + parameter) / 2.0;
+
+    parameters[parameterId] = newParameter;
+
+  }
 
 }
 
 var prereduce = function(req) {
 
   parameter = req.data.parameters;
+  parameterId = req.data.parameterId;
   speed = req.data.speed;
+
+  id = req.io.socket.id;
 
   // only for the first
   if(!markovResults.length) {
-    markovFirstResult = process.hrtime().join('');
+    markovFirstResult = process.hrtime()
   }
 
-  // for all
-  markovResults.push(parameter);
+  // determine lag.
+  lag = (new Date).getTime() - req.io.socket.mapTime - req.io.socket.runTime;
+
+  req.io.socket.lagHistory.push(lag);
+  req.io.socket.lagHistory = req.io.socket.lagHistory.slice(-1 * LAG_HISTORY, 2 * LAG_HISTORY);
+  req.io.socket.lag = req.io.socket.lagHistory.average();
 
   // save speed of this worker
-  req.io.socket.power = speed;
+  req.io.socket.powerSet.push(speed);
+  req.io.socket.powerSet = req.io.socket.powerSet.slice(-1 * POWER_MEAN, 2 * POWER_MEAN);
+  req.io.socket.power = req.io.socket.powerSet.average();
+  
+  // reduce power by lag factor.
+  // power index is determined on 1 second.
+  // if the client lags 100 MS, then 100/1000 = factor 0.1 reduction of power.
+  lagFactor = (req.io.socket.lag / 1000.0) + 1.0;
+  req.io.socket.power /= lagFactor;
+
+  markovResults.push({
+    parameterId: parameterId,
+    parameter: parameter
+  });
 
   // only for the last
   if(markovResults.length == markovLength) {
 
     // what is the delay?
-    delay = process.hrtime().join('') - markovFirstResult
-    console.log('chain reception delay:', delay, 'NS,', delay / 1000, 'uS,', delay / 1000000, 'MS');
+    delay = process.hrtime(markovFirstResult).join('')
+    console.log('chain reception delay / last to arrive:', delay / 1000000, 'MS', req.io.socket.id);
 
-    parameter = reduce(markovResults);
+    reduce(markovResults);
+
+    markovResults = [];
 
     // run next chain
-    distributor(parameter);
+    run(parameters);
 
   }
 
 }
 
-var output = function(parameter) {
-
-  // runs when a full markov chain is done.
-  // parameter == end result
-  // log to all clients, for example.
-  // normally, you would run the chain again.
-  // i.e. run initiator again with a parameter.
-
-  // report
-  i = clientsOnline();
-  while(i--) {
-    client = app.io.sockets.clients('room')[i];
-    client.emit('log', 'Markov chain done! Result: ' + parameter);
-  }
-
-  // the END
-
-  // run again !
-  run(datamap);
-
-
-}
-
-var distributor = function(parameter) {
-
-  // read markov chain, pop item. (does not matter if backwards)
-
-  if(!markovChain.length) {
-    // chain is empty. all is done. run output
-    return output(parameter);
-  }
+var distributor = function(parameters) {
 
   markovResults = [];
 
-  // currentChain is like a vertical map.
-  // i.e. not a timeline, but for this timestamp, this list of nodes.
-  currentChain = markovChain.pop();
-
-  var i = currentChain.length;
-
+  var i = markovChain.length;
   markovLength = i;
 
-  var client, item;
+  var client, item, timeout, timeoutTime;
   while(i--) {
 
-    item = currentChain[i];
+    item = markovChain[i];
     client = getClientById(item.client);
+
+    // selects existing parameter results, or make new one.
+    // this automatically addresses historical parameters.
+    parameterId = (i + parameterRotationID) % markovChain.length;
+
+    if(parameters[parameterId] === undefined) {
+      parameters[parameterId] = INITIAL_PARAMETER;
+    }
+
+    parameter = parameters[parameterId];
+
+    // register time of issuance.
+    // use this to determine latency.
+    client.mapTime = (new Date).getTime();
+
+    // run according to lag fix.
+    client.runTime = nodeSettings.runtime - client.lag;
 
     // tell client to work.
     client.emit('map', {
       'list': item.set,
-      'settings': nodeSettings,
-      'parameters': parameter
+      'settings': {runtime: client.runTime},
+      'parameters': parameter,
+      'parameterId': parameterId
     });
 
+  }
+
+  parameterRotationID++;
+  if(parameterRotationID == markovChain.length) {
+    parameterRotationID = 0;
   }
 
 }
 
 var initiator = function(datamap, req) {
 
-  // build a single markov chain
   // only consider nodes which actually 'have' the data
   // order by least coverage
 
@@ -500,11 +544,15 @@ var initiator = function(datamap, req) {
   var j, localset;
   var set = [];
   while(i--) {
+
     client = app.io.sockets.clients('room')[i];
+
+    if(client.powertesting) {
+      continue;
+    }
 
     localset = [];
 
-    console.log('data for client:', client.id);
     j = datamap.length;
     while(j--) {
       piece = datamap[j];
@@ -520,6 +568,13 @@ var initiator = function(datamap, req) {
 
     }
 
+    // measure to make sure not to include extreme slow machines
+    // or when a new node joins.
+    if(localset.length < 10) {
+      j += localset.lenght;
+      continue;
+    }
+
     set.push({
       'client': client.id,
       'set': localset
@@ -529,50 +584,37 @@ var initiator = function(datamap, req) {
 
   }
 
-  // now make a full markov chain
-  // with n = set.length
-  // size = n*n
+  // now build a markov chain.
+  // a schedule is made by looping over node IDS.
+
   var chain = [];
   var offset = 0;
   var n = set.length;
   var clientId;
-  i = n;
 
-  if(!P_MCMC) {
-    // P-SGD is just one iteration, no chain.
-    i = 1;
+  while(n--) {
+
+    clientId = (n + markovRotationID) % set.length;
+
+    chain.push(set[clientId]);
   }
 
-  while(i--) {
-    // first dim
+  markovRotationID++;
 
-    currentSet = []
-
-    j = n;
-    while(j--) {
-      // second dim
-
-      clientId = (j + offset) % set.length;
-
-      currentSet.push(set[clientId]);
-    }
-
-    offset++;
-
-    chain.push(currentSet);
+  if(markovRotationID == set.length) {
+    markovRotationID = 0;
   }
 
-  // store chain
   return chain;
 
 }
 
-var run = function(datamap) {
+var run = function(parameters) {
   // run sample embedded job
 
   var chain;
 
-  console.log('run job, sample markov chain');
+  console.log('run job');
   if(!datamap.length) {
     console.log('no datamap');
     return;
@@ -588,7 +630,14 @@ var run = function(datamap) {
 
   markovChain = initiator(datamap);
 
-  distributor(0);
+  if(!markovChain.length) {
+    console.log('could not build a processing set.');
+    console.log('trying again in', nodeSettings.runtime, 'MS');
+    setTimeout(run, nodeSettings.runtime);
+    return;
+  }
+
+  distributor(parameters);
 
 }
 
@@ -604,7 +653,14 @@ var reallocate = function(datamap) {
   var powerAvailable = 0;
   var i = clientsOnline();
   while(i--) {
-    powerAvailable += app.io.sockets.clients('room')[i].power;
+    
+    client = app.io.sockets.clients('room')[i]
+    
+    // do not determine when powertesting
+    if(!client.powertesting) {
+      powerAvailable += client.power;
+    }
+
   }
 
   console.log('power available:', powerAvailable);
@@ -618,27 +674,24 @@ var reallocate = function(datamap) {
   // tell each client his new power 'currentPower'
   i = clientsOnline();
   var power, client, currentPower, currentPowerFloat, clientMaxData, localUnderflow;
-  var underflow = 0;
-  var underflowOffset = false;
+  var totalpower = 0;
   while(i--) {
     client = app.io.sockets.clients('room')[i]; 
-    // causes underflow, but will be solved.
+
+    // do not determine when powertesting
+    if(client.powertesting) {
+      continue;
+    }
 
     // determine underflow
+    // when all clients add up their power, it must be 100%
+    // thus fix the tiny gaps with underflow correction.
     currentPowerFloat = client.power / normalizeFactor;
     currentPower = Math.floor(currentPowerFloat);
 
-    localUnderflow = currentPowerFloat - currentPower;
-    underflow += localUnderflow;
+    diff = currentPowerFloat - currentPower;
+    client.powerDiff = diff;
 
-    // use epsilon to avoid awful rounding
-    if(underflow > 1.0e-12) {
-      // add 1 power to this client to solve underflow
-      currentPower += 1;
-      underflow -= 1.0;
-      underflowOffset = true;
-    }
-  
     // currentPower can not be more than allocated dataset
     if(client.device == 'mobile') {
       clientMaxData = MAX_MOBILE;
@@ -649,28 +702,107 @@ var reallocate = function(datamap) {
     if(currentPower > clientMaxData) {
       currentPower = clientMaxData;
 
-      // cannot add underflow point when at max. so remove.
-      if(underflowOffset) {
-        underflow += 1;
-        underflowOffset = false;
-      }
+      // cannot be used for remaining power division.
+      client.favour = -1;
+    } else if( (client.currentPower + 1) == client.previousPower) {
+      // most favourable for power division
+      client.favour = 1;
+    } else if(client.currentPower == client.previousPower) {
+      // least favourable.
+      client.favour = 0;
+    }
 
-    } 
+    previousPower = client.currentPower
+    client.previousPower = previousPower;
 
     client.currentPower = currentPower;
-    console.log('current power of client:', currentPower, client.id);
 
     // set allocatedPower to 0 for easy calculation
     client.allocatedPower = 0;
+
+    totalpower += client.currentPower;
+
+  }
+  
+  // deal out the remaining power
+  // 1 point at a time.
+  // we do not want to skew performance too much.
+  remainingPower = datamap.length - totalpower;
+
+  var clientsRemaining = app.io.sockets.clients('room');
+
+  // remove the clients at max data.
+  clientsRemaining = clientsRemaining.filter(function(e) {
+    return (e.favour > -1) && !e.powertesting;
+  });
+
+  while(remainingPower && clientsRemaining.length) {
+
+    // remove the clients at max data. (again)
+    clientsRemaining = clientsRemaining.filter(function(e) {
+      return (e.favour > -1) && !e.powertesting;
+    });
+    
+    // sort on favourableness
+    clientsRemaining = clientsRemaining.sort(function(a,b) { 
+      d = b.favour - a.favour;
+      
+      // order on the decimal difference, nearest to 1 is more favourable.
+      if(d == 0) {
+        return b.powerDiff - a.powerDiff; 
+      }
+
+      return b.favour - a.favour;
+    });
+
+    var j = clientsRemaining.length;
+
+    while(j-- && remainingPower) {
+
+      client = clientsRemaining[j];
+      client.currentPower++;
+      totalpower++;
+
+      remainingPower--;
+
+      client.favour = 0;
+
+      if(client.device == 'mobile') {
+        clientMaxData = MAX_MOBILE;
+      } else {
+        clientMaxData = MAX_DESKTOP;
+      }
+
+      // remove from next loop.
+      if(client.currentPower == clientMaxData) {
+        client.favour = -1;
+      }
+
+    }
+
   }
 
+  console.log(">>>> datamap size", datamap.length);
+  console.log(">>>> power available", totalpower);
 
-  // make a new datamap based on the 'new' power available.
+  i = clientsOnline();
+  while(i--) {
+
+    client = app.io.sockets.clients('room')[i];
+
+    if(!client.powertesting) {
+
+      console.log("> Power/Previous", client.currentPower, client.previousPower, client.id);
+
+    }
+
+  }
+
+  // make a new datamap based on the power available.
   // first, re-build current datamap with current nodes, with new power settings.
   // second, assign new node the 'empty' spaces left by the other nodes
   // third, cover up rest of datamap by original method to reinforce coverage.
 
-  // use 'processors' in the datamap
   // order it first, based on least allocated
   datamap = datamap.sort(function(a,b) { return b.allocated.length - a.allocated.length } );
 
@@ -694,9 +826,10 @@ var reallocate = function(datamap) {
       client = getClientById(clients[j]);
       if(client.allocatedPower < client.currentPower) {
         // assign
-        if(piece.processors.indexOf(client.id) > -1) {
-          continue;
-        }
+        
+        //if(piece.processors.indexOf(client.id) > -1) {
+        //  continue;
+        //}
 
         piece.processors.push(client.id);
         client.allocatedPower++;
@@ -712,13 +845,6 @@ var reallocate = function(datamap) {
 
   }
 
-  // report
-  i = clientsOnline();
-  while(i--) {
-    client = app.io.sockets.clients('room')[i];
-    client.emit('log', 'Assigned ' + client.allocatedPower + ' vectors in memory as processing set');
-  }
-
   if(totalEmpty) {
     console.log('manage unpowered data, number:', totalEmpty);
 
@@ -729,17 +855,29 @@ var reallocate = function(datamap) {
       return e.allocatedPower < e.currentPower;
     });
 
-    // find unpowered data
-    var dataUnpowered = datamap.filter(function(e) {
-      return !e.processors.length;
-    });
-
     var i = clientsUnderpowered.length;
-    var j = dataUnpowered.length;
+    
 
     var assignedData;
+
+    var infiniteloopbreak = 1000;
+
     while(i--) {
       client = clientsUnderpowered[i];
+
+      // do not determine when powertesting
+      if(client.powertesting) {
+        continue;
+      }
+
+      // find unpowered data
+      var dataUnpowered = datamap.filter(function(e) {
+        return !e.processors.length;
+      });
+
+      var j = dataUnpowered.length;
+
+      console.log('unpowered data left:', j);
 
       assignedData = [];
 
@@ -775,11 +913,26 @@ var reallocate = function(datamap) {
 
       // client is not full
       if(client.allocatedPower < client.currentPower) {
+
+        console.log('allocatedpower / currentpower', client.allocatedpower, client.currentPower);
+        console.log('$$$ crash due to underflow');
+        process.kill()
+
         i++;
       } else {
         if(assignedData.length) {
-          client.emit('assignedData', assignedData);
-          client.emit('log', 'Assigned ' + client.allocatedPower + ' vectors not in memory as processing set');
+
+          dwc = getDataworkerById(client.dataworker);
+
+          // check if client is alive.
+          if(dwc) {
+
+            getDataworkerById(client.dataworker).emit('assignedData', {
+              data: assignedData,
+              worker: client.id
+            });
+
+          }
         }
       }
     }
@@ -789,16 +942,20 @@ var reallocate = function(datamap) {
   // final allocation for coverage
   // each client has max_data - client.allocation left to fill up
 
-  // order by least coverage
-  datamap = datamap.sort(function(a,b) { return b.allocated.length - a.allocated.length } );
-
   clients = app.io.sockets.clients('room');
   i = clients.length;
 
-  j = datamap.length;
-
   while(i--) {
     client = clients[i];
+
+    if(client.powertesting) {
+      continue;
+    }
+
+    // order by least coverage
+    datamap = datamap.sort(function(a,b) { return b.allocated.length - a.allocated.length } );
+
+    j = datamap.length; 
 
     // based on device type, allocate data
     var max_data = MAX_DESKTOP;
@@ -819,7 +976,7 @@ var reallocate = function(datamap) {
         piece = datamap[j];
 
         if(piece.allocated.indexOf(client.id) > -1) {
-          j++;
+          allocationLeft++;
           continue;
         }
 
@@ -842,31 +999,57 @@ var reallocate = function(datamap) {
 
       }
 
-      client.emit('assignedData', assignedData);
-      client.emit('log', 'Assigned ' + total + ' vectors as spare set');
+      if(assignedData.length) {
+        
+        // check if client is alive.
+        if(client.dataworker) {
+          dwc = getDataworkerById(client.dataworker);
+
+          if(dwc) {
+
+            dwc.emit('assignedData', {
+              data: assignedData,
+              worker: client.id
+            });
+
+          }
+        }
+      }
 
     }
 
   }
 
-  // report
-  i = clientsOnline();
-  while(i--) {
-    client = app.io.sockets.clients('room')[i];
-    client.emit('log', 'Memory size: ' + client.allocation);
+  // for debug purposes
+  // print out allocation map coverage.
+  /*
+  var n = datamap.length;
+  var piece;
+  while(n--) {
+    piece = datamap[n];
+    process.stdout.write(piece.allocated.length + ' ');
   }
+  */
 
 }
- 
+
 var join = function(req, datamap, settings) {
 
   // predetermine device speed
   // need to determine this better.
   // power number of iterations per 100 vectors
-  req.io.socket.power = 400;
+  req.io.socket.power = 100;
   if(req.io.socket.device == 'mobile') {
-    req.io.socket.power = 100;
+    req.io.socket.power = 50;
   }
+
+  // to better estimate power of workers.
+  // maximum length of POWER_MEAN, average is actual power.
+  req.io.socket.powerSet = [req.io.socket.power];
+
+  // set up all clients to initially lag for 100 MS (round trip)
+  req.io.socket.lagHistory = [100];
+  req.io.socket.lag = 100;
 
   req.io.socket.powerAllocated = 0;
 
@@ -876,30 +1059,132 @@ var join = function(req, datamap, settings) {
     var max_data = MAX_MOBILE;
   }
 
+
+  // test the power of the client before joining.
+  // give 10 vectors, and determine vsec.
+
+  req.io.socket.powertesting = false;
+  
+  // special condition for the first node when there is no data.
+  // vsec is calculated on the run.
+  if(!datamap.length) {
+    req.io.join('room');
+    return;
+  }
+
+  var testdata = [];
+
+  // find 10 vectors
+  var i = datamap.length;
+  var piece;
+  while(i--) {
+    piece = datamap[i];
+    if(piece.data.length) {
+
+      allocationObject = {
+        id: piece.id,
+        clients: piece.data
+      }
+
+      testdata.push(allocationObject);
+
+    }
+
+    if(testdata.length == 10) {
+      break;
+    }
+
+  }
+
+  if(testdata.length < 10) {
+    // do not test if there is not enoug data. special condition.
+    req.io.join('room');
+    return;
+  }
+
+
+  // check if client is alive.
+  if(req.io.socket.dataworker) {
+    dwc = getDataworkerById(req.io.socket.dataworker);
+    dwc.emit('assignedData', {
+      data: testdata,
+      worker: req.io.socket.id
+    });
+  }
+
+  req.io.socket.powertesting = true;
+  req.io.emit('powertest'); 
+
   req.io.join('room');
-
-  // do not allocate data yet.
-  // you could change this in the future to allow for quicker
-  // data assignment.
-
-  // data (re)allocation happens when the problem set is run.
-  // then this client will get data too.
 
 }
 
-// Setup the ready route, and emit talk event.
-app.io.route('ready', function(req) {
-  req.io.socket.device = req.data;
+var endpowertest = function(req) {
+
+  req.io.socket.powerSet = Array.apply(null, new Array(POWER_MEAN)).map(Number.prototype.valueOf,req.data.speed);
+  req.io.socket.power = req.data.speed;
+  req.io.socket.powertesting = false;
+
+}
+
+var pings = {}
+
+var ping = function() {
+
+  // ping all available nodes
+  var client;
+  var i = clientsOnline();
+  while(i--) {
+    client =  app.io.sockets.clients('room')[i];
+    client.emit('ping');
+
+    pings[client.id] = setTimeout(function() {
+      
+      console.log('>> ping timeout for', client.id);
+      //removeClient(datamap, client);
+
+    }, nodeSettings.runtime + 1000);
+  }
+
+  setTimeout(function() {
+    ping();
+  }, 1000);
+
+}
+
+var pingReceived = function(req) {
+  clearTimeout(pings[req.io.socket.id]);
+}
+
+var processworkerstart = function(req) {
+
+  req.io.socket.device = req.data.device;
+  req.io.socket.dataworker = req.data.dataworker;
   req.io.socket.allocation = 0;
-  req.io.emit('log', 'clients online:' + clientsOnline())
-  req.io.emit('log', 'My ID: ' + req.io.socket.id);
+  req.io.emit('myid', req.io.socket.id);
   join(req, datamap, settings);
   console.log('MY ID:', req.io.socket.id);
-});
+
+}
+
+var dataworkerstart = function(req) {
+  req.io.join('dataworkers');
+  req.io.emit('myid', req.io.socket.id);
+}
+
+//ping();
+
+app.io.set("reconnection limit", 2000);
+
+app.io.route('processworkerstart', processworkerstart);
+app.io.route('dataworkerstart', dataworkerstart);
+app.io.route('proxydata', proxyData);
+app.io.route('endpowertest', endpowertest);
+app.io.route('registerData', registerdata);
 
 app.io.route('disconnect', function(req) {
   // client disconnects
-  removeClient(datamap, req);
+  removeClient(datamap, req.io.socket);
 })
 
 app.io.route('offerData', function(req) {
@@ -912,20 +1197,9 @@ app.io.route('downloadData', function(req) {
   uploadDataToClient(datamap, req);
 });
 
-app.io.route('proxyData', function(req) {
-  // client wants to send data to other client (through server).
-  proxyData(datamap, req.data);
-});
-
-app.io.route('downloadDone', function(req) {
-  // client is done downloading
-  // for debug use now.
-  //console.log(datamap);
-});
-
 app.io.route('run', function(req) {
   // run sample embedded job
-  run(datamap);
+  run(parameters);
 });
 
 app.io.route('reduce', function(req) {
@@ -933,10 +1207,15 @@ app.io.route('reduce', function(req) {
   prereduce(req);
 });
 
+app.io.route('ping', function(req) {
+  pingReceived(req);
+});
+
 
 // Send the client html.
 app.get('/', function(req, res) {
     res.render('index')
 });
+
 
 app.listen(8071);

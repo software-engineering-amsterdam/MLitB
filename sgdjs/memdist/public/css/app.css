@@ -11,3 +11,11 @@
 	font-weight: 800;
 	color: rgb(107, 174, 214);
 }
+
+@media (max-width: 500px) {
+
+	table {
+		font-size: 11px;
+	}
+
+}
