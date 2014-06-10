@@ -1,6 +1,16 @@
-var io, device, dataworkerId, dataworker, processworker, processworkers, channel;
+var io, device, dataworkerId, dataworker, processworker, processworkers, channel, canAddNewWorker;
+
+var MEASURE_COUNTER = 5;
+var MEASURE_THRESHOLD = 5;
 
 var processWorkerCounter = 1;
+
+var measurementsCounter = MEASURE_COUNTER;
+
+var measurementsFlag = false;
+var measurements = [0,0,0];
+
+var stable = false;
 
 var performance = {};
 
@@ -21,6 +31,9 @@ var dataworkerMessage = function(e) {
 
     dataworkerId = e.data.data;
 
+    canAddNewWorker = false;
+    addworker();
+
   } else if(e.data.type == 'data') {
 
     dataworker.postMessage({
@@ -32,51 +45,10 @@ var dataworkerMessage = function(e) {
   
 }
 
-var measurePerformance = function(data) {
-  id = data.id;
-  vsec = data.vsec;
-  isec = data.isec;
-
-  // update visuals
-  if(! $('#' + id).length ) {
-    // insert table
-    $('#performance').append(' \
-      <tr id="' + id + '"> \
-        <td>' + processWorkerCounter + '</td> \
-        <td class="vsec"></td> \
-        <td class="vsecdelta"></td> \
-        <td class="isec"></td> \
-        <td class="isecdelta"></td> \
-      </tr> \
-      ');
-
-    processWorkerCounter++;
-
-    performance[id] = {
-      vsec: vsec,
-      vsecHistory: [],
-      isec: isec,
-      isecHistory: []
-    }
-
-  }
-
-  prevVsec = performance[id].vsec;
-  prevIsec = performance[id].isec;
-
-  vsecDelta = vsec - prevVsec;
-  isecDelta = isec - prevIsec;
-
-  $('#' + id + ' .vsec').html(vsec.toFixed(3));
-  $('#' + id + ' .isec').html(isec.toFixed(3));
-  $('#' + id + ' .vsecdelta').html(vsecDelta.toFixed(3));
-  $('#' + id + ' .isecdelta').html(isecDelta.toFixed(3));
+var metaPerformance = function() {
 
   // number of workers
   $('#nrworkers').html(processWorkerCounter - 1);
-
-  performance[id].vsec = vsec;
-  performance[id].isec = isec;
 
   var vsecAverage = 0.0;
   var isecAverage = 0.0;
@@ -91,6 +63,123 @@ var measurePerformance = function(data) {
   $('.vsecaverage').html(vsecAverage.toFixed(3));
   $('.isecaverage').html(isecAverage.toFixed(3));
 
+  if(!stable && canAddNewWorker) {
+
+    measurementsCounter--;
+    if(!measurementsCounter) {
+
+      measurementsCounter = MEASURE_COUNTER;
+      measurements.push( vsecAverage.toFixed(3) * (processWorkerCounter - 1) );
+      measurements.shift();
+
+      if(measurementsFlag) {
+
+        if((measurements[2] - MEASURE_THRESHOLD * 2) < measurements[0]) {
+          // stop.
+          // remove 2.
+          stable = true;
+          console.log('flag @', measurements[1], 'not ok.');
+          console.log('current worker @', measurements[2], 'not ok.');
+          console.log('stable @', measurements[0]);
+          removeworker();
+          removeworker();
+          return
+
+        } else {
+          // continue.
+          measurementsFlag = false;  
+
+        }
+
+      } else {
+      
+        if((measurements[2] - MEASURE_THRESHOLD) < measurements[1]) {
+          
+          measurementsFlag = true;
+
+        }
+
+      }
+
+      // continue
+      console.log('add worker @', measurements[2]);
+      canAddNewWorker = false;
+      addworker();
+
+    }
+
+  }
+
+}
+
+var getWorkerById = function(id) {
+
+  var i = processworkers.length;
+  while(i--) {
+    p = processworkers[i];
+    if(p.id == id) {
+      return p;
+    }
+  }
+  return false;
+
+}
+
+var measurePerformance = function(data) {
+  id = data.id;
+  vsec = data.vsec;
+  isec = data.isec;
+  lag = data.lag;
+
+  if(!(getWorkerById(id))) {
+    return;
+  }
+
+  // update visuals
+  if(! $('#' + id).length ) {
+    // insert table
+    $('#performance').append(' \
+      <tr id="' + id + '"> \
+        <td>' + processWorkerCounter + '</td> \
+        <td class="vsec"></td> \
+        <td class="isec"></td> \
+        <td class="lag"></td> \
+      </tr> \
+      ');
+
+    processWorkerCounter++;
+
+    performance[id] = {
+      vsec: vsec,
+      vsecHistory: [],
+      isec: isec,
+      isecHistory: []
+    }
+
+    // new node arrived, add.
+    canAddNewWorker = true;
+
+  }
+
+  prevVsec = performance[id].vsec;
+  prevIsec = performance[id].isec;
+
+  $('#' + id + ' .vsec').html(vsec.toFixed(3));
+  $('#' + id + ' .isec').html(isec.toFixed(3));
+  $('#' + id + ' .lag').html(lag.toFixed(3));
+
+  performance[id].vsec = vsec;
+  performance[id].isec = isec;
+
+  if(processworkers[0].id == id) {
+    metaPerformance();
+  }
+
+}
+
+var registerprocessworker = function(e) {
+
+  processworkers[processworkers.length-1].id = e.data;
 
 }
 
@@ -102,11 +191,15 @@ var processworkerMessage = function(e) {
 
   } else if(e.data.type == 'performance') {
     measurePerformance(e.data);
+  } else if(e.data.type == 'registerprocessworker') {
+    registerprocessworker(e.data);
   }
   
 }
 
 var start = function() {
+
+  $('#start').attr('disabled', 'true')
 
   device = "desktop";
   if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
@@ -127,10 +220,10 @@ var start = function() {
 
 var addworker = function() {
   
-  if(!dataworker) {
-    logger('No dataworker connected, do this first.');
-    return;
-  }
+  //if(!dataworker) {
+  //  logger('No dataworker connected, do this first.');
+  // return;
+  //}
 
   processworker = new Worker('/js/processworker.js');
 
@@ -160,12 +253,19 @@ var addworker = function() {
 
 }
 
-var run = function() {
-  // clients like this should not be able to run.
-  // this needs to move to /master
-  dataworker.postMessage({
-    type: 'run'
-  });
+var removeworker = function() {
+
+  lastWorker = processworkers.pop();
+
+  console.log('removing', lastWorker.id);
+
+  $('#' + lastWorker.id).remove();
+
+  lastWorker.postMessage({
+    type: 'terminate'
+  })
+  processWorkerCounter--;
+
 }
 
 var processUploadedData = function(file) {
@@ -183,6 +283,17 @@ var processUploadedData = function(file) {
     data: newData
   });
 
+}
+
+var terminatenow = function(e) {
+  // called when window closes. immediate shutdown
+  console.log('terminate all');
+  var i = processworkers.length;
+  while(i--) {
+    processworkers[i].postMessage({
+      type: 'terminate'
+    });
+  }
 }
 
 var clearFileInput = function() 
@@ -223,12 +334,16 @@ var handleFileSelect = function(evt) {
 }
 
 $('#start').click(start);
-$('#addworker').click(addworker);
-$('#runjob').click(run);
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
+
+window.onbeforeunload = terminatenow;
 
 
 /*
+
+// FOR FUNSIES
+// To draw a chart displaying data.
+// Not used now.
 
 });
 

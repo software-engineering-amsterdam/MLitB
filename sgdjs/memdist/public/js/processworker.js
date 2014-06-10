@@ -4,6 +4,7 @@ var io, id, device, parent, dataworker, port, f;
 var data = [];
 var that = this;
 var powertesting = false;
+var terminate = false;
 
 var vsec, isec;
 
@@ -35,6 +36,11 @@ var setMyId = function(newid) {
 		type: 'registerprocessworker',
 		data: id
 	});
+
+  that.postMessage({
+    type: 'registerprocessworker',
+    data: id
+  });
 }
 
 var senddata = function(e) {
@@ -135,6 +141,7 @@ var map = function(obj) {
   var list = obj.list;
   var parameters = obj.parameters;
   var parameterId = obj.parameterId;
+  var lag = obj.lag;
   var settings = obj.settings;
   var time = (new Date).getTime();
 
@@ -156,10 +163,16 @@ var map = function(obj) {
 
       // do process
 
+      // COMPUTATION STARTS FROM HERE
+      // workingset = the data you are working with.
+
       i = workingset.length;
       while(i--) {
 
         piece = workingset[i];
+
+        // NOTE. piece = single working datapoint (object)
+        // in this case, piece is an array with 1000 floats.
 
         // SAMPLE COMPUTATION.
         // ADD ALL NUMBERS AND DIVIDE
@@ -173,6 +186,9 @@ var map = function(obj) {
       }
 
       parameters /= total;
+
+      // END OF COMPUTATION
+
       iterations++;
 
       currentTime = (new Date).getTime();
@@ -217,8 +233,14 @@ var map = function(obj) {
       type: 'performance',
       id: id,
       vsec: vsec,
-      isec: isec
+      isec: isec,
+      lag: lag
     })
+
+    if(terminate) {
+      logger('Shutting down.');
+      self.close();
+    }
 
   }
 
@@ -262,7 +284,10 @@ var clientmessage = function(e) {
 	
 	if(e.data.type == 'start') {
 		start(e);
-	}
+	} else if(e.data.type == 'terminate') {
+    io.disconnect();
+    terminate = true;
+  }
 
 }
 

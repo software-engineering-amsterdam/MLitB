@@ -1,27 +1,29 @@
 doctype
 html
   head
-    title P-MCMC
+    title ML in the Browser
+    meta(name="viewport" content="width=device-width, initial-scale=1")
     script(src='/socket.io/socket.io.js')
     link(rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css")
-    link(rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css")
     link(rel="stylesheet" href="/css/app.css")
   body
+    nav.navbar.navbar-default(role="navigation")
+        div.container
+            div.navbar-header
+                a.navbar-brand(href="#") ML in the Browser
+                ul.nav.navbar-nav.navbar-right
+                    li
+                        button.btn.btn-default.navbar-btn#start(type="button")
+                            span.glyphicon.glyphicon-off
+                            span  Start
+                        span.btn.btn-default.btn-file.navbar-btn
+                            input#files(type="file" name="files")
+                            span.glyphicon.glyphicon-upload
+                            span  Upload                            
+
     div.container
         div.row
-            div.col-md-6
-                h1 P-MCMC
-                p Press connect to connect.
-                p 
-                    input#start(type="button" value="connect")
-                p 
-                    input#addworker(type="button" value="add a worker")
-                p 
-                    input#runjob(type="button" value="run sample embedded job")
-                p Upload file:                    
-                input#files(type="file" name="files")
-                span#download 0%
-            div.col-md-6
+            div.col-lg-6
                 h4 Workers in operation: 
                     span#nrworkers 0
                 table.table.table-condensed
@@ -29,21 +31,18 @@ html
                         tr
                             th ID
                             th Vectors/sec
-                            th &Delta;
                             th Iterations/sec
-                            th &Delta;
+                            th Latency in MS
                     tbody#performance
                     thead
                         tr 
                             th
                             th.vsecaverage
                             th
-                            th.isecaverage
                             th
                 h4 Log
                 pre.log
 
     script(src='/js/jquery.js')
     script(src='//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js')
-    script(src='//mbostock.github.com/d3/d3.js')
     script(src='/js/client.js')

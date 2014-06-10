@@ -227,8 +227,10 @@ var addprocessworker = function(e) {
 
 }
 
-var run = function() {
-	io.emit('run');
+var removeprocessworker = function(e) {
+
+	delete processworkers[e.data];
+
 }
 
 var onmessage = function(e) {
@@ -239,10 +241,9 @@ var onmessage = function(e) {
 		fileupload(e.data);
 	} else if(e.data.type == 'addprocessworker') {
 		addprocessworker(e);
-	} else if(e.data.type == 'run') {
-		run();
+	} else if(e.data.type == 'removeprocessworker') {
+		removeprocessworker(e.data);
 	}
-
 
 }
 

@@ -41,7 +41,7 @@ var MAX_DESKTOP       = 800,
     MAX_MOBILE        = 200,
     COVERAGE_EQ       = 3,
     POWER_MEAN        = 10,
-    LAG_HISTORY       = 10,
+    LAG_HISTORY       = 10, // MIN = 3
     INITIAL_PARAMETER = 0.0;
 
 var settings = {
@@ -58,6 +58,7 @@ var markovChain = [];
 var markovLength;
 var markovResults;
 var markovFirstResult;
+var markovIDs = [];
 var parameters = [];
 var markovRotationID = 0;
 var parameterRotationID = 0;
@@ -250,6 +251,14 @@ var addIndices = function(datamap, req) {
   var i, index, newObject;
   var firstIndex = nextIndex;
 
+  startworking = false;
+
+  // determine if we can start working automatically
+  // i.e. if this is the first data set added, then start
+  if(!datamap.length) {
+    startworking = true;
+  }
+
   for(i = 0; i < req.data.data; i++) {
     index = i + nextIndex;
     newObject = {
@@ -272,6 +281,10 @@ var addIndices = function(datamap, req) {
   });
 
   reallocate(datamap);
+
+  if(startworking) {
+    run(parameters);
+  }
 
 }
 
@@ -316,10 +329,7 @@ var removeClient = function(datamap, client) {
     console.log('Lost', lostData, 'data vectors from the network.');
   }
 
-  reallocate(datamap);
-
-  // determine if this client is/was working
-
+  // determine if this client is working
   i = markovChain.length;
 
   var set, j, piece, node;
@@ -339,13 +349,17 @@ var removeClient = function(datamap, client) {
       
       console.log('-> Client was currently processing, cleaning up.');
 
-      markovLength--;
+      // remove client from markovIDs
+      markovIDsIndex = markovIDs.indexOf(client.id);
+      markovIDs.splice(markovIDsIndex, 1);
 
-      if(markovResults.length == markovLength) {
+      if(!markovIDs.length) {
 
         console.log('-> Last client, continue with reduction');
 
-        parameter = reduce(markovResults);
+        delay = process.hrtime(markovFirstResult).join('')
+
+        reduce(markovResults);
 
         // run next chain
         run(parameters);
@@ -411,31 +425,48 @@ var reduce = function(markovResults) {
 
   // SAMPLE REDUCTION for P-MCMC
   // AVERAGE PARAMETERS
+
+  // Result parameters from the nodes are stored in markovResults
+
   var i = markovResults.length;
   var piece;
+
   while(i--) {
     piece = markovResults[i];
 
     parameter = piece.parameter;
     parameterId = piece.parameterId;
 
+    // parameter from previous step
     previousParameter = parameters[parameterId];
 
+    // new parameter
     newParameter = (previousParameter + parameter) / 2.0;
 
+    // store parameter for next step.
     parameters[parameterId] = newParameter;
 
   }
 
+  // Optionally: output here.
+  // Could be done with websocket.
+
 }
 
 var prereduce = function(req) {
+
+  dropClient = false;
 
   parameter = req.data.parameters;
   parameterId = req.data.parameterId;
   speed = req.data.speed;
 
   id = req.io.socket.id;
+
+  if(markovIDs.indexOf(id) == -1) {
+    // impossible. but pass.
+    return
+  }
 
   // only for the first
   if(!markovResults.length) {
@@ -445,9 +476,38 @@ var prereduce = function(req) {
   // determine lag.
   lag = (new Date).getTime() - req.io.socket.mapTime - req.io.socket.runTime;
 
+  if(lag < 0) {
+    console.log('lag/id', lag, id);
+    console.log('maptime/runtime', req.io.socket.mapTime, req.io.socket.runTime);
+    console.log('$$$ lag under zero.');
+    //process.kill()
+  }
+
   req.io.socket.lagHistory.push(lag);
   req.io.socket.lagHistory = req.io.socket.lagHistory.slice(-1 * LAG_HISTORY, 2 * LAG_HISTORY);
   req.io.socket.lag = req.io.socket.lagHistory.average();
+
+  // if lag is too big for one instance, ignore it.
+  if(lag > (nodeSettings.runtime * 0.66)) {
+    req.io.socket.lag = nodeSettings.runtime * 0.66;
+
+    // if lag is too big three times, drop client.
+    lagcheck = req.io.socket.lagHistory.slice(-3, 6);
+    lagToBeat = (nodeSettings.runtime * 0.66) * 3.0;
+    total = 0;
+    var i = lagcheck.length;
+    while(i--) {
+      total += lagcheck[i];
+    }
+
+    if(total >= lagToBeat) {
+      // drop client
+      console.log('Dropped client for lagging:', req.io.socket.id);
+      dropClient = true;
+    }
+
+  }
+
 
   // save speed of this worker
   req.io.socket.powerSet.push(speed);
@@ -458,6 +518,7 @@ var prereduce = function(req) {
   // power index is determined on 1 second.
   // if the client lags 100 MS, then 100/1000 = factor 0.1 reduction of power.
   lagFactor = (req.io.socket.lag / 1000.0) + 1.0;
+
   req.io.socket.power /= lagFactor;
 
   markovResults.push({
@@ -465,8 +526,16 @@ var prereduce = function(req) {
     parameter: parameter
   });
 
+  if(dropClient) {
+    return removeClient(datamap, req.io.socket);
+  }
+
+  // remove client from markovIDs
+  markovIDsIndex = markovIDs.indexOf(id);
+  markovIDs.splice(markovIDsIndex, 1);
+
   // only for the last
-  if(markovResults.length == markovLength) {
+  if(!markovIDs.length) {
 
     // what is the delay?
     delay = process.hrtime(markovFirstResult).join('')
@@ -486,11 +555,13 @@ var prereduce = function(req) {
 var distributor = function(parameters) {
 
   markovResults = [];
+  markovIDs = [];
 
   var i = markovChain.length;
   markovLength = i;
 
   var client, item, timeout, timeoutTime;
+
   while(i--) {
 
     item = markovChain[i];
@@ -513,12 +584,16 @@ var distributor = function(parameters) {
     // run according to lag fix.
     client.runTime = nodeSettings.runtime - client.lag;
 
+    // make a list of clients at work
+    markovIDs.push(client.id);
+
     // tell client to work.
     client.emit('map', {
       'list': item.set,
       'settings': {runtime: client.runTime},
       'parameters': parameter,
-      'parameterId': parameterId
+      'parameterId': parameterId,
+      'lag': client.lag
     });
 
   }
@@ -777,22 +852,6 @@ var reallocate = function(datamap) {
       if(client.currentPower == clientMaxData) {
         client.favour = -1;
       }
-
-    }
-
-  }
-
-  console.log(">>>> datamap size", datamap.length);
-  console.log(">>>> power available", totalpower);
-
-  i = clientsOnline();
-  while(i--) {
-
-    client = app.io.sockets.clients('room')[i];
-
-    if(!client.powertesting) {
-
-      console.log("> Power/Previous", client.currentPower, client.previousPower, client.id);
 
     }
 
@@ -1195,11 +1254,6 @@ app.io.route('offerData', function(req) {
 app.io.route('downloadData', function(req) {
   // clients want to receive data.
   uploadDataToClient(datamap, req);
-});
-
-app.io.route('run', function(req) {
-  // run sample embedded job
-  run(parameters);
 });
 
 app.io.route('reduce', function(req) {
