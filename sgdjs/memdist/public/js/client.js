@@ -1,5 +1,7 @@
 var io, device, dataworkerId, dataworker, processworker, processworkers, channel, canAddNewWorker;
 
+var ENABLE_AUTOSCALE = false;
+
 var MEASURE_COUNTER = 5;
 var MEASURE_THRESHOLD = 5;
 
@@ -63,7 +65,7 @@ var metaPerformance = function() {
   $('.vsecaverage').html(vsecAverage.toFixed(3));
   $('.isecaverage').html(isecAverage.toFixed(3));
 
-  if(!stable && canAddNewWorker) {
+  if(!stable && canAddNewWorker && ENABLE_AUTOSCALE) {
 
     measurementsCounter--;
     if(!measurementsCounter) {

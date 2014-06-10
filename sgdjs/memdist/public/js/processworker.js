@@ -165,6 +165,7 @@ var map = function(obj) {
 
       // COMPUTATION STARTS FROM HERE
       // workingset = the data you are working with.
+      // parameters = the parameters from previous node.
 
       i = workingset.length;
       while(i--) {
