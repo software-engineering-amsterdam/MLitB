@@ -17,9 +17,13 @@
       this.drop_index = [];
       this.V_in = V;
       var Z = V.clone();
-      for (var i = 0; i < Z.data.length; i++) {
-        if (Math.random()<this.drop_prob){Z.data[i]=0; this.drop_index.push(i)}
-      };
+
+      //Drop only when training
+      if (is_training){
+        for (var i = 0; i < Z.data.length; i++) {
+          if (Math.random()<this.drop_prob){Z.data[i]=0; this.drop_index.push(i)}
+        };  
+      }
 
       // for (var i = 0; i < Z.data.length; i++) {
       //   if (Math.random()<this.drop_prob){Z.data[i]=0; this.dropped[i]=true;}
