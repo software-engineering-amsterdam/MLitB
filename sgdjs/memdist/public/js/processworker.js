@@ -85,17 +85,6 @@ var downloaddata = function(e) {
 
 }
 
-var dataworkermessage = function(e) {
-
-	if(e.data.type == 'fileupload') {
-		fileupload(e.data);
-	} else if(e.data.type == 'senddata') {
-		senddata(e.data);
-	} else if(e.data.type == 'downloaddata') {
-		downloaddata(e.data);
-	}
-}
-
 var runpowertest = function() {
 
   // the 10 test data vectors have arrived, start testing.
@@ -255,7 +244,16 @@ var start = function(e) {
 	dataworker = e.data.data.dataworker;
 	port = e.ports[0];
 
-	port.onmessage = dataworkermessage;
+	port.onmessage = function(e) {
+
+    if(e.data.type == 'fileupload') {
+      fileupload(e.data);
+    } else if(e.data.type == 'senddata') {
+      senddata(e.data);
+    } else if(e.data.type == 'downloaddata') {
+      downloaddata(e.data);
+    }
+  };
 
 	io = io.connect();
 

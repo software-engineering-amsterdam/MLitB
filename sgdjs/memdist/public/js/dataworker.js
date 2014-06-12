@@ -210,20 +210,19 @@ var registerprocessworker = function(e) {
 
 }
 
-var processworkermessage = function(e) {
-
-	if(e.data.type == 'registerprocessworker') {
-		registerprocessworker(e.data);
-	} else if(e.data.type == 'senddata') {
-		proxyDataToServer(e.data);
-	}
-
-}
-
 var addprocessworker = function(e) {
 
 	newProcessWorker = e.ports[0];
-	newProcessWorker.onmessage = processworkermessage;
+	
+	newProcessWorker.onmessage = function(e) {
+
+		if(e.data.type == 'registerprocessworker') {
+			registerprocessworker(e.data);
+		} else if(e.data.type == 'senddata') {
+			proxyDataToServer(e.data);
+		}
+
+	};
 
 }
 
