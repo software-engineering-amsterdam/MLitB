@@ -247,6 +247,11 @@ var addIndices = function(datamap, req) {
 
   var client = getClientById(req.data.id);
 
+  if(!client) {
+    // happens at client drop.
+    return;
+  }
+
   // from nextIndex, add length number of indices
   var i, index, newObject;
   var firstIndex = nextIndex;
