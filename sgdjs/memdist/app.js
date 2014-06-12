@@ -484,6 +484,7 @@ var prereduce = function(req) {
   if(lag < 0) {
     console.log('lag/id', lag, id);
     console.log('maptime/runtime', req.io.socket.mapTime, req.io.socket.runTime);
+    console.log('penalize client');
     console.log('$$$ lag under zero.');
     //process.kill()
   }

@@ -1,6 +1,6 @@
 var io, device, dataworkerId, dataworker, processworker, processworkers, channel, canAddNewWorker;
 
-var ENABLE_AUTOSCALE = true;
+var ENABLE_AUTOSCALE = false;
 
 var MEASURE_COUNTER = 5;
 var MEASURE_THRESHOLD = 5;
