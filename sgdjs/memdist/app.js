@@ -696,6 +696,12 @@ var distributor = function(parameters) {
     client.mapTime = (new Date).getTime();
 
     // run according to lag fix.
+    if(client.lag > nodeSettings.runtime) {
+      console.log('$$$ client lag is larger than nodesettings');
+      console.log('lag:', client.lag);
+      client.lag = 50;
+    }
+
     client.runTime = nodeSettings.runtime - client.lag;
 
     // make a list of clients at work
