@@ -142,7 +142,7 @@ var measurePerformance = function(data) {
     // insert table
     $('#performance').append(' \
       <tr id="' + id + '"> \
-        <td>' + processWorkerCounter + '</td> \
+        <td>' + id + '</td> \
         <td class="vsec"></td> \
         <td class="isec"></td> \
         <td class="lag"></td> \
