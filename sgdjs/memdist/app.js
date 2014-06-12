@@ -482,11 +482,14 @@ var prereduce = function(req) {
   lag = (new Date).getTime() - req.io.socket.mapTime - req.io.socket.runTime;
 
   if(lag < 0) {
-    console.log('lag/id', lag, id);
-    console.log('maptime/runtime', req.io.socket.mapTime, req.io.socket.runTime);
-    console.log('penalize client');
-    console.log('$$$ lag under zero.');
-    //process.kill()
+    console.log('$ lag under zero.');
+    console.log('$ lag/id', lag, id);
+    console.log('$ maptime/runtime', req.io.socket.mapTime, req.io.socket.runTime);
+    console.log('$$$ penalize client');
+    req.io.socket.penalty += 1;
+    if(req.io.socket.penalty == 3) {
+      dropClient = true;
+    }
   }
 
   req.io.socket.lagHistory.push(lag);
@@ -1232,6 +1235,7 @@ var processworkerstart = function(req) {
   req.io.socket.device = req.data.device;
   req.io.socket.dataworker = req.data.dataworker;
   req.io.socket.allocation = 0;
+  req.io.socket.penalty = 0;
   req.io.emit('myid', req.io.socket.id);
   join(req, datamap, settings);
   console.log('MY ID:', req.io.socket.id);
