@@ -1,4 +1,5 @@
 importScripts('/socket.io/socket.io.js');
+importScripts('/js/last_mlitb.js')
 
 var io, id, device, parent, dataworker, port, f;
 var data = [];
@@ -125,6 +126,19 @@ var powertest = function(obj) {
 
 }
 
+
+var is_initialized =false;
+
+var Net = new mlitb.Net();
+var conf = []
+conf.push({type : 'input', sx : 28, sy:28, depth :1});
+conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
+conf.push({type : 'pool', sx : 2, stride : 2});
+conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
+conf.push({type : 'pool', sx : 3, stride : 3, drop_prob : 0.5});
+// conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
+conf.push({type : 'fc', num_neurons : 10, activation : 'softmax'});
+
 var map = function(obj) {
 
   var list = obj.list;
@@ -141,12 +155,29 @@ var map = function(obj) {
 
   var iterations = 0;
 
-  fn = function() {
+  //initialize the network for the first time
+  initialize = function() {
+    // console.log('incoming');
+    if (! is_initialized){
+    // if (true){
+      Net.createLayers(conf);
+      // console.log('first layer ',Net.layers.length);
 
+    }
+  }
+
+  fn = function() {
     // do computation
     var piece, i, j, vector;
     var total = 0;
     var currentTime;
+
+    if (is_initialized){
+      console.log('json');
+      // console.log(JSON.stringify(parameters.parameter.parameters));
+      //copy the parameters and gradients
+      Net.setParamsAndGrads(parameters.parameter.parameters);
+    }
 
     while(true) {
 
@@ -157,6 +188,8 @@ var map = function(obj) {
       // parameters = the parameters from previous node.
 
       i = workingset.length;
+      // 800 takes too long to finish
+      if (i>0) i = 20;
       while(i--) {
 
         piece = workingset[i];
@@ -166,16 +199,22 @@ var map = function(obj) {
 
         // SAMPLE COMPUTATION.
         // ADD ALL NUMBERS AND DIVIDE
-        j = piece.data.length;
-        while(j--) {
-          vector = piece.data[j];
-          parameters += vector;
-          total++;
-        }
+        // j = piece.data.length;
+        // while(j--) {
+        //   vector = piece.data[j];
+        //   parameters += vector;
+        //   total++;
+        // }
+        var Input = new mlitb.Vol(28,28,1, 0.0);
+        Input.data = piece.data;
+        Net.forward(Input,true);
+        // console.log(i);
+        Net.backward(piece.label);
+        // console.log('break');
 
       }
 
-      parameters /= total;
+      // parameters /= total;
 
       // END OF COMPUTATION
 
@@ -184,15 +223,23 @@ var map = function(obj) {
       currentTime = (new Date).getTime();
 
       if(currentTime > (time + settings.runtime)) {
+        // console.log('before break');
+        // console.log(JSON.stringify(Net.getParamsAndGrads()[0]));
+        parameters = {
+          parameters : Net.getParamsAndGrads()
+        };
         break;
         
       }
    
     }
 
+    is_initialized = true;
+
     return finish();
 
   }
+
 
   finish = function() {
 
@@ -233,7 +280,7 @@ var map = function(obj) {
     }
 
   }
-
+  initialize();
   fn();
 
 }
