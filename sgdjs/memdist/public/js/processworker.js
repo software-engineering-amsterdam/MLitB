@@ -281,7 +281,7 @@ var fileupload = function(e) {
 
 }
 
-var clientmessage = function(e) {
+this.onmessage = function(e) {
 	
 	if(e.data.type == 'start') {
 		start(e);
@@ -291,5 +291,3 @@ var clientmessage = function(e) {
   }
 
 }
-
-this.onmessage = clientmessage;

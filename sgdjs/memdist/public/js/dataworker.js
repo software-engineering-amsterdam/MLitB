@@ -233,7 +233,7 @@ var removeprocessworker = function(e) {
 
 }
 
-var onmessage = function(e) {
+this.onmessage = function(e) {
 	
 	if(e.data.type == 'start') {
 		start(e.data);
@@ -246,5 +246,3 @@ var onmessage = function(e) {
 	}
 
 }
-
-this.onmessage = onmessage;
