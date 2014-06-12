@@ -559,6 +559,12 @@ var prereduce = function(req) {
 
 var distributor = function(parameters) {
 
+  // for debugging purposes only
+  if(markovIDs.length) {
+    console.log('$$$ distributor called with clients still waiting to arrive.');
+    process.kill()
+  }
+
   markovResults = [];
   markovIDs = [];
 
