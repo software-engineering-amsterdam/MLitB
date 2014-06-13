@@ -65,6 +65,11 @@ var parameterRotationID = 0;
 
 var timeouts = {};
 
+var hrtime = function() {
+  now = process.hrtime();
+  return Math.floor((now[0] * 1e9 + now[1]) / 1000000);
+}
+
 var logger = function(req, text) {
   req.io.emit('log', text);
 }
@@ -356,7 +361,9 @@ var removeClient = function(datamap, client) {
 
       // remove client from markovIDs
       markovIDsIndex = markovIDs.indexOf(client.id);
-      markovIDs.splice(markovIDsIndex, 1);
+      if(markovIDsIndex > -1) {
+        markovIDs.splice(markovIDsIndex, 1);
+      }
 
       if(!markovIDs.length) {
 
@@ -479,17 +486,10 @@ var prereduce = function(req) {
   }
 
   // determine lag.
-  lag = (new Date).getTime() - req.io.socket.mapTime - req.io.socket.runTime;
+  lag = hrtime() - req.io.socket.mapTime - req.io.socket.runTime;
 
   if(lag < 0) {
-    console.log('$ lag under zero.');
-    console.log('$ lag/id', lag, id);
-    console.log('$ maptime/runtime', req.io.socket.mapTime, req.io.socket.runTime);
-    console.log('$$$ penalize client');
-    req.io.socket.penalty += 1;
-    if(req.io.socket.penalty == 3) {
-      dropClient = true;
-    }
+    console.log('$$$ lag under zero.');
   }
 
   req.io.socket.lagHistory.push(lag);
@@ -594,15 +594,9 @@ var distributor = function(parameters) {
 
     // register time of issuance.
     // use this to determine latency.
-    client.mapTime = (new Date).getTime();
+    client.mapTime = hrtime();
 
     // run according to lag fix.
-    if(client.lag > nodeSettings.runtime) {
-      console.log('$$$ client lag is larger than nodesettings');
-      console.log('lag:', client.lag);
-      client.lag = 50;
-    }
-
     client.runTime = nodeSettings.runtime - client.lag;
 
     // make a list of clients at work
@@ -1241,7 +1235,6 @@ var processworkerstart = function(req) {
   req.io.socket.device = req.data.device;
   req.io.socket.dataworker = req.data.dataworker;
   req.io.socket.allocation = 0;
-  req.io.socket.penalty = 0;
   req.io.emit('myid', req.io.socket.id);
   join(req, datamap, settings);
   console.log('MY ID:', req.io.socket.id);
