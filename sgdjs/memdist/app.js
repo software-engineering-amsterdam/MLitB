@@ -433,32 +433,124 @@ var shortage = function(datamap) {
   return total;
 }
 
+var zeros = function(n) {
+  if(typeof(n)==='undefined' || isNaN(n)) { return []; }
+  if(typeof ArrayBuffer === 'undefined') {
+    // lacking browser support
+    var arr = new Array(n);
+    for(var i=0;i<n;i++) { arr[i]= 0; }
+    return arr;
+  } else {
+    return new Float64Array(n);
+  }
+}
+
+var SGDTrainer = function (net, conf) {
+  this.net = net;
+  this.loss =0.0;
+  this.l2_loss = 0.0;
+  this.l1_loss = 0.0;
+
+  this.learning_rate = typeof conf.learning_rate !== 'undefined' ? conf.learning_rate : 0.01;
+  this.l1_decay = typeof conf.l1_decay !== 'undefined' ? conf.l1_decay : 0.0;
+  this.l2_decay = typeof conf.l2_decay !== 'undefined' ? conf.l2_decay : 0.0;
+  this.batch_size = typeof conf.batch_size !== 'undefined' ? conf.batch_size : 1;
+  this.momentum = typeof conf.momentum !== 'undefined' ? conf.momentum : 0.9;
+  this.iteration = 0;
+  this.last_grads = [];
+  this.last_params = [];
+}
+  
+SGDTrainer.prototype = {
+  reduce : function(markovResults){
+    // console.log('markov results ',markovResults[0].parameter.parameters[0]);
+    //for the first time, get parameter from Net
+    if (this.last_params.length == 0){
+      var pgs = markovResults[0].parameter.parameters;
+      this.last_params =  pgs;
+    }
+    // console.log(JSON.stringify(this.last_params[0]));
+    // console.log('before ',this.last_params);
+    //only the first time to initialize the last grad
+    if (this.last_grads.length == 0 && this.momentum > 0.0){
+      for (var i = 0; i < this.last_params.length; i++) {
+        this.last_grads.push(zeros(pgs[i].grads.length));
+      };
+    }
+
+    //iterate over each param and grad vector
+    for (var i = 0; i < this.last_params.length; i++) {
+      var pg =this.last_params[i];
+      var p = pg.params;
+      var g = pg.grads;
+      //add up all gradient vectors
+      for (var gi = 0; gi < g.length; i++) {
+        total_gi = 0.0;
+        for (var k = 0; k < markovResults.length; k++) {
+          console.log('could be problem at below');
+          total_gi+=markovResults[k].parameter.parameters[i].grads[gi];
+        };
+        g[gi] = total_gi;
+      };
+      
+      var plen = p.length;
+      var lg = this.last_grads[i];
+      for (var j = 0; j < plen; j++) {
+        this.l2_loss += this.l2_decay*p[j]*p[j];
+        this.l1_loss += this.l1_decay*Math.abs(p[j]);
+        var l2_grad = this.l2_decay*p[j];
+        var l1_grad = this.l1_decay*(p[j]>0 ? 1 : -1);
+        var lgj = lg[j];
+        var dw = (1.0-this.momentum)*this.learning_rate*((l1_grad+l2_grad+g[j])/this.batch_size)+this.momentum*lgj;
+        p[j] -= dw;
+        lgj = dw;
+        g[j] = 0.0;
+      }
+    }
+
+    //set the new parameter to the markovResults
+    for (var i = 0; i < parameters.length; i++) {
+      parameters[i] = {
+        parameter: {
+          parameters: this.last_params
+        }
+      }
+    };
+    // console.log(JSON.stringify(this.last_params));
+    // console.log(markovResults[0].parameter.parameters);
+    // console.log('after ',this.last_params);
+  }
+}
+
+//Create object SGD Trainer
+SGD = new SGDTrainer({}, {learning_rate : 0.1, batch_size : 16, l2_decay : 0.001});
+
 var reduce = function(markovResults) {
 
   // SAMPLE REDUCTION for P-MCMC
   // AVERAGE PARAMETERS
-
+  SGD.reduce(markovResults);
   // Result parameters from the nodes are stored in markovResults
 
-  var i = markovResults.length;
-  var piece;
+  // var i = markovResults.length;
+  // var piece;
 
-  while(i--) {
-    piece = markovResults[i];
+  // while(i--) {
+  //   piece = markovResults[i];
 
-    parameter = piece.parameter;
-    parameterId = piece.parameterId;
+  //   parameter = piece.parameter;
+  //   parameterId = piece.parameterId;
 
-    // parameter from previous step
-    previousParameter = parameters[parameterId];
+  //   // parameter from previous step
+  //   previousParameter = parameters[parameterId];
 
-    // new parameter
-    newParameter = (previousParameter + parameter) / 2.0;
+  //   // new parameter
+  //   newParameter = (previousParameter + parameter) / 2.0;
 
-    // store parameter for next step.
-    parameters[parameterId] = newParameter;
+  //   // store parameter for next step.
+  //   parameters[parameterId] = newParameter;
 
-  }
+  // }
 
   // Optionally: output here.
   // Could be done with websocket.
@@ -466,6 +558,9 @@ var reduce = function(markovResults) {
 }
 
 var prereduce = function(req) {
+
+  console.log('1 received from client');
+ 
 
   dropClient = false;
 
@@ -477,6 +572,7 @@ var prereduce = function(req) {
 
   if(markovIDs.indexOf(id) == -1) {
     // impossible. but pass.
+    console.log('2 received from client'); 
     return
   }
 
@@ -535,6 +631,8 @@ var prereduce = function(req) {
     parameter: parameter
   });
 
+  console.log('dropping client');
+
   if(dropClient) {
     return removeClient(datamap, req.io.socket);
   }
@@ -543,6 +641,8 @@ var prereduce = function(req) {
   markovIDsIndex = markovIDs.indexOf(id);
   markovIDs.splice(markovIDsIndex, 1);
 
+  console.log('3 received from client');
+ 
   // only for the last
   if(!markovIDs.length) {
 
@@ -553,7 +653,6 @@ var prereduce = function(req) {
     reduce(markovResults);
 
     markovResults = [];
-
     // run next chain
     run(parameters);
 
@@ -601,6 +700,8 @@ var distributor = function(parameters) {
 
     // make a list of clients at work
     markovIDs.push(client.id);
+    // console.log(parameterId);
+    // console.log(JSON.stringify(parameter));
 
     // tell client to work.
     client.emit('map', {
@@ -1287,4 +1388,4 @@ app.get('/', function(req, res) {
 });
 
 
-app.listen(8071);
+app.listen(8075);
