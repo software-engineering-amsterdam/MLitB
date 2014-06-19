@@ -7,7 +7,17 @@ var that = this;
 var powertesting = false;
 var terminate = false;
 
+var ITER_AVERAGE_SAMPLES = 3;
+
 var vsec, isec;
+
+Array.prototype.average = function () {
+    var sum = 0, j = 0; 
+    for (var i = 0; i < this.length, isFinite(this[i]); i++) { 
+        sum += parseFloat(this[i]); ++j; 
+    } 
+    return j ? sum / j : 0; 
+};
 
 var logger = function(e){ 
 	this.postMessage({
@@ -77,7 +87,7 @@ var downloaddata = function(e) {
 		data.push(e.data[i]);
 	}
 
-  logger('downloaded data: ' + id);
+  logger('downloaded data length/id: ' + e.data.length + ' ' + id);
 
   // only at start
   if(powertesting) {
@@ -127,17 +137,8 @@ var powertest = function(obj) {
 }
 
 
-var is_initialized =false;
-
-var Net = new mlitb.Net();
-var conf = []
-conf.push({type : 'input', sx : 28, sy:28, depth :1});
-conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
-conf.push({type : 'pool', sx : 2, stride : 2});
-conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
-conf.push({type : 'pool', sx : 3, stride : 3, drop_prob : 0.5});
-// conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
-conf.push({type : 'fc', num_neurons : 10, activation : 'softmax'});
+var is_initialized = false;
+var Net, conf;
 
 var map = function(obj) {
 
@@ -147,6 +148,7 @@ var map = function(obj) {
   var lag = obj.lag;
   var settings = obj.settings;
   var time = (new Date).getTime();
+  var trueTime;
 
   // get working set from local data set
   var workingset = data.filter(function(e) {
@@ -155,13 +157,22 @@ var map = function(obj) {
 
   var iterations = 0;
 
-  //initialize the network for the first time
+  // initialize the network for the first time
   initialize = function() {
-    // console.log('incoming');
-    if (! is_initialized){
-    // if (true){
+
+    if (!is_initialized) {
+
+      Net = new mlitb.Net();
+      conf = []
+      conf.push({type : 'input', sx : 28, sy:28, depth :1});
+      conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
+      conf.push({type : 'pool', sx : 2, stride : 2});
+      conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
+      conf.push({type : 'pool', sx : 3, stride : 3, drop_prob : 0.5});
+      // conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
+      conf.push({type : 'fc', num_neurons : 10, activation : 'softmax'});
+
       Net.createLayers(conf);
-      // console.log('first layer ',Net.layers.length);
 
     }
   }
@@ -170,14 +181,16 @@ var map = function(obj) {
     // do computation
     var piece, i, j, vector;
     var total = 0;
-    var currentTime;
+    var startTime, currentTime, iterTime;
+    var iterTimes = [];
 
-    if (is_initialized){
-      console.log('json');
-      // console.log(JSON.stringify(parameters.parameter.parameters));
-      //copy the parameters and gradients
+    if (is_initialized) {
+      // copy the parameters and gradients
       Net.setParamsAndGrads(parameters.parameter.parameters);
     }
+
+    startTime = (new Date).getTime();
+    iterTime = startTime;
 
     while(true) {
 
@@ -188,33 +201,20 @@ var map = function(obj) {
       // parameters = the parameters from previous node.
 
       i = workingset.length;
-      // 800 takes too long to finish
-      if (i>0) i = 20;
       while(i--) {
 
         piece = workingset[i];
 
-        // NOTE. piece = single working datapoint (object)
-        // in this case, piece is an array with 1000 floats.
+        // NOTE. piece = single working datapoint (object)s.
 
-        // SAMPLE COMPUTATION.
-        // ADD ALL NUMBERS AND DIVIDE
-        // j = piece.data.length;
-        // while(j--) {
-        //   vector = piece.data[j];
-        //   parameters += vector;
-        //   total++;
-        // }
         var Input = new mlitb.Vol(28,28,1, 0.0);
         Input.data = piece.data;
         Net.forward(Input,true);
-        // console.log(i);
-        Net.backward(piece.label);
-        // console.log('break');
+        Net.backward(piece.label);        
+
+        break;
 
       }
-
-      // parameters /= total;
 
       // END OF COMPUTATION
 
@@ -222,9 +222,24 @@ var map = function(obj) {
 
       currentTime = (new Date).getTime();
 
-      if(currentTime > (time + settings.runtime)) {
-        // console.log('before break');
-        // console.log(JSON.stringify(Net.getParamsAndGrads()[0]));
+      // predict if the next iteration does not pass the settings.runtime.
+      iterDiff = currentTime - iterTime;
+      iterTime = currentTime;
+
+      iterTimes.push(iterDiff);
+      iterTimes.slice(-1 * ITER_AVERAGE_SAMPLES, 2 * ITER_AVERAGE_SAMPLES);
+      iterPredict = Math.round(iterTimes.average());
+
+      if((iterPredict + currentTime) > (time + settings.runtime)) {
+        logger('break on predict ' + id);
+      }
+
+      if((currentTime > (time + settings.runtime)) || (iterPredict + currentTime) > (time + settings.runtime)) {
+
+        trueTime = currentTime - startTime;
+
+        logger('true runtime / assigned runtime : ' + trueTime.toString() + '/' + settings.runtime.toString());
+
         parameters = {
           parameters : Net.getParamsAndGrads()
         };
@@ -243,9 +258,9 @@ var map = function(obj) {
 
   finish = function() {
 
-    // calculate speed v / 1000i
+    // calculate speed v / i
 
-    vsec = ((iterations / 1000) * list.length) / (settings.runtime / 1000);
+    vsec = (iterations * list.length) / (settings.runtime / 1000);
     isec = iterations / (settings.runtime / 1000);
 
     if(vsec <= 1.0) {
@@ -261,7 +276,8 @@ var map = function(obj) {
     io.emit('reduce', {
       'parameters': parameters,
       'parameterId' :parameterId,
-      'speed': vsec
+      'speed': vsec,
+      'runtime': trueTime
     });
 
     // tell dataworker the performance. It may decide to shut this worker down
@@ -280,6 +296,7 @@ var map = function(obj) {
     }
 
   }
+
   initialize();
   fn();
 
@@ -323,6 +340,8 @@ var start = function(e) {
 var fileupload = function(e) {
 
 	data = data.concat(e.data);
+
+  logger('file uploaded, length: ' + e.data.length);
 
 }
 

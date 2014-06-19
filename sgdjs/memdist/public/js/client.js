@@ -275,7 +275,7 @@ var processUploadedData = function(file) {
   newData = JSON.parse(file.target.result);
   var msg = "Upload data file not OK.";
   if(newData) {
-    msg = "Upload data file OK, length: " + newData.length * 1000;
+    msg = "Upload data file OK, length: " + newData.length;
   }
 
   logger(msg);

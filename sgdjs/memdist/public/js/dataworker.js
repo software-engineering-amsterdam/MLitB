@@ -42,10 +42,12 @@ var setNewDataFirstIndex = function(data) {
 	var i;
 	var index = data.index;
 	var client = data.client;
+	var idset = [];
 
 	// do not do this back to front
 	for(i = 0; i < newData.length; i++) {
 		newData[i].id = index;
+		idset.push(index);
 		index++;
 	}
 
@@ -58,6 +60,11 @@ var setNewDataFirstIndex = function(data) {
 	fileUploadRoundRobinId = ((fileUploadRoundRobinId + 1) % processworkersLength());
 
 	newData = [];
+
+	io.emit('registerData', {
+		client: client,
+		data: idset
+	});
 
 }
 

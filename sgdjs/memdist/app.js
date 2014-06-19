@@ -32,13 +32,8 @@ Array.prototype.average = function () {
 
 // STATICS
 
-// Type of system
-// true = Parallel Markov Chain Monte Carlo
-// false = Parallel Stochastic Gradient Descent (no markov chains)
-var P_MCMC = true;
-
-var MAX_DESKTOP       = 800,
-    MAX_MOBILE        = 200,
+var MAX_DESKTOP       = 10,
+    MAX_MOBILE        = 5,
     COVERAGE_EQ       = 3,
     POWER_MEAN        = 10,
     LAG_HISTORY       = 10, // MIN = 3
@@ -53,6 +48,8 @@ var nodeSettings = {
 }
 
 // make this a online setting
+var running = false;
+
 var normalizeFactor;
 var markovChain = [];
 var markovLength;
@@ -175,6 +172,13 @@ var registerdata = function(req) {
 
   }
 
+  if(!running) {
+
+    running = true;
+    run(parameters);
+
+  }
+
 }
 
 var proxyData = function(req) {
@@ -261,19 +265,11 @@ var addIndices = function(datamap, req) {
   var i, index, newObject;
   var firstIndex = nextIndex;
 
-  startworking = false;
-
-  // determine if we can start working automatically
-  // i.e. if this is the first data set added, then start
-  if(!datamap.length) {
-    startworking = true;
-  }
-
   for(i = 0; i < req.data.data; i++) {
     index = i + nextIndex;
     newObject = {
       id: index,
-      data: [client.id],
+      data: [],
       allocated: [client.id],
       processors: []
     }
@@ -289,12 +285,6 @@ var addIndices = function(datamap, req) {
     index: firstIndex,
     client: client.id
   });
-
-  reallocate(datamap);
-
-  if(startworking) {
-    run(parameters);
-  }
 
 }
 
@@ -337,6 +327,10 @@ var removeClient = function(datamap, client) {
 
   if(lostData) {
     console.log('Lost', lostData, 'data vectors from the network.');
+  }
+
+  if(!clientsOnline()) {
+    running = false;
   }
 
   // determine if this client is working
@@ -463,39 +457,77 @@ var SGDTrainer = function (net, conf) {
   
 SGDTrainer.prototype = {
   reduce : function(markovResults){
-    // console.log('markov results ',markovResults[0].parameter.parameters[0]);
+
+    var i, j, gi, k, total_gi;
+
     //for the first time, get parameter from Net
-    if (this.last_params.length == 0){
+    if (!this.last_params.length){
       var pgs = markovResults[0].parameter.parameters;
-      this.last_params =  pgs;
+      this.last_params = pgs;
     }
-    // console.log(JSON.stringify(this.last_params[0]));
-    // console.log('before ',this.last_params);
+
     //only the first time to initialize the last grad
-    if (this.last_grads.length == 0 && this.momentum > 0.0){
+    if (!this.last_grads.length && this.momentum > 0.0){
+      
+      /*
       for (var i = 0; i < this.last_params.length; i++) {
-        this.last_grads.push(zeros(pgs[i].grads.length));
-      };
+      */
+
+      i = this.last_params.length;     
+      while(i--) {
+        this.last_grads.unshift(zeros(pgs[i].grads.length));
+      }
+
     }
 
     //iterate over each param and grad vector
+
+    /*
     for (var i = 0; i < this.last_params.length; i++) {
-      var pg =this.last_params[i];
+    */
+
+    i = this.last_params.length;
+    while(i--) {
+      var pg = this.last_params[i];
       var p = pg.params;
       var g = pg.grads;
       //add up all gradient vectors
+      
+      /*
       for (var gi = 0; gi < g.length; i++) {
+      */
+
+      gi = g.length;
+      while(gi--) {
+        
         total_gi = 0.0;
+
+        /*
         for (var k = 0; k < markovResults.length; k++) {
-          console.log('could be problem at below');
-          total_gi+=markovResults[k].parameter.parameters[i].grads[gi];
-        };
+        */
+
+        k = markovResults.length;
+        
+        while(k--) {
+
+          total_gi += markovResults[k].parameter.parameters[i].grads[gi];
+
+        }
+
         g[gi] = total_gi;
+
       };
       
       var plen = p.length;
       var lg = this.last_grads[i];
+
+      /*
       for (var j = 0; j < plen; j++) {
+      */
+
+      j = plen;
+      while(j--) {
+
         this.l2_loss += this.l2_decay*p[j]*p[j];
         this.l1_loss += this.l1_decay*Math.abs(p[j]);
         var l2_grad = this.l2_decay*p[j];
@@ -505,20 +537,29 @@ SGDTrainer.prototype = {
         p[j] -= dw;
         lgj = dw;
         g[j] = 0.0;
+
       }
+
     }
 
-    //set the new parameter to the markovResults
-    for (var i = 0; i < parameters.length; i++) {
+    // set the new parameter to the markovResults
+    // all chains receive same value, thus a P-SGD
+    i = parameters.length;
+    while(i--) {
       parameters[i] = {
         parameter: {
           parameters: this.last_params
         }
       }
-    };
-    // console.log(JSON.stringify(this.last_params));
-    // console.log(markovResults[0].parameter.parameters);
-    // console.log('after ',this.last_params);
+    }
+
+    // set initial parameter for new clients
+    INITIAL_PARAMETER = {
+      parameter: {
+        parameters: this.last_params
+      }
+    }
+
   }
 }
 
@@ -529,6 +570,7 @@ var reduce = function(markovResults) {
 
   // SAMPLE REDUCTION for P-MCMC
   // AVERAGE PARAMETERS
+
   SGD.reduce(markovResults);
   // Result parameters from the nodes are stored in markovResults
 
@@ -559,20 +601,17 @@ var reduce = function(markovResults) {
 
 var prereduce = function(req) {
 
-  console.log('1 received from client');
- 
-
   dropClient = false;
 
   parameter = req.data.parameters;
   parameterId = req.data.parameterId;
   speed = req.data.speed;
+  runtime = req.data.runtime;
 
   id = req.io.socket.id;
 
   if(markovIDs.indexOf(id) == -1) {
     // impossible. but pass.
-    console.log('2 received from client'); 
     return
   }
 
@@ -581,11 +620,15 @@ var prereduce = function(req) {
     markovFirstResult = process.hrtime()
   }
 
+  // the actual runtime may be higher or lower than the assigned runtime.
+  runtimeDiff = req.io.socket.runTime - runtime;
+
   // determine lag.
-  lag = hrtime() - req.io.socket.mapTime - req.io.socket.runTime;
+  lag = hrtime() - req.io.socket.mapTime - req.io.socket.runTime + runtimeDiff;
 
   if(lag < 0) {
-    console.log('$$$ lag under zero.');
+    console.log('$$$ lag under zero:', lag);
+    console.log('mapTime:', req.io.socket.mapTime, 'runtime:', req.io.socket.runTime)
   }
 
   req.io.socket.lagHistory.push(lag);
@@ -631,8 +674,6 @@ var prereduce = function(req) {
     parameter: parameter
   });
 
-  console.log('dropping client');
-
   if(dropClient) {
     return removeClient(datamap, req.io.socket);
   }
@@ -641,8 +682,6 @@ var prereduce = function(req) {
   markovIDsIndex = markovIDs.indexOf(id);
   markovIDs.splice(markovIDsIndex, 1);
 
-  console.log('3 received from client');
- 
   // only for the last
   if(!markovIDs.length) {
 
@@ -700,8 +739,6 @@ var distributor = function(parameters) {
 
     // make a list of clients at work
     markovIDs.push(client.id);
-    // console.log(parameterId);
-    // console.log(JSON.stringify(parameter));
 
     // tell client to work.
     client.emit('map', {
@@ -814,6 +851,11 @@ var run = function(parameters) {
   if(!clientsOnline()) {
     console.log('no clients');
     return; 
+  }
+
+  if(!running) {
+    console.log('clients not ready');
+    return;
   }
 
   // done to redistribute client power.
@@ -1234,7 +1276,6 @@ var join = function(req, datamap, settings) {
     var max_data = MAX_MOBILE;
   }
 
-
   // test the power of the client before joining.
   // give 10 vectors, and determine vsec.
 
@@ -1276,7 +1317,6 @@ var join = function(req, datamap, settings) {
     req.io.join('room');
     return;
   }
-
 
   // check if client is alive.
   if(req.io.socket.dataworker) {
@@ -1338,7 +1378,7 @@ var processworkerstart = function(req) {
   req.io.socket.allocation = 0;
   req.io.emit('myid', req.io.socket.id);
   join(req, datamap, settings);
-  console.log('MY ID:', req.io.socket.id);
+  console.log('@ worker joined', req.io.socket.id);
 
 }
 
@@ -1388,4 +1428,4 @@ app.get('/', function(req, res) {
 });
 
 
-app.listen(8075);
+app.listen(8071);
