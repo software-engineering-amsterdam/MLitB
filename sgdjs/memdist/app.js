@@ -33,7 +33,7 @@ Array.prototype.average = function () {
 // STATICS
 
 var MAX_DESKTOP       = 10,
-    MAX_MOBILE        = 5,
+    MAX_MOBILE        = 50,
     COVERAGE_EQ       = 3,
     POWER_MEAN        = 10,
     LAG_HISTORY       = 10, // MIN = 3
@@ -559,6 +559,11 @@ SGDTrainer.prototype = {
         parameters: this.last_params
       }
     }
+
+    sendMonitor({
+      type: 'parameter',
+      data: this.last_params
+    });
 
   }
 }
@@ -1342,6 +1347,16 @@ var endpowertest = function(req) {
 
 }
 
+var sendMonitor = function(data) {
+
+  var i = app.io.sockets.clients('monitors').length;
+  while(i--) {
+    monitor = app.io.sockets.clients('monitors')[i];
+    monitor.emit('monitor', data);
+  }
+
+}
+
 var pings = {}
 
 var ping = function() {
@@ -1387,7 +1402,10 @@ var dataworkerstart = function(req) {
   req.io.emit('myid', req.io.socket.id);
 }
 
-//ping();
+var monitor = function(req) {
+  req.io.join('monitors');
+  console.log('@ monitor connected');
+}
 
 app.io.set("reconnection limit", 2000);
 
@@ -1396,6 +1414,8 @@ app.io.route('dataworkerstart', dataworkerstart);
 app.io.route('proxydata', proxyData);
 app.io.route('endpowertest', endpowertest);
 app.io.route('registerData', registerdata);
+
+app.io.route('monitor', monitor);
 
 app.io.route('disconnect', function(req) {
   // client disconnects
@@ -1425,6 +1445,10 @@ app.io.route('ping', function(req) {
 // Send the client html.
 app.get('/', function(req, res) {
     res.render('index')
+});
+
+app.get('/monitor', function(req, res) {
+    res.render('monitor')
 });
 
 
