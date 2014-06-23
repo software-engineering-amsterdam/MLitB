@@ -142,7 +142,13 @@ var Net, conf;
 
 var map = function(obj) {
 
+  shuffle = function(o){
+    for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+    return o;
+  };
+
   var list = obj.list;
+  var workingsetslice = obj.workingsetslice;
   var parameters = obj.parameters;
   var parameterId = obj.parameterId;
   var lag = obj.lag;
@@ -150,12 +156,15 @@ var map = function(obj) {
   var time = (new Date).getTime();
   var trueTime;
 
-  // get working set from local data set
-  var workingset = data.filter(function(e) {
+  var iterations = 0;
+
+  var slice = Math.round(list.length / workingsetslice);  
+
+  workingset = data.filter(function(e) {
     return (list.indexOf(e.id) > -1);
   });
 
-  var iterations = 0;
+  workingset = shuffle(workingset);
 
   // initialize the network for the first time
   initialize = function() {
@@ -167,9 +176,9 @@ var map = function(obj) {
       conf.push({type : 'input', sx : 28, sy:28, depth :1});
       //conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
       //conf.push({type : 'pool', sx : 2, stride : 2});
-      //conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
-      //conf.push({type : 'pool', sx : 3, stride : 3, drop_prob : 0.5});
-      conf.push({type : 'fc', num_neurons : 100, activation : 'relu'});
+      conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
+      conf.push({type : 'pool', sx : 3, stride : 3, drop_prob : 0.5});
+      conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
       conf.push({type : 'fc', num_neurons : 10, activation : 'softmax'});
 
       Net.createLayers(conf);
@@ -194,16 +203,34 @@ var map = function(obj) {
 
     while(true) {
 
-      // do process
+      if(workingsetslice) {
+
+        if(workingset.length < slice) {
+          // reset workingset
+
+          workingset = data.filter(function(e) {
+            return (list.indexOf(e.id) > -1);
+          });
+
+          workingset = shuffle(workingset);
+
+        }
+
+        subset = workingset.slice(0, slice);
+        workingset = workingset.slice(slice, workingset.length);
+
+      } else {
+        subset = workingset;
+      }
 
       // COMPUTATION STARTS FROM HERE
       // workingset = the data you are working with.
       // parameters = the parameters from previous node.
 
-      i = workingset.length;
+      i = subset.length;
       while(i--) {
 
-        piece = workingset[i];
+        piece = subset[i];
 
         // NOTE. piece = single working datapoint (object)s.
 
@@ -228,15 +255,9 @@ var map = function(obj) {
       iterTimes.slice(-1 * ITER_AVERAGE_SAMPLES, 2 * ITER_AVERAGE_SAMPLES);
       iterPredict = Math.round(iterTimes.average());
 
-      if((iterPredict + currentTime) > (time + settings.runtime)) {
-        logger('break on predict ' + id);
-      }
-
       if((currentTime > (time + settings.runtime)) || (iterPredict + currentTime) > (time + settings.runtime)) {
 
         trueTime = currentTime - startTime;
-
-        logger('true runtime / assigned runtime : ' + trueTime.toString() + '/' + settings.runtime.toString());
 
         parameters = {
           parameters : Net.getParamsAndGrads()
@@ -246,6 +267,10 @@ var map = function(obj) {
       }
    
     }
+
+    logger('iterations: ' + iterations);
+
+    logger('assigned list / remaining: ' + list.length + ' / ' + workingset.length);
 
     is_initialized = true;
 
@@ -258,8 +283,18 @@ var map = function(obj) {
 
     // calculate speed v / i
 
-    vsec = (iterations * list.length) / (settings.runtime / 1000);
-    isec = iterations / (settings.runtime / 1000);
+    if(workingsetslice) {
+      sl = slice;
+    } else {
+      sl = list.length;
+    }
+
+    vsec = (iterations * sl) / (settings.runtime / 1000);
+    isec = (iterations / (settings.runtime / 1000));
+
+    if(workingsetslice) {
+      isec /= workingsetslice;
+    }
 
     if(vsec <= 1.0) {
       vsec = 1.0;
@@ -275,6 +310,7 @@ var map = function(obj) {
       'parameters': parameters,
       'parameterId' :parameterId,
       'speed': vsec,
+      'iterations': isec,
       'runtime': trueTime
     });
 

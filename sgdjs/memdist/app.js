@@ -32,10 +32,12 @@ Array.prototype.average = function () {
 
 // STATICS
 
-var MAX_DESKTOP       = 10,
-    MAX_MOBILE        = 50,
+var MAX_DESKTOP       = 1000,
+    MAX_MOBILE        = 500,
     COVERAGE_EQ       = 3,
-    POWER_MEAN        = 10,
+    POWER_MEAN        = 5,
+    ISEC_MEAN         = 3,
+    ISEC_NORMALIZE    = 30.0,
     LAG_HISTORY       = 10, // MIN = 3
     INITIAL_PARAMETER = 0.0;
 
@@ -59,6 +61,8 @@ var markovIDs = [];
 var parameters = [];
 var markovRotationID = 0;
 var parameterRotationID = 0;
+
+var isecNormalize;
 
 var timeouts = {};
 
@@ -611,6 +615,7 @@ var prereduce = function(req) {
   parameter = req.data.parameters;
   parameterId = req.data.parameterId;
   speed = req.data.speed;
+  iterations = req.data.iterations;
   runtime = req.data.runtime;
 
   id = req.io.socket.id;
@@ -666,6 +671,11 @@ var prereduce = function(req) {
   req.io.socket.powerSet.push(speed);
   req.io.socket.powerSet = req.io.socket.powerSet.slice(-1 * POWER_MEAN, 2 * POWER_MEAN);
   req.io.socket.power = req.io.socket.powerSet.average();
+
+
+  req.io.socket.isecSet.push(iterations);
+  req.io.socket.isecSet = req.io.socket.isecSet.slice(-1 * ISEC_MEAN, 2 * ISEC_MEAN);
+  req.io.socket.iterations = req.io.socket.isecSet.average();
   
   // reduce power by lag factor.
   // power index is determined on 1 second.
@@ -748,6 +758,7 @@ var distributor = function(parameters) {
     // tell client to work.
     client.emit('map', {
       'list': item.set,
+      'workingsetslice': isecNormalize,
       'settings': {runtime: client.runTime},
       'parameters': parameter,
       'parameterId': parameterId,
@@ -793,7 +804,7 @@ var initiator = function(datamap, req) {
       if(piece.data.indexOf(client.id) > -1) {
         // assign
         localset.push(piece.id);
-        if(localset.length == client.allocatedPower) {
+        if(localset.length >= client.allocatedPower) {
           break;
         }
 
@@ -807,6 +818,8 @@ var initiator = function(datamap, req) {
       j += localset.lenght;
       continue;
     }
+
+    console.log('allocated power:', localset.length, client.id)
 
     set.push({
       'client': client.id,
@@ -847,7 +860,7 @@ var run = function(parameters) {
 
   var chain;
 
-  console.log('run job');
+  console.log('> run job');
   if(!datamap.length) {
     console.log('no datamap');
     return;
@@ -889,6 +902,7 @@ var reallocate = function(datamap) {
   // determine current power
   // add up the power of all nodes
   var powerAvailable = 0;
+  var isec = [];
   var i = clientsOnline();
   while(i--) {
     
@@ -899,15 +913,37 @@ var reallocate = function(datamap) {
       powerAvailable += client.power;
     }
 
+    if(client.iterations) {
+      isec.push(client.iterations);
+    }
+
   }
 
-  console.log('power available:', powerAvailable);
+  var isecaverage = isec.average();
+
+  var powerweight = isecaverage / powerAvailable; 
+
+  console.log('> power / isec:', powerAvailable, isecaverage);
+  console.log('> power weight:', powerweight);
+
+  isecNormalize = ISEC_NORMALIZE / isecaverage;
+  if(isecNormalize <= 1.0) {
+    isecNormalize = 1.0;
+  }
+  console.log('> isec normalize factor:', isecNormalize);
+
 
   // normalize powerAvailable to the datamap size
   // each node divides his power by the normalizeFactor
+
+  // normalization factor is reduced if the isecaverage < 30.
   normalizeFactor = powerAvailable / datamap.length;
 
-  console.log('normalization factor:', normalizeFactor);
+  console.log('> normalization factor:', normalizeFactor);
+
+  if(normalizeFactor < 1.0) {
+    normalizeFactor = 1.0;
+  }
 
   // tell each client his new power 'currentPower'
   i = clientsOnline();
@@ -924,11 +960,13 @@ var reallocate = function(datamap) {
     // determine underflow
     // when all clients add up their power, it must be 100%
     // thus fix the tiny gaps with underflow correction.
-    currentPowerFloat = client.power / normalizeFactor;
+    currentPowerFloat = (client.power / normalizeFactor)
     currentPower = Math.floor(currentPowerFloat);
 
     diff = currentPowerFloat - currentPower;
     client.powerDiff = diff;
+
+    console.log('client calculated power:', currentPower, client.id);
 
     // currentPower can not be more than allocated dataset
     if(client.device == 'mobile') {
@@ -943,7 +981,7 @@ var reallocate = function(datamap) {
       // cannot be used for remaining power division.
       client.favour = -1;
     } else if( (client.currentPower + 1) == client.previousPower) {
-      // most favourable for power division
+      // most favourable for power division (because 1 additional data == no change)
       client.favour = 1;
     } else if(client.currentPower == client.previousPower) {
       // least favourable.
@@ -961,6 +999,8 @@ var reallocate = function(datamap) {
     totalpower += client.currentPower;
 
   }
+
+  /*
   
   // deal out the remaining power
   // 1 point at a time.
@@ -1020,7 +1060,9 @@ var reallocate = function(datamap) {
 
   }
 
-  // make a new datamap based on the power available.
+  */
+
+  // make a new datamap based on the power assigned.
   // first, re-build current datamap with current nodes, with new power settings.
   // second, assign new node the 'empty' spaces left by the other nodes
   // third, cover up rest of datamap by original method to reinforce coverage.
@@ -1038,7 +1080,6 @@ var reallocate = function(datamap) {
     piece.processors = [];
 
     // client selection based on power allocated
-    // todo: new data means only 1 client has allocation, so move other clients to help process.
     clients = piece.allocated;
     j = clients.length;
 
@@ -1265,9 +1306,14 @@ var join = function(req, datamap, settings) {
     req.io.socket.power = 50;
   }
 
+  // do not set, cannot be used at 1st iteration.
+  req.io.socket.iterations = null;
+
   // to better estimate power of workers.
   // maximum length of POWER_MEAN, average is actual power.
   req.io.socket.powerSet = [req.io.socket.power];
+
+  req.io.socket.isecSet = [];
 
   // set up all clients to initially lag for 100 MS (round trip)
   req.io.socket.lagHistory = [100];
@@ -1407,7 +1453,8 @@ var monitor = function(req) {
   console.log('@ monitor connected');
 }
 
-app.io.set("reconnection limit", 2000);
+app.io.set("heartbeat interval", 2);
+app.io.set("heartbeat timeout", 5);
 
 app.io.route('processworkerstart', processworkerstart);
 app.io.route('dataworkerstart', dataworkerstart);
