@@ -160,9 +160,15 @@ var map = function(obj) {
 
   var slice = Math.round(list.length / workingsetslice);  
 
+  if(slice < 1.0) {
+    slice = 1.0;
+  }
+
   workingset = data.filter(function(e) {
     return (list.indexOf(e.id) > -1);
   });
+
+  logger('slice size: ' + slice.toString());
 
   workingset = shuffle(workingset);
 
