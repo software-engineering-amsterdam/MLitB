@@ -32,12 +32,19 @@ Array.prototype.average = function () {
 
 // STATICS
 
+// MAX DESKTOP = number of vectors a desktop machine can store.
+// MAX_MOBILE = number of vectors a mobile device can store.
 var MAX_DESKTOP       = 1000,
     MAX_MOBILE        = 500,
+    // COVERAGE EQ: data redundancy level. Data with lower COVERAGE_EQ are prioritized in distribution.
     COVERAGE_EQ       = 3,
-    POWER_MEAN        = 5,
+    // POWER_MEAN: number of historic vsec measures to average
+    POWER_MEAN        = 3,
+    // POWER_MEAN: number of historic isec measures to average
     ISEC_MEAN         = 3,
-    ISEC_NORMALIZE    = 30.0,
+    // ISEC_NORMALIZE: number of iterations a client tries to converge to.
+    // Lower: allows more heavy apps, but decreases timing predictions.
+    ISEC_NORMALIZE    = 10.0,
     LAG_HISTORY       = 10, // MIN = 3
     INITIAL_PARAMETER = 0.0;
 
@@ -45,6 +52,10 @@ var settings = {
   'currentPower' : 400
 }
 
+// Time a client runs:
+// Default: 2000
+// Higher: predictions take longer, thus workers are added more slowly by clients
+// Lower: Clients with high latency (e.g. 500 MS or something) may starve.
 var nodeSettings = {
   'runtime': 2000
 }
@@ -938,6 +949,10 @@ var reallocate = function(datamap) {
 
   var isecaverage = isec.average();
 
+  if(isecaverage == 0.0) {
+    isecaverage = 1.0;
+  }
+
   var powerweight = isecaverage / powerAvailable; 
 
   console.log('> power / isec:', powerAvailable, isecaverage);
@@ -958,9 +973,9 @@ var reallocate = function(datamap) {
 
   console.log('> normalization factor:', normalizeFactor);
 
-  if(normalizeFactor < 1.0) {
-    normalizeFactor = 1.0;
-  }
+  //if(normalizeFactor < 1.0) {
+  //  normalizeFactor = 1.0;
+  //}
 
   // tell each client his new power 'currentPower'
   i = clientsOnline();
@@ -1470,8 +1485,8 @@ var monitor = function(req) {
   console.log('@ monitor connected');
 }
 
-app.io.set("heartbeat interval", 2);
-app.io.set("heartbeat timeout", 5);
+//app.io.set("heartbeat interval", 2);
+//app.io.set("heartbeat timeout", 5);
 
 app.io.route('processworkerstart', processworkerstart);
 app.io.route('dataworkerstart', dataworkerstart);

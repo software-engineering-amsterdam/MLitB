@@ -158,6 +158,8 @@ var map = function(obj) {
 
   var iterations = 0;
 
+  logger('list length / workingsetslice: ' + list.length + ' / ' + workingsetslice);
+
   var slice = Math.round(list.length / workingsetslice);  
 
   if(slice < 1.0) {
@@ -167,8 +169,6 @@ var map = function(obj) {
   workingset = data.filter(function(e) {
     return (list.indexOf(e.id) > -1);
   });
-
-  logger('slice size: ' + slice.toString());
 
   workingset = shuffle(workingset);
 
@@ -276,7 +276,7 @@ var map = function(obj) {
           error : error,
           nVector : nVector
         };
-        logger('runtime ' + tt); 
+        logger('assigned / true run time: ' + settings.runtime + ' / ' + trueTime); 
         break;
         
       }
@@ -285,7 +285,6 @@ var map = function(obj) {
 
     logger('iterations: ' + iterations);
 
-    logger('assigned list / remaining: ' + list.length + ' / ' + workingset.length);
 
     is_initialized = true;
 

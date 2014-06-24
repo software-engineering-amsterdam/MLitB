@@ -1,9 +1,9 @@
 var io, device, dataworkerId, dataworker, processworker, processworkers, channel, canAddNewWorker;
 
-var ENABLE_AUTOSCALE = true;
+var ENABLE_AUTOSCALE = true; // false == 1 worker only
 
-var MEASURE_COUNTER = 5;
-var MEASURE_THRESHOLD = 5;
+var MEASURE_COUNTER = 5; // number of samples before calculating speed.
+var MEASURE_THRESHOLD_DIVIDER = 4.0; // higher = allows smaller increase per worker. (== more workers)
 
 var processWorkerCounter = 1;
 
@@ -67,6 +67,9 @@ var metaPerformance = function() {
 
   if(!stable && canAddNewWorker && ENABLE_AUTOSCALE) {
 
+    // new measure threshold
+    measure_threshold = vsecAverage / MEASURE_THRESHOLD_DIVIDER;
+
     measurementsCounter--;
     if(!measurementsCounter) {
 
@@ -76,7 +79,7 @@ var metaPerformance = function() {
 
       if(measurementsFlag) {
 
-        if((measurements[2] - MEASURE_THRESHOLD * 2) < measurements[0]) {
+        if((measurements[2] - measure_threshold * 2) < measurements[0]) {
           // stop.
           // remove 2.
           stable = true;
@@ -95,7 +98,7 @@ var metaPerformance = function() {
 
       } else {
       
-        if((measurements[2] - MEASURE_THRESHOLD) < measurements[1]) {
+        if((measurements[2] - measure_threshold) < measurements[1]) {
           
           measurementsFlag = true;
 
@@ -167,7 +170,7 @@ var measurePerformance = function(data) {
   prevIsec = performance[id].isec;
 
   $('#' + id + ' .vsec').html(vsec.toFixed(3));
-  $('#' + id + ' .isec').html(isec.toFixed(3));
+  $('#' + id + ' .isec').html(isec.toFixed(5));
   $('#' + id + ' .lag').html(lag.toFixed(3));
 
   performance[id].vsec = vsec;
