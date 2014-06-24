@@ -184,7 +184,7 @@ var map = function(obj) {
       //conf.push({type : 'pool', sx : 2, stride : 2});
       conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
       conf.push({type : 'pool', sx : 3, stride : 3, drop_prob : 0.5});
-      conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
+      // conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
       conf.push({type : 'fc', num_neurons : 10, activation : 'softmax'});
 
       Net.createLayers(conf);
@@ -206,6 +206,8 @@ var map = function(obj) {
 
     startTime = (new Date).getTime();
     iterTime = startTime;
+    var error = 0.0;
+    var nVector = 0;
 
     while(true) {
 
@@ -242,8 +244,12 @@ var map = function(obj) {
 
         Input = new mlitb.Vol(28,28,1, 0.0);
         Input.data = piece.data;
+        cTime = (new Date).getTime();
         Net.forward(Input,true);
-        Net.backward(piece.label);
+        error+=Net.backward(piece.label);
+        nTime = (new Date).getTime();
+        tt = nTime-cTime;
+        nVector++;
 
       }
 
@@ -266,8 +272,11 @@ var map = function(obj) {
         trueTime = currentTime - startTime;
 
         parameters = {
-          parameters : Net.getParamsAndGrads()
+          parameters : Net.getParamsAndGrads(),
+          error : error,
+          nVector : nVector
         };
+        logger('runtime ' + tt); 
         break;
         
       }

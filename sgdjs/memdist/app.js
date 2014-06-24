@@ -432,15 +432,18 @@ var shortage = function(datamap) {
 }
 
 var zeros = function(n) {
-  if(typeof(n)==='undefined' || isNaN(n)) { return []; }
-  if(typeof ArrayBuffer === 'undefined') {
-    // lacking browser support
-    var arr = new Array(n);
-    for(var i=0;i<n;i++) { arr[i]= 0; }
-    return arr;
-  } else {
-    return new Float64Array(n);
-  }
+  // if(typeof(n)==='undefined' || isNaN(n)) { return []; }
+  // if(typeof ArrayBuffer === 'undefined') {
+  //   // lacking browser support
+  //   var arr = new Array(n);
+  //   for(var i=0;i<n;i++) { arr[i]= 0; }
+  //   return arr;
+  // } else {
+  //   return new Float64Array(n);
+  // }
+  var arr = new Array(n);
+  for(var i=0;i<n;i++) { arr[i]= 0; }
+  return arr;
 }
 
 var SGDTrainer = function (net, conf) {
@@ -457,62 +460,72 @@ var SGDTrainer = function (net, conf) {
   this.iteration = 0;
   this.last_grads = [];
   this.last_params = [];
+  this.total_data_seen = 0;
 }
   
 SGDTrainer.prototype = {
   reduce : function(markovResults){
 
-    var i, j, gi, k, total_gi;
+    // var i, j, gi, k, total_gi;
+    var totalError=0.0;
+    var totalVector=0;
 
     //for the first time, get parameter from Net
-    if (!this.last_params.length){
+    if (!this.last_params.length ){
       var pgs = markovResults[0].parameter.parameters;
       this.last_params = pgs;
+      console.log('first length ',this.last_params[0].params.length);
     }
-
+    // console.log('this is vector',markovResults[0].parameter.nVector);
+    // console.log('this is error',markovResults[0].parameter.error);
+    // console.log('awal',this.last_params[0].params.length);
     //only the first time to initialize the last grad
     if (!this.last_grads.length && this.momentum > 0.0){
-      
-      /*
       for (var i = 0; i < this.last_params.length; i++) {
-      */
-
-      i = this.last_params.length;     
-      while(i--) {
-        this.last_grads.unshift(zeros(pgs[i].grads.length));
+      // i = this.last_params.length;     
+      // while(i--) {
+        this.last_grads.push(zeros(pgs[i].grads.length));
       }
 
     }
 
+    // accumulate total error and total vectors
+    for (var mr = 0; mr < markovResults.length; mr++) {
+      totalError+=markovResults[mr].parameter.error;
+      console.log(totalError);
+      totalVector+=markovResults[mr].parameter.nVector;
+      console.log(totalVector);
+    };
+    this.total_data_seen+=totalVector;
+    console.log('total data seen : ', this.total_data_seen);
+    console.log('error : ',totalError/totalVector);
+
+
+    // console.log('before ',JSON.stringify(this.last_params[2].params));    
     //iterate over each param and grad vector
-
-    /*
     for (var i = 0; i < this.last_params.length; i++) {
-    */
-
-    i = this.last_params.length;
-    while(i--) {
+    // i = this.last_params.length;
+    // while(i--) {
       var pg = this.last_params[i];
       var p = pg.params;
+      // var p = this.last_params[i].params;
+      // console.log('length ppp ',p.length);
+      
       var g = pg.grads;
       //add up all gradient vectors
-      
-      /*
-      for (var gi = 0; gi < g.length; i++) {
-      */
-
-      gi = g.length;
-      while(gi--) {
+      for (var gi = 0; gi < g.length; gi++) {
+      // gi = g.length;
+      // while(gi--) {
         
         total_gi = 0.0;
 
-        /*
-        for (var k = 0; k < markovResults.length; k++) {
-        */
-
-        k = markovResults.length;
         
-        while(k--) {
+        for (var k = 0; k < markovResults.length; k++) {
+        
+
+        // k = markovResults.length;
+        
+        // while(k--) {
 
           total_gi += markovResults[k].parameter.parameters[i].grads[gi];
 
@@ -521,23 +534,25 @@ SGDTrainer.prototype = {
         g[gi] = total_gi;
 
       };
+
+      // console.log('masuk');
       
       var plen = p.length;
       var lg = this.last_grads[i];
-
-      /*
+      // console.log('plen ',plen);
+      
       for (var j = 0; j < plen; j++) {
-      */
-
-      j = plen;
-      while(j--) {
+      
+        // console.log('masuk');
+      // j = plen;
+      // while(j--) {
 
         this.l2_loss += this.l2_decay*p[j]*p[j];
         this.l1_loss += this.l1_decay*Math.abs(p[j]);
         var l2_grad = this.l2_decay*p[j];
         var l1_grad = this.l1_decay*(p[j]>0 ? 1 : -1);
         var lgj = lg[j];
-        var dw = (1.0-this.momentum)*this.learning_rate*((l1_grad+l2_grad+g[j])/this.batch_size)+this.momentum*lgj;
+        var dw = (1.0-this.momentum)*this.learning_rate*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lgj;
         p[j] -= dw;
         lgj = dw;
         g[j] = 0.0;
@@ -545,6 +560,8 @@ SGDTrainer.prototype = {
       }
 
     }
+
+    console.log('param length ',JSON.stringify(this.last_params[2]));
 
     // set the new parameter to the markovResults
     // all chains receive same value, thus a P-SGD
