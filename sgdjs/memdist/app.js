@@ -75,7 +75,7 @@ var parameters = [];
 var markovRotationID = 0;
 var parameterRotationID = 0;
 
-var step;
+var step = 1;
 
 var isecNormalize;
 
