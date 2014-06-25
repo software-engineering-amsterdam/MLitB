@@ -4,6 +4,8 @@ io.emit('monitor');
 
 var log_list = [];
 
+var t = 0;
+
 var logger = function(text) {
 
   log_list.push(text);
@@ -13,6 +15,7 @@ var logger = function(text) {
 
   var i = log_list.length;
   while(i--) {
+    text += t.toString() + ' : ';
     text += log_list[i];
     text += '\n';
   }

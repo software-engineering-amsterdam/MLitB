@@ -596,7 +596,7 @@ SGDTrainer.prototype = {
 
     sendMonitor({
       type: 'parameter',
-      data: this.last_params
+      data: totalError/totalVector
     });
 
   }
