@@ -23,9 +23,9 @@ var logger = function(text) {
 
 var displayParameter = function(data) {
 
-  t = data.step.toString() + ' : ' + data.error.toString();
+  //t = data.step.toString() + ' : ' + data.error.toString();
 
-	logger(JSON.stringify(t));
+	logger(JSON.stringify(data));
 }
 
 var monitor = function(e) {
