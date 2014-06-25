@@ -75,6 +75,8 @@ var parameters = [];
 var markovRotationID = 0;
 var parameterRotationID = 0;
 
+var step;
+
 var isecNormalize;
 
 var timeouts = {};
@@ -596,7 +598,9 @@ SGDTrainer.prototype = {
 
     sendMonitor({
       type: 'parameter',
-      data: totalError/totalVector
+      data: {
+        error: totalError/totalVector,
+        step: step
     });
 
   }
@@ -611,6 +615,8 @@ var reduce = function(markovResults) {
   // AVERAGE PARAMETERS
 
   SGD.reduce(markovResults);
+
+  step++;  
   // Result parameters from the nodes are stored in markovResults
 
   // var i = markovResults.length;
