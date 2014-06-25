@@ -1,0 +1,21 @@
+doctype
+html
+  head
+    title ML in the Browser
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    script(src='/socket.io/socket.io.js')
+    link(rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css")
+  body
+    nav.navbar.navbar-default(role="navigation")
+        div.container
+            div.navbar-header
+                a.navbar-brand(href="#") ML in the Browser
+    div.container
+        div.row
+            div.col-lg-6
+                h4 Monitor
+                pre#log            
+
+    script(src='/js/jquery.js')
+    script(src='//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js')
+    script(src='/js/monitor.js')

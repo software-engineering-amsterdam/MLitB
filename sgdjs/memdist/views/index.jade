@@ -19,7 +19,9 @@ html
                         span.btn.btn-default.btn-file.navbar-btn
                             input#files(type="file" name="files")
                             span.glyphicon.glyphicon-upload
-                            span  Upload                            
+                            span  Upload
+                        span.btn.btn-default.btn-file.navbar-btn#addworker
+                            span.glyphicon.glyphicon-plus
 
     div.container
         div.row
@@ -30,14 +32,22 @@ html
                     thead
                         tr
                             th ID
-                            th Vectors/sec
-                            th Iterations/sec
-                            th Latency in MS
+                            th V/sec
+                            th I/sec
+                            th V/Slice
+                            th I/Slice
+                            th TA
+                            th TRT
+                            th MS
                     tbody#performance
                     thead
                         tr 
                             th
                             th.vsecaverage
+                            th
+                            th
+                            th
+                            th
                             th
                             th
                 h4 Log

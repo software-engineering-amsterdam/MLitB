@@ -2,12 +2,14 @@ var io, device, dataworkerId, dataworker, processworker, processworkers, channel
 
 var ENABLE_AUTOSCALE = true; // false == 1 worker only
 
-var MEASURE_COUNTER = 5; // number of samples before calculating speed.
+var MEASURE_START = 3; // number of samples before calculating speed.
+var MEASURE_SAMPLES = 3; // number of samples taken to average
 var MEASURE_THRESHOLD_DIVIDER = 4.0; // higher = allows smaller increase per worker. (== more workers)
 
 var processWorkerCounter = 1;
 
-var measurementsCounter = MEASURE_COUNTER;
+var measureStart = MEASURE_START;
+var measureSamples = MEASURE_SAMPLES;
 
 var measurementsFlag = false;
 var measurements = [0,0,0];
@@ -16,10 +18,31 @@ var stable = false;
 
 var performance = {};
 
+var log_list = [];
+
+Array.prototype.average = function () {
+    var sum = 0, j = 0; 
+    for (var i = 0; i < this.length, isFinite(this[i]); i++) { 
+        sum += parseFloat(this[i]); ++j; 
+    } 
+    return j ? sum / j : 0; 
+};
+
 var logger = function(text) {
 
-  var val = $('pre.log').html();
-  $('pre.log').html(text + '\n' + val);
+  log_list.push(text);
+  log_list = log_list.slice(-100, 200);
+
+  text = "";
+
+  var i = log_list.length;
+  while(i--) {
+    text += log_list[i];
+    text += '\n';
+  }
+
+  $('pre.log').html(text);
+
 
 }
 
@@ -54,10 +77,21 @@ var metaPerformance = function() {
 
   var vsecAverage = 0.0;
   var isecAverage = 0.0;
+
+  var iseca = [];
+
   for(k in performance) {
     vsecAverage += performance[k].vsec;
     isecAverage += performance[k].isec;
+    iseca.push(performance[k].isec);
   }
+
+  iseca = iseca.sort();
+
+  min = iseca[0];
+  max = iseca[iseca.length-1];
+
+  df = max - min;
 
   vsecAverage /= processWorkerCounter -1;
   isecAverage /= processWorkerCounter -1
@@ -65,51 +99,72 @@ var metaPerformance = function() {
   $('.vsecaverage').html(vsecAverage.toFixed(3));
   $('.isecaverage').html(isecAverage.toFixed(3));
 
+  var measureAvg = [];
+
   if(!stable && canAddNewWorker && ENABLE_AUTOSCALE) {
 
-    // new measure threshold
-    measure_threshold = vsecAverage / MEASURE_THRESHOLD_DIVIDER;
+    measureStart--;
+    if(measureStart <= 0) {
 
-    measurementsCounter--;
-    if(!measurementsCounter) {
+      // measure
+      measureAvg.push( df );
 
-      measurementsCounter = MEASURE_COUNTER;
-      measurements.push( vsecAverage.toFixed(3) * (processWorkerCounter - 1) );
-      measurements.shift();
+      measureSamples--;
 
-      if(measurementsFlag) {
+      if(!measureSamples) {
 
-        if((measurements[2] - measure_threshold * 2) < measurements[0]) {
-          // stop.
-          // remove 2.
-          stable = true;
-          console.log('flag @', measurements[1], 'not ok.');
-          console.log('current worker @', measurements[2], 'not ok.');
-          console.log('stable @', measurements[0]);
-          removeworker();
-          removeworker();
-          return
+        avg = measureAvg.average();
+        if(avg == 0.0) {
+          // 1st sample, set to 1.0
+          avg = 1.0;
+        }
+
+        measureSamples = MEASURE_SAMPLES;
+        measureStart = MEASURE_START;
+        measurements.unshift( avg );
+
+        measureAvg = [];
+
+        if(measurementsFlag) {
+
+          if(measurements[0] > measurements[2]) {
+            // stop.
+            // remove 2.
+            stable = true;
+            console.log('flag @', measurements[0], 'not ok.');
+            console.log('current worker @', measurements[1], 'not ok.');
+            console.log('stable @', measurements[2]);
+            removeworker();
+            removeworker();
+            return
+
+          } else {
+            // continue.
+            measurementsFlag = false;  
+
+          }
 
         } else {
-          // continue.
-          measurementsFlag = false;  
+
+          if(measurements.length > 2) {
+        
+            if(measurements[1] > measurements[2]) {
+              
+              measurementsFlag = true;
+              console.log('flag set');
+
+            }
+
+          }
 
         }
 
-      } else {
-      
-        if((measurements[2] - measure_threshold) < measurements[1]) {
-          
-          measurementsFlag = true;
-
-        }
+        // continue
+        console.log('add worker @', measurements[0]);
+        canAddNewWorker = false;
+        addworker();
 
       }
-
-      // continue
-      console.log('add worker @', measurements[2]);
-      canAddNewWorker = false;
-      addworker();
 
     }
 
@@ -134,6 +189,10 @@ var measurePerformance = function(data) {
   id = data.id;
   vsec = data.vsec;
   isec = data.isec;
+  slice = data.slice;
+  islice = data.islice;
+  ta = data.ta;
+  trt = data.trt;
   lag = data.lag;
 
   if(!(getWorkerById(id))) {
@@ -145,9 +204,13 @@ var measurePerformance = function(data) {
     // insert table
     $('#performance').append(' \
       <tr id="' + id + '"> \
-        <td>' + id + '</td> \
+        <td>' + processWorkerCounter + '</td> \
         <td class="vsec"></td> \
         <td class="isec"></td> \
+        <td class="slice"></td> \
+        <td class="islice"></td> \
+        <td class="ta"></td> \
+        <td class="trt"></td> \
         <td class="lag"></td> \
       </tr> \
       ');
@@ -171,7 +234,14 @@ var measurePerformance = function(data) {
 
   $('#' + id + ' .vsec').html(vsec.toFixed(3));
   $('#' + id + ' .isec').html(isec.toFixed(5));
-  $('#' + id + ' .lag').html(lag.toFixed(3));
+
+  $('#' + id + ' .slice').html(Math.round(slice));
+  $('#' + id + ' .islice').html(islice);
+
+  $('#' + id + ' .ta').html(Math.round(ta));
+  $('#' + id + ' .trt').html(trt);
+
+  $('#' + id + ' .lag').html(Math.round(lag));
 
   performance[id].vsec = vsec;
   performance[id].isec = isec;
@@ -340,8 +410,13 @@ var handleFileSelect = function(evt) {
 
 $('#start').click(start);
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
-
 window.onbeforeunload = terminatenow;
+
+if(ENABLE_AUTOSCALE) {
+  $('#addworker').hide();
+}
+
+$('#addworker').click(addworker);
 
 
 /*

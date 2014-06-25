@@ -44,6 +44,8 @@ var MAX_DESKTOP       = 1000,
     ISEC_MEAN         = 3,
     // ISEC_NORMALIZE: number of iterations a client tries to converge to.
     // Lower: allows more heavy apps, but decreases timing predictions.
+    // Is now controlled automatically, this is starting point
+    // MIN: 5.0
     ISEC_NORMALIZE    = 10.0,
     LAG_HISTORY       = 10, // MIN = 3
     INITIAL_PARAMETER = 0.0;
@@ -954,6 +956,13 @@ var reallocate = function(datamap) {
   }
 
   var powerweight = isecaverage / powerAvailable; 
+
+  if(powerweight < 0.00001) {
+    ISEC_NORMALIZE--;
+    if(ISEC_NORMALIZE < 5.0) {
+      ISEC_NORMALIZE = 5.0;
+    }
+  }
 
   console.log('> power / isec:', powerAvailable, isecaverage);
   console.log('> power weight:', powerweight);

@@ -158,8 +158,6 @@ var map = function(obj) {
 
   var iterations = 0;
 
-  logger('list length / workingsetslice: ' + list.length + ' / ' + workingsetslice);
-
   var slice = Math.round(list.length / workingsetslice);  
 
   if(slice < 1.0) {
@@ -276,15 +274,12 @@ var map = function(obj) {
           error : error,
           nVector : nVector
         };
-        logger('assigned / true run time: ' + settings.runtime + ' / ' + trueTime); 
+        
         break;
         
       }
    
     }
-
-    logger('iterations: ' + iterations);
-
 
     is_initialized = true;
 
@@ -335,6 +330,10 @@ var map = function(obj) {
       id: id,
       vsec: vsec,
       isec: isec,
+      slice: workingsetslice,
+      islice: iterations,
+      ta: settings.runtime,
+      trt: trueTime,
       lag: lag
     })
 
