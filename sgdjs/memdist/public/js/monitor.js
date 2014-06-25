@@ -20,6 +20,8 @@ var logger = function(text) {
     text += '\n';
   }
 
+  t++;
+
   $('pre#log').html(text);
 
 }
