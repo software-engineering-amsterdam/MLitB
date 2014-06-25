@@ -601,6 +601,7 @@ SGDTrainer.prototype = {
       data: {
         error: totalError/totalVector,
         step: step
+      }
     });
 
   }
