@@ -25,7 +25,7 @@ var displayParameter = function(data) {
 
   t = data.step.toString() + ' : ' + data.error.toString();
 
-	logger(JSON.stringify(data));
+	logger(JSON.stringify(t));
 }
 
 var monitor = function(e) {
