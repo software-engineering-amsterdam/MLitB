@@ -77,8 +77,6 @@ var parameterRotationID = 0;
 
 var step = 1;
 
-var isecNormalize;
-
 var timeouts = {};
 
 var hrtime = function() {
@@ -589,13 +587,6 @@ SGDTrainer.prototype = {
       }
     }
 
-    // set initial parameter for new clients
-    INITIAL_PARAMETER = {
-      parameter: {
-        parameters: this.last_params
-      }
-    }
-
     sendMonitor({
       type: 'parameter',
       data: {
@@ -795,7 +786,6 @@ var distributor = function(parameters) {
     // tell client to work.
     client.emit('map', {
       'list': item.set,
-      'workingsetslice': isecNormalize,
       'settings': {runtime: client.runTime},
       'parameters': parameter,
       'parameterId': parameterId,
@@ -956,30 +946,16 @@ var reallocate = function(datamap) {
 
   }
 
-  var isecaverage = isec.average();
+  console.log('> power:', powerAvailable);
 
-  if(isecaverage == 0.0) {
-    isecaverage = 1.0;
-  }
-
-  var powerweight = isecaverage / powerAvailable; 
-
-  if(powerweight < 0.00001) {
-    ISEC_NORMALIZE--;
-    if(ISEC_NORMALIZE < 5.0) {
-      ISEC_NORMALIZE = 5.0;
+  sendMonitor({
+    type: 'power',
+    data: {
+      'power': powerAvailable,
+      'clients': clientsOnline(),
+      'step': step
     }
-  }
-
-  console.log('> power / isec:', powerAvailable, isecaverage);
-  console.log('> power weight:', powerweight);
-
-  isecNormalize = ISEC_NORMALIZE / isecaverage;
-  if(isecNormalize <= 1.0) {
-    isecNormalize = 1.0;
-  }
-  console.log('> isec normalize factor:', isecNormalize);
-
+  });
 
   // normalize powerAvailable to the datamap size
   // each node divides his power by the normalizeFactor
@@ -1047,8 +1023,6 @@ var reallocate = function(datamap) {
     totalpower += client.currentPower;
 
   }
-
-  /*
   
   // deal out the remaining power
   // 1 point at a time.
@@ -1107,8 +1081,6 @@ var reallocate = function(datamap) {
     }
 
   }
-
-  */
 
   // make a new datamap based on the power assigned.
   // first, re-build current datamap with current nodes, with new power settings.
@@ -1543,7 +1515,9 @@ app.get('/', function(req, res) {
 });
 
 app.get('/monitor', function(req, res) {
-    res.render('monitor')
+    res.render('monitor', {
+      step: nodeSettings.runtime
+    })
 });
 
 

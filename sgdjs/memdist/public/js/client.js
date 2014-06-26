@@ -1,6 +1,6 @@
 var io, device, dataworkerId, dataworker, processworker, processworkers, channel, canAddNewWorker;
 
-var ENABLE_AUTOSCALE = true; // false == 1 worker only
+var ENABLE_AUTOSCALE = false; // false == 1 worker only
 
 var MEASURE_START = 3; // number of samples before calculating speed.
 var MEASURE_SAMPLES = 3; // number of samples taken to average
@@ -83,7 +83,7 @@ var metaPerformance = function() {
   for(k in performance) {
     vsecAverage += performance[k].vsec;
     isecAverage += performance[k].isec;
-    iseca.push(performance[k].isec);
+    iseca.push(performance[k].iter);
   }
 
   iseca = iseca.sort();
@@ -188,9 +188,7 @@ var getWorkerById = function(id) {
 var measurePerformance = function(data) {
   id = data.id;
   vsec = data.vsec;
-  isec = data.isec;
-  slice = data.slice;
-  islice = data.islice;
+  iter = data.iter;
   ta = data.ta;
   trt = data.trt;
   lag = data.lag;
@@ -206,9 +204,7 @@ var measurePerformance = function(data) {
       <tr id="' + id + '"> \
         <td>' + processWorkerCounter + '</td> \
         <td class="vsec"></td> \
-        <td class="isec"></td> \
-        <td class="slice"></td> \
-        <td class="islice"></td> \
+        <td class="iter"></td> \
         <td class="ta"></td> \
         <td class="trt"></td> \
         <td class="lag"></td> \
@@ -219,9 +215,7 @@ var measurePerformance = function(data) {
 
     performance[id] = {
       vsec: vsec,
-      vsecHistory: [],
-      isec: isec,
-      isecHistory: []
+      vsecHistory: []
     }
 
     // new node arrived, add.
@@ -230,13 +224,10 @@ var measurePerformance = function(data) {
   }
 
   prevVsec = performance[id].vsec;
-  prevIsec = performance[id].isec;
 
   $('#' + id + ' .vsec').html(vsec.toFixed(3));
-  $('#' + id + ' .isec').html(isec.toFixed(5));
 
-  $('#' + id + ' .slice').html(Math.round(slice));
-  $('#' + id + ' .islice').html(islice);
+  $('#' + id + ' .iter').html(iter);
 
   $('#' + id + ' .ta').html(Math.round(ta));
   $('#' + id + ' .trt').html(trt);
@@ -244,7 +235,7 @@ var measurePerformance = function(data) {
   $('#' + id + ' .lag').html(Math.round(lag));
 
   performance[id].vsec = vsec;
-  performance[id].isec = isec;
+  performance[id].iter = iter;
 
   if(processworkers[0].id == id) {
     metaPerformance();

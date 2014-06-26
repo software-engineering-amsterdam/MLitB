@@ -11,6 +11,9 @@ var ITER_AVERAGE_SAMPLES = 3;
 
 var vsec, isec;
 
+var is_initialized = false;
+var Net, conf;
+
 Array.prototype.average = function () {
     var sum = 0, j = 0; 
     for (var i = 0; i < this.length, isFinite(this[i]); i++) { 
@@ -118,6 +121,8 @@ var endpowertest = function(vsec) {
 
   powertesting = false;
 
+  is_initialized = false;
+
   data = [];
 
   io.emit('endpowertest', {
@@ -136,10 +141,6 @@ var powertest = function(obj) {
 
 }
 
-
-var is_initialized = false;
-var Net, conf;
-
 var map = function(obj) {
 
   shuffle = function(o){
@@ -148,7 +149,6 @@ var map = function(obj) {
   };
 
   var list = obj.list;
-  var workingsetslice = obj.workingsetslice;
   var parameters = obj.parameters;
   var parameterId = obj.parameterId;
   var lag = obj.lag;
@@ -158,17 +158,17 @@ var map = function(obj) {
 
   var iterations = 0;
 
-  var slice = Math.round(list.length / workingsetslice);  
+  var workingset = [];
 
-  if(slice < 1.0) {
-    slice = 1.0;
+  reshuffle = function() {
+
+    workingset = data.filter(function(e) {
+      return (list.indexOf(e.id) > -1);
+    });
+
+    workingset = shuffle(workingset);
+
   }
-
-  workingset = data.filter(function(e) {
-    return (list.indexOf(e.id) > -1);
-  });
-
-  workingset = shuffle(workingset);
 
   // initialize the network for the first time
   initialize = function() {
@@ -187,6 +187,8 @@ var map = function(obj) {
 
       Net.createLayers(conf);
 
+      is_initialized = true;      
+
     }
   }
 
@@ -195,9 +197,8 @@ var map = function(obj) {
     var piece, i, j, vector;
     var total = 0;
     var startTime, currentTime, iterTime, Input;
-    var iterTimes = [];
 
-    if (is_initialized) {
+    if (parameters !== 0.0) {
       // copy the parameters and gradients
       Net.setParamsAndGrads(parameters.parameter.parameters);
     }
@@ -209,47 +210,23 @@ var map = function(obj) {
 
     while(true) {
 
-      if(workingsetslice) {
-
-        if(workingset.length < slice) {
-          // reset workingset
-
-          workingset = data.filter(function(e) {
-            return (list.indexOf(e.id) > -1);
-          });
-
-          workingset = shuffle(workingset);
-
-        }
-
-        subset = workingset.slice(0, slice);
-        workingset = workingset.slice(slice, workingset.length);
-
-      } else {
-        subset = workingset;
+      if(!workingset.length) {
+        reshuffle();
       }
 
       // COMPUTATION STARTS FROM HERE
       // workingset = the data you are working with.
       // parameters = the parameters from previous node.
 
-      i = subset.length;
-      while(i--) {
+      piece = workingset.pop();
+      
+      // NOTE. piece = single working datapoint (object)s.
 
-        piece = subset[i];
-
-        // NOTE. piece = single working datapoint (object)s.
-
-        Input = new mlitb.Vol(28,28,1, 0.0);
-        Input.data = piece.data;
-        cTime = (new Date).getTime();
-        Net.forward(Input,true);
-        error+=Net.backward(piece.label);
-        nTime = (new Date).getTime();
-        tt = nTime-cTime;
-        nVector++;
-
-      }
+      Input = new mlitb.Vol(28,28,1, 0.0);
+      Input.data = piece.data;
+      Net.forward(Input,true);
+      error += Net.backward(piece.label);
+      nVector++;
 
       // END OF COMPUTATION
 
@@ -261,11 +238,7 @@ var map = function(obj) {
       iterDiff = currentTime - iterTime;
       iterTime = currentTime;
 
-      iterTimes.push(iterDiff);
-      iterTimes.slice(-1 * ITER_AVERAGE_SAMPLES, 2 * ITER_AVERAGE_SAMPLES);
-      iterPredict = Math.round(iterTimes.average());
-
-      if((currentTime > (time + settings.runtime)) || (iterPredict + currentTime) > (time + settings.runtime)) {
+      if((currentTime > (startTime + settings.runtime)) || (iterDiff + currentTime) > (startTime + settings.runtime)) {
 
         trueTime = currentTime - startTime;
 
@@ -281,8 +254,6 @@ var map = function(obj) {
    
     }
 
-    is_initialized = true;
-
     return finish();
 
   }
@@ -291,19 +262,8 @@ var map = function(obj) {
   finish = function() {
 
     // calculate speed v / i
-
-    if(workingsetslice) {
-      sl = slice;
-    } else {
-      sl = list.length;
-    }
-
-    vsec = (iterations * sl) / (settings.runtime / 1000);
+    vsec = iterations / (settings.runtime / 1000);
     isec = (iterations / (settings.runtime / 1000));
-
-    if(workingsetslice) {
-      isec /= workingsetslice;
-    }
 
     if(vsec <= 1.0) {
       vsec = 1.0;
@@ -329,9 +289,7 @@ var map = function(obj) {
       type: 'performance',
       id: id,
       vsec: vsec,
-      isec: isec,
-      slice: workingsetslice,
-      islice: iterations,
+      iter: iterations,
       ta: settings.runtime,
       trt: trueTime,
       lag: lag
