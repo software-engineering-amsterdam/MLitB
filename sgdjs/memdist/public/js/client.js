@@ -20,24 +20,6 @@ var performance = {};
 
 var log_list = [];
 
-var client = new Faye.Client('http://localhost:8001/');
-
-var fayelisten = function(addr) {
-  
-  client.subscribe('/' + addr, function(message) {
-    console.log(message.text);
-  });
-
-}
-
-var fayesend = function(addr, msg) {
-
-  client.publish('/' + addr, {
-    text: msg
-  });
-  
-}
-
 Array.prototype.average = function () {
     var sum = 0, j = 0; 
     for (var i = 0; i < this.length, isFinite(this[i]); i++) { 
