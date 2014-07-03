@@ -1,9 +1,9 @@
-ping = function(e) {
-	io.emit('ping', e);	
-}
+ws = new WebSocket('ws://192.168.2.20:8080');
 
-io = io.connect();
+//ws.onopen = function(e) {
+	
+//}
 
-io.on('ping', ping);
-
-io.emit('start');
+ws.onmessage = function (e) {
+  ws.send(e.data);
+};
