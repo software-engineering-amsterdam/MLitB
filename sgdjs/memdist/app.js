@@ -2,6 +2,7 @@ express = require('express.io'),
 app = require('express.io')()
   , stylus = require('stylus')
   , nib = require('nib')
+  , http = require('http')
 app.http().io()
 
 function compile(str, path) {
@@ -39,14 +40,8 @@ var MAX_DESKTOP       = 1000,
     // COVERAGE EQ: data redundancy level. Data with lower COVERAGE_EQ are prioritized in distribution.
     COVERAGE_EQ       = 3,
     // POWER_MEAN: number of historic vsec measures to average
-    POWER_MEAN        = 3,
+    POWER_MEAN        = 50,
     // POWER_MEAN: number of historic isec measures to average
-    ISEC_MEAN         = 3,
-    // ISEC_NORMALIZE: number of iterations a client tries to converge to.
-    // Lower: allows more heavy apps, but decreases timing predictions.
-    // Is now controlled automatically, this is starting point
-    // MIN: 5.0
-    ISEC_NORMALIZE    = 10.0,
     LAG_HISTORY       = 10, // MIN = 3
     INITIAL_PARAMETER = 0.0;
 
@@ -658,11 +653,12 @@ var prereduce = function(req) {
     markovFirstResult = process.hrtime()
   }
 
-  // the actual runtime may be higher or lower than the assigned runtime.
-  runtimeDiff = req.io.socket.runTime - runtime;
-
   // determine lag.
-  lag = hrtime() - req.io.socket.mapTime - req.io.socket.runTime + runtimeDiff;
+  lag = hrtime() - req.io.socket.mapTime - runtime;
+
+  console.log('>> id/lag/AT/TRT:', id, lag, req.io.socket.runTime, runtime);
+
+  lag = 50;
 
   if(lag < 0) {
     console.log('$$$ lag under zero:', lag);
@@ -696,15 +692,16 @@ var prereduce = function(req) {
 
 
   // save speed of this worker
+  if(req.io.socket.powerSet.length != POWER_MEAN) {
+    req.io.socket.powerSet = Array.apply(null, new Array(POWER_MEAN)).map(Number.prototype.valueOf,speed);
+  } else {
+    req.io.socket.powerSet.push(speed);
+  }
+
   req.io.socket.powerSet.push(speed);
   req.io.socket.powerSet = req.io.socket.powerSet.slice(-1 * POWER_MEAN, 2 * POWER_MEAN);
   req.io.socket.power = req.io.socket.powerSet.average();
 
-
-  req.io.socket.isecSet.push(iterations);
-  req.io.socket.isecSet = req.io.socket.isecSet.slice(-1 * ISEC_MEAN, 2 * ISEC_MEAN);
-  req.io.socket.iterations = req.io.socket.isecSet.average();
-  
   // reduce power by lag factor.
   // power index is determined on 1 second.
   // if the client lags 100 MS, then 100/1000 = factor 0.1 reduction of power.
@@ -929,7 +926,6 @@ var reallocate = function(datamap) {
   // determine current power
   // add up the power of all nodes
   var powerAvailable = 0;
-  var isec = [];
   var i = clientsOnline();
   while(i--) {
     
@@ -938,10 +934,6 @@ var reallocate = function(datamap) {
     // do not determine when powertesting
     if(!client.powertesting) {
       powerAvailable += client.power;
-    }
-
-    if(client.iterations) {
-      isec.push(client.iterations);
     }
 
   }
@@ -1331,9 +1323,7 @@ var join = function(req, datamap, settings) {
 
   // to better estimate power of workers.
   // maximum length of POWER_MEAN, average is actual power.
-  req.io.socket.powerSet = [req.io.socket.power];
-
-  req.io.socket.isecSet = [];
+  req.io.socket.powerSet = [];
 
   // set up all clients to initially lag for 100 MS (round trip)
   req.io.socket.lagHistory = [100];
@@ -1519,6 +1509,5 @@ app.get('/monitor', function(req, res) {
       step: nodeSettings.runtime
     })
 });
-
 
 app.listen(8071);
