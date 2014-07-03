@@ -25,7 +25,7 @@ wss.on('connection', function(ws) {
 	    	console.log('sending');
 	    	t = hrtime();
 	        ws.send('a');
-	    }, 500);
+	    }, 3000);
 	});
 
 	console.log('connected');
