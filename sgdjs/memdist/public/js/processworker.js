@@ -178,8 +178,8 @@ var map = function(obj) {
       Net = new mlitb.Net();
       conf = []
       conf.push({type : 'input', sx : 28, sy:28, depth :1});
-      //conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
-      //conf.push({type : 'pool', sx : 2, stride : 2});
+      // conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
+      // conf.push({type : 'pool', sx : 2, stride : 2});
       conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
       conf.push({type : 'pool', sx : 3, stride : 3, drop_prob : 0.5});
       // conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
@@ -197,10 +197,14 @@ var map = function(obj) {
     var piece, i, j, vector;
     var total = 0;
     var startTime, currentTime, iterTime, Input;
+    var param, param_type;
 
     if (parameters !== 0.0) {
       // copy the parameters and gradients
-      Net.setParamsAndGrads(parameters.parameter.parameters);
+      // Net.setParamsAndGrads(parameters.parameter.parameters);
+      // logger('parameters '+JSON.stringify(parameters.parameter.parameters));
+      logger('set param');
+      Net.setParams(parameters.parameter.parameters);
     }
 
     startTime = (new Date).getTime();
@@ -241,9 +245,17 @@ var map = function(obj) {
       if((currentTime > (startTime + settings.runtime)) || (iterDiff + currentTime) > (startTime + settings.runtime)) {
 
         trueTime = currentTime - startTime;
-
+        // logger('type of parameter '+typeof parameters);
+        if (typeof parameters === 'number'){
+          param = [Net.getParams(),Net.getGrads()];
+          param_type = 'params_and_grads';
+        } else {
+          param = Net.getGrads();
+          param_type = 'grads';
+        }
         parameters = {
-          parameters : Net.getParamsAndGrads(),
+          parameters : param,
+          parameters_type : param_type,
           error : error,
           nVector : nVector
         };

@@ -469,20 +469,22 @@ var SGDTrainer = function (net, conf) {
   this.last_grads = [];
   this.last_params = [];
   this.total_data_seen = 0;
+  this.is_initialized = false;
 }
   
 SGDTrainer.prototype = {
-  reduce : function(markovResults){
+  reduce2 : function(markovResults){
 
     // var i, j, gi, k, total_gi;
     var totalError=0.0;
     var totalVector=0;
 
-    //for the first time, get parameter from Net
+    //for the first time, get parameter from any client
+    //assume that in this situation, all client will send both param and grad
     if (!this.last_params.length ){
       var pgs = markovResults[0].parameter.parameters;
       this.last_params = pgs;
-      console.log('first length ',this.last_params[0].params.length);
+      // console.log('first length ',this.last_params[0].params.length);
     }
     // console.log('this is vector',markovResults[0].parameter.nVector);
     // console.log('this is error',markovResults[0].parameter.error);
@@ -570,6 +572,111 @@ SGDTrainer.prototype = {
     }
 
     console.log('param length ',JSON.stringify(this.last_params[2]));
+
+    // set the new parameter to the markovResults
+    // all chains receive same value, thus a P-SGD
+    i = parameters.length;
+    while(i--) {
+      parameters[i] = {
+        parameter: {
+          parameters: this.last_params
+        }
+      }
+    }
+
+    sendMonitor({
+      type: 'parameter',
+      data: {
+        'error': totalError/totalVector,
+        'step': step
+      }
+    });
+
+  },
+
+  reduce : function(markovResults){
+    var totalError=0.0;
+    var totalVector=0;
+
+    //for the first time, get parameter from any client
+    //assume that in this situation, all client will send both param and grad
+    // initialize = function(){
+    if (!this.is_initialized){
+      console.log('momentum '+this.momentum);
+      console.log(markovResults[0].parameter.parameters_type);
+      if (markovResults[0].parameter.parameters_type === 'params_and_grads'){
+        this.last_params = markovResults[0].parameter.parameters[0];
+        for (var i = 0; i < this.last_params.length; i++) {
+          this.last_grads.push(zeros(this.last_params[i].length));
+        }
+        this.is_initialized = true;
+      } else{
+        console.log('THERE IS SOMETHING WRONG');
+      }
+    } 
+    else {
+    // updateParams = function(){
+      for (var mr = 0; mr < markovResults.length; mr++) {
+        //ignore new client
+        if (markovResults[mr].parameter.parameters_type=='grads'){
+          totalError+=markovResults[mr].parameter.error;
+          console.log(totalError);
+          totalVector+=markovResults[mr].parameter.nVector;
+          console.log(totalVector);  
+        }
+      };
+      this.total_data_seen+=totalVector;
+      console.log('total data seen : ', this.total_data_seen);
+      console.log('error : ',totalError/totalVector);
+      // console.log('before ',JSON.stringify(this.last_params[2].params));    
+      //iterate over each param and grad vector
+      for (var i = 0; i < this.last_params.length; i++) {
+        // var pg = this.last_params[i];
+        var p = this.last_params[i];
+        var g = [];
+        //add up all gradient vectors. grad length = param length
+        for (var gi = 0; gi < p.length; gi++) {
+          total_gi = 0.0;
+          for (var k = 0; k < markovResults.length; k++) {
+            //again ignore grads from new client
+            if (markovResults[k].parameter.parameters_type=='grads'){
+              if (typeof markovResults[k].parameter.parameters == 'undefined'){
+                console.log(JSON.stringify(markovResults[k].parameter));
+                console.log(this.iteration);  
+              }
+              total_gi += markovResults[k].parameter.parameters[i][gi];
+            }
+          }
+          g.push(total_gi);
+        };
+        // console.log('masuk');
+        var plen = p.length;
+        var lg = this.last_grads[i];
+        // console.log('plen ',plen);
+        for (var j = 0; j < plen; j++) {
+          // console.log('masuk');
+          this.l2_loss += this.l2_decay*p[j]*p[j];
+          this.l1_loss += this.l1_decay*Math.abs(p[j]);
+          var l2_grad = this.l2_decay*p[j];
+          var l1_grad = this.l1_decay*(p[j]>0 ? 1 : -1);
+          var lgj = lg[j];
+          var dw = (1.0-this.momentum)*this.learning_rate*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lgj;
+          p[j] -= dw;
+          lgj = dw;
+          g[j] = 0.0;
+        }
+      }
+      // console.log('param length ',JSON.stringify(this.last_params[2]));  
+    }
+    
+    // if (this.is_initialized){
+    //   updateParams();  
+    // } else {
+    //   initialize();
+    // }
+    
+    console.log('param sent ',JSON.stringify(this.last_params[1]));  
+    this.iteration++;
 
     // set the new parameter to the markovResults
     // all chains receive same value, thus a P-SGD

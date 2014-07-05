@@ -318,6 +318,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     getParamsAndGrads : function () {
       return [];
     },
+    getGrads : function () {
+      return [];
+    },
+    getParams : function () {
+      return [];
+    },
     toJSON: function() {
       // todo: we may want to only save d most significant digits to save space
       var json = {}
@@ -457,6 +463,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 			out.push({params : this.biases.data, grads : this.biases.drv});
 			return out;
 		},
+
 		setParamsAndGrads : function (json) {
 			for (var i = 0; i < this.filters.length; i++) {
 				this.filters[i].data = json[i].params;
@@ -465,6 +472,35 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 			this.biases.data = json[json.length-1].params;
 			this.biases.drv = json[json.length-1].grads;
 		},
+
+    getGrads : function () {
+      var out = [];
+      for (var i = 0; i < this.filters.length; i++) {
+        out.push(this.filters[i].drv);
+      };
+      out.push(this.biases.drv);
+      return out;
+    },
+
+    setParams : function (json) {
+      for (var i = 0; i < this.filters.length; i++) {
+        this.filters[i].data = json[i];
+        this.filters[i].drv = global.zeros(json[i].length);
+      };
+      // i should be filters.length
+      this.biases.data = json[i];
+      this.biases.drv = global.zeros(json[i].length);
+    },
+
+    getParams : function () {
+      var out = [];
+      for (var i = 0; i < this.filters.length; i++) {
+        out.push(this.filters[i].data);
+      };
+      out.push(this.biases.data);
+      return out;
+    },
+
 		toJSON: function() {
       var json = {};
       json.sx = this.sx; // filter size in x, y dims
@@ -582,6 +618,25 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 			this.biases.data = json[1].params;
 			this.biases.drv = json[1].grads;
 		},
+    getGrads : function () {
+      var out = []
+      out.push(this.filters.drv);
+      out.push(this.biases.drv);
+      return out;
+    },
+
+    setParams : function (json) {
+      this.filters.data = json[0];
+      this.filters.drv = global.zeros(json[0].length);
+      this.biases.data = json[1];
+      this.biases.drv = global.zeros(json[1].length);
+    },
+    getParams : function () {
+      var out = []
+      out.push(this.filters.data);
+      out.push(this.biases.data);
+      return out;
+    },
 		toJSON: function() {
       var json = {};
       json.in_neurons = this.in_neurons;
@@ -696,6 +751,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 		getParamsAndGrads : function () {
 			return [];
 		},
+
+    getGrads : function () {
+      return [];
+    },
+
+    setParams : function (json) {
+    },
+    getParams : function () {
+      return [];
+    },
+
 		toJSON : function(){
 			json = {};
 			json.out_sx = this.out_sx;
@@ -749,6 +815,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 		getParamsAndGrads : function () {
 			return [];
 		},
+
+    getGrads : function () {
+      return [];
+    },
+
+    setParams : function (json) {
+    },
+    getParams : function () {
+      return [];
+    },
+
 		toJSON : function(){
 			var json = {};
 			json.out_sx = this.out_sx;
@@ -823,6 +900,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     getParamsAndGrads : function () {
 			return [];
 		},
+
+    getGrads : function () {
+      return [];
+    },
+
+    setParams : function (json) {
+    },
+    getParams : function () {
+      return [];
+    },
+
 		toJSON : function(){
 			var json = {};
 			json.num_inputs = this.num_inputs;
@@ -885,6 +973,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 		getParamsAndGrads : function () {
 			return [];
 		},
+
+    getGrads : function () {
+      return [];
+    },
+
+    setParams : function (json) {
+    },
+    getParams : function () {
+      return [];
+    },
+
 		toJSON : function(){
 			var json = {};
 			json.out_sx = this.out_sx;
@@ -1011,6 +1110,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     getParamsAndGrads : function () {
       return [];
     },
+
+    getGrads : function () {
+      return [];
+    },
+
+    setParams : function (json) {
+    },
+    getParams : function () {
+      return [];
+    },
+
     toJSON : function(){
 			var json = {};
 			json.sx = this.sx;
@@ -1096,6 +1206,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     getParamsAndGrads : function () {
       return [];
     },
+
+    getGrads : function () {
+      return [];
+    },
+
+    setParams : function (json) {
+    },
+    getParams : function () {
+      return [];
+    },
+
     toJSON : function(){
 			var json = {};
 			json.out_depth = this.out_depth;
@@ -1258,6 +1379,40 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 				}
 			};
 		},
+
+    getGrads : function () {
+      var out = [];
+      for (var i = 0; i < this.layers.length; i++) {
+        var o = this.layers[i].getGrads();
+        for (var j = 0; j < o.length; j++) {
+          out.push(o[j]);
+        };
+      };
+      return out;
+    },
+
+    setParams : function (json) {
+      var last_pos = 0;
+      for (var i = 0; i < this.layers.length; i++) {
+        if (this.layers[i].layer_type === 'conv' || this.layers[i].layer_type === 'fc'){
+          total_params = this.layers[i].n_params + this.layers[i].n_biases;
+          var newjson = json.slice(last_pos,total_params+last_pos);
+          this.layers[i].setParams(newjson);
+          last_pos +=total_params;
+        }
+      };
+    },
+    getParams : function () {
+      var out = [];
+      for (var i = 0; i < this.layers.length; i++) {
+        var o = this.layers[i].getParams();
+        for (var j = 0; j < o.length; j++) {
+          out.push(o[j]);
+        };
+      };
+      return out;
+    },
+
 		toJSON: function() {
       var json = {};
       json.layers = [];
