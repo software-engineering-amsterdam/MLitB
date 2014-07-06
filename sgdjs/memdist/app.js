@@ -470,6 +470,11 @@ var SGDTrainer = function (net, conf) {
   this.last_params = [];
   this.total_data_seen = 0;
   this.is_initialized = false;
+  // this.data_labels = {};
+  this.last_pred_loss = {}; // data_id : [loss, discrete_loss]. discrete loss = 0 if y=y', 1 otherwise
+  // this.last_pred_descrete_loss = {}; // data_id : 0 if y=y', 1 otherwise
+  // this.proceeded_data = {'max':0, 'min':999999, 'length':0};
+  this.proceeded_data = {};
 }
   
 SGDTrainer.prototype = {
@@ -602,8 +607,6 @@ SGDTrainer.prototype = {
     //assume that in this situation, all client will send both param and grad
     // initialize = function(){
     if (!this.is_initialized){
-      console.log('momentum '+this.momentum);
-      console.log(markovResults[0].parameter.parameters_type);
       if (markovResults[0].parameter.parameters_type === 'params_and_grads'){
         this.last_params = markovResults[0].parameter.parameters[0];
         for (var i = 0; i < this.last_params.length; i++) {
@@ -617,12 +620,30 @@ SGDTrainer.prototype = {
     else {
     // updateParams = function(){
       for (var mr = 0; mr < markovResults.length; mr++) {
+        var markovParam = markovResults[mr].parameter;
         //ignore new client
-        if (markovResults[mr].parameter.parameters_type=='grads'){
-          totalError+=markovResults[mr].parameter.error;
-          console.log(totalError);
-          totalVector+=markovResults[mr].parameter.nVector;
-          console.log(totalVector);  
+        if (markovParam.parameters_type=='grads'){
+          totalError+=markovParam.error;
+          // console.log(totalError);
+          totalVector+=markovParam.nVector;
+          // console.log(totalVector);  
+
+          //compute data statistics
+          var l = markovParam.proceeded_data.length;
+          while(l--){
+            data_id = markovParam.proceeded_data[l][0];
+            var new_val = (this.proceeded_data[data_id]||0)+1;
+            this.proceeded_data[data_id] = new_val;
+            this.last_pred_loss[data_id] = [markovParam.proceeded_data[l][1],markovParam.proceeded_data[l][2]];
+            // this.last_pred_descrete_loss[data_id]=markovParam.proceeded_data[l][2];
+          }
+        // } else if markovParam.parameters_type=='params_and_grads'{
+        //   var l=data_labels;
+        //   while(l--){
+        //     key = markovParam.data_labels[l][0];
+        //     val = markovParam.data_labels[l][1];
+        //     this.data_labels[key]=val;
+        //   }
         }
       };
       this.total_data_seen+=totalVector;
@@ -675,8 +696,52 @@ SGDTrainer.prototype = {
     //   initialize();
     // }
     
-    console.log('param sent ',JSON.stringify(this.last_params[1]));  
+    // console.log('param sent ',JSON.stringify(this.last_params[1]));  
     this.iteration++;
+
+    if (this.iteration%10==0){
+      // this.momentum = this.momentum+0.05 <=0.9 ? this.momentum+0.05 : 0.9;
+      // this.learning_rate = this.learning_rate*0.9 > 0.01 ? this.learning_rate*0.9 : 0.01;
+      // console.log('data proceeded : '+JSON.stringify(this.proceeded_data));
+      var max,min,l = 0;
+      for( var key in this.proceeded_data ) {
+        if ( this.proceeded_data.hasOwnProperty(key) ) {
+          var val = this.proceeded_data[key];
+          if (l==0){
+            max = val;
+            min = val;
+          }
+          if (val > max){max = val;}
+          if (val < min){min = val;}
+          l++;
+        }
+      }
+      console.log('Data statistics :');
+      console.log('Total : '+l);
+      console.log('Max   : '+max);
+      console.log('Min   : '+min);
+
+      //
+      var RMS = 0.0;
+      var discrete_RMS = 0.0;
+      var NData = 0;
+      for (key in this.last_pred_loss){
+        if (this.last_pred_loss.hasOwnProperty(key)){
+          diff = 1-this.last_pred_loss[key][0];
+          // RMS+= diff*diff;
+          RMS+= diff;
+          discrete_RMS+=this.last_pred_loss[key][1];
+          NData++;
+        }
+      }
+      // RMS = Math.sqrt(RMS)/NData;
+      RMS = RMS/NData;
+      // discrete_RMS = discrete_RMS/NData;
+      //RMS all training data that has ever been proceeded by clients
+      console.log('RMS all training data '+RMS);
+      console.log('discrete RMS all training data '+discrete_RMS+'/'+NData+' = '+discrete_RMS/NData);
+
+    }
 
     // set the new parameter to the markovResults
     // all chains receive same value, thus a P-SGD
@@ -697,11 +762,12 @@ SGDTrainer.prototype = {
       }
     });
 
+
   }
 }
 
 //Create object SGD Trainer
-SGD = new SGDTrainer({}, {learning_rate : 0.1, batch_size : 16, l2_decay : 0.001});
+SGD = new SGDTrainer({}, {momentum : 0.9,learning_rate : 0.1, batch_size : 16, l2_decay : 0.001});
 
 var reduce = function(markovResults) {
 
