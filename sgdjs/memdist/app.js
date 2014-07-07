@@ -765,8 +765,6 @@ var prereduce = function(req) {
 
   console.log('>> id/lag/AT/TRT:', id, lag, req.io.socket.runTime, runtime);
 
-  lag = 50;
-
   if(lag < 0) {
     console.log('$$$ lag under zero:', lag);
     console.log('mapTime:', req.io.socket.mapTime, 'runtime:', req.io.socket.runTime)

@@ -15,21 +15,34 @@ var t;
 
 wss.on('connection', function(ws) {
 
+	var framesize = Math.pow(2,12);
+
+	send = function() {
+		//i = Math.ceil(testdata.length / 10);
+		t = hrtime();
+		//while(i--) {
+		//	piece = testdata.slice(framesize*(i-1),framesize*i);
+			ws.send(lzstring.compressToBase64(testdata));
+		//}
+
+	}
+
 	ws.on('close', function() {
 	    console.log('disconnected');
 	});
 
 	ws.on('message', function(data) {
-	    console.log('Roundtrip time: ' + (hrtime() - t) + 'ms');
+
+		de = lzstring.decompressFromBase64(data);
+
+		d = hrtime();
+    	console.log('Roundtrip time: ' + (d - t) + 'ms');
 	    setTimeout(function() {
-	    	console.log('sending');
-	    	t = hrtime();
-	        ws.send('a');
+	    	send();
 	    }, 3000);
 	});
 
 	console.log('connected');
-	t = hrtime();
-	ws.send('s');
+	send();
 
 });

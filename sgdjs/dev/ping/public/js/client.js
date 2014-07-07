@@ -5,5 +5,10 @@ ws = new WebSocket('ws://192.168.2.20:8080');
 //}
 
 ws.onmessage = function (e) {
-  ws.send(e.data);
+
+  d = LZString.decompressFromBase64(e.data);
+
+  f = LZString.compressToBase64(d);
+
+  ws.send(f);
 };

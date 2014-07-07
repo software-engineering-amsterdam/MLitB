@@ -203,7 +203,6 @@ var map = function(obj) {
       // copy the parameters and gradients
       // Net.setParamsAndGrads(parameters.parameter.parameters);
       // logger('parameters '+JSON.stringify(parameters.parameter.parameters));
-      logger('set param');
       Net.setParams(parameters.parameter.parameters);
     }
 
