@@ -54,7 +54,7 @@ var settings = {
 // Higher: predictions take longer, thus workers are added more slowly by clients
 // Lower: Clients with high latency (e.g. 500 MS or something) may starve.
 var nodeSettings = {
-  'runtime': 5000
+  'runtime': 4000
 }
 
 // make this a online setting
