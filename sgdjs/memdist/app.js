@@ -54,7 +54,7 @@ var settings = {
 // Higher: predictions take longer, thus workers are added more slowly by clients
 // Lower: Clients with high latency (e.g. 500 MS or something) may starve.
 var nodeSettings = {
-  'runtime': 3000
+  'runtime': 4000
 }
 
 // make this a online setting
@@ -1695,8 +1695,7 @@ var reset = function(req) {
 
 }
 
-//app.io.set("heartbeat interval", 2);
-//app.io.set("heartbeat timeout", 5);
+app.io.set("heartbeat timeout", nodeSettings.runtime);
 
 app.io.route('processworkerstart', processworkerstart);
 app.io.route('dataworkerstart', dataworkerstart);
