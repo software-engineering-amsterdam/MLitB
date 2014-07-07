@@ -111,8 +111,6 @@ var drawChart = function(chart, point) {
 
   chart.series[0].addPoint(point, true, shift);
 
-  console.log(chart.series[0].data);
-
   return chart;
 
 }
