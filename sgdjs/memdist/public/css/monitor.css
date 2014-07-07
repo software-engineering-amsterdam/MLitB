@@ -1,0 +1,33 @@
+
+
+.navbar-header {
+    height: 50px;
+}
+
+.navbar-nav {
+    margin: inherit;
+}
+
+.steptext {
+	display: block;
+}
+
+@media (max-width: 800px) {
+
+	.steptext {
+		display: none;
+	}
+
+}
+
+@media (max-width: 500px) {
+
+    .navbar-brand {
+        font-size: 14px;
+    }
+
+    .navtext {
+        display: none;
+    }
+
+}

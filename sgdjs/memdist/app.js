@@ -40,7 +40,7 @@ var MAX_DESKTOP       = 1000,
     // COVERAGE EQ: data redundancy level. Data with lower COVERAGE_EQ are prioritized in distribution.
     COVERAGE_EQ       = 3,
     // POWER_MEAN: number of historic vsec measures to average
-    POWER_MEAN        = 50,
+    POWER_MEAN        = 5,
     // POWER_MEAN: number of historic isec measures to average
     LAG_HISTORY       = 10, // MIN = 3
     INITIAL_PARAMETER = 0.0;
@@ -54,11 +54,12 @@ var settings = {
 // Higher: predictions take longer, thus workers are added more slowly by clients
 // Lower: Clients with high latency (e.g. 500 MS or something) may starve.
 var nodeSettings = {
-  'runtime': 2000
+  'runtime': 5000
 }
 
 // make this a online setting
 var running = false;
+var start = false;
 
 var normalizeFactor;
 var markovChain = [];
@@ -70,9 +71,13 @@ var parameters = [];
 var markovRotationID = 0;
 var parameterRotationID = 0;
 
-var step = 1;
+var step = 0;
+
+var initial_parameter = INITIAL_PARAMETER;
 
 var timeouts = {};
+
+var SGD;
 
 var hrtime = function() {
   now = process.hrtime();
@@ -762,17 +767,32 @@ SGDTrainer.prototype = {
       }
     });
 
+    sendTest({
+      type: 'parameter',
+      data: {
+        'error': totalError/totalVector,
+        'step': step,
+        'parameter': {
+          parameter: {
+            parameters: this.last_params
+          }
+        }
+      }
+    });
+
 
   }
 }
-
-//Create object SGD Trainer
-SGD = new SGDTrainer({}, {momentum : 0.9,learning_rate : 0.1, batch_size : 16, l2_decay : 0.001});
 
 var reduce = function(markovResults) {
 
   // SAMPLE REDUCTION for P-MCMC
   // AVERAGE PARAMETERS
+
+  if(step == 0) {
+    //Create object SGD Trainer
+    SGD = new SGDTrainer({}, {momentum : 0.9,learning_rate : 0.1, batch_size : 16, l2_decay : 0.001});
+  }
 
   SGD.reduce(markovResults);
 
@@ -811,7 +831,6 @@ var prereduce = function(req) {
   parameter = req.data.parameters;
   parameterId = req.data.parameterId;
   speed = req.data.speed;
-  iterations = req.data.iterations;
   runtime = req.data.runtime;
 
   id = req.io.socket.id;
@@ -912,12 +931,6 @@ var prereduce = function(req) {
 
 var distributor = function(parameters) {
 
-  // for debugging purposes only
-  if(markovIDs.length) {
-    console.log('$$$ distributor called with clients still waiting to arrive.');
-    process.kill()
-  }
-
   markovResults = [];
   markovIDs = [];
 
@@ -936,7 +949,7 @@ var distributor = function(parameters) {
     parameterId = (i + parameterRotationID) % markovChain.length;
 
     if(parameters[parameterId] === undefined) {
-      parameters[parameterId] = INITIAL_PARAMETER;
+      parameters[parameterId] = initial_parameter;
     }
 
     parameter = parameters[parameterId];
@@ -957,7 +970,8 @@ var distributor = function(parameters) {
       'settings': {runtime: client.runTime},
       'parameters': parameter,
       'parameterId': parameterId,
-      'lag': client.lag
+      'lag': client.lag,
+      'step': step
     });
 
   }
@@ -1054,6 +1068,10 @@ var run = function(parameters) {
   // run sample embedded job
 
   var chain;
+
+  if(!start) {
+    return;
+  }
 
   console.log('> run job');
   if(!datamap.length) {
@@ -1584,6 +1602,16 @@ var sendMonitor = function(data) {
 
 }
 
+var sendTest = function(data) {
+
+  var i = app.io.sockets.clients('tests').length;
+  while(i--) {
+    monitor = app.io.sockets.clients('tests')[i];
+    monitor.emit('test', data);
+  }
+
+}
+
 var pings = {}
 
 var ping = function() {
@@ -1634,6 +1662,37 @@ var monitor = function(req) {
   console.log('@ monitor connected');
 }
 
+var test = function(req) {
+  req.io.join('tests');
+  console.log('@ test connected');
+}
+
+var startp = function(req) {
+
+  console.log('!>> System started');
+  start = true;
+  run(parameters);
+
+}
+
+var stopp = function(req) {
+  
+  console.log('!>> System paused');
+  start = false;
+
+}
+
+var reset = function(req) {
+  
+  console.log('!>> System reset');
+  initial_parameter = INITIAL_PARAMETER;
+  step = 0;
+  parameters = [];
+  markovResults = [];
+  markovIDs = [];
+
+}
+
 //app.io.set("heartbeat interval", 2);
 //app.io.set("heartbeat timeout", 5);
 
@@ -1643,7 +1702,12 @@ app.io.route('proxydata', proxyData);
 app.io.route('endpowertest', endpowertest);
 app.io.route('registerData', registerdata);
 
+app.io.route('start', startp);
+app.io.route('stop', stopp);
+app.io.route('reset', reset);
+
 app.io.route('monitor', monitor);
+app.io.route('test', test);
 
 app.io.route('disconnect', function(req) {
   // client disconnects
@@ -1677,8 +1741,13 @@ app.get('/', function(req, res) {
 
 app.get('/monitor', function(req, res) {
     res.render('monitor', {
-      step: nodeSettings.runtime
+      step: nodeSettings.runtime,
+      start: start
     })
+});
+
+app.get('/test', function(req, res) {
+    res.render('test');
 });
 
 app.listen(8071);

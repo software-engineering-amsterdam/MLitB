@@ -6,6 +6,8 @@ var log_list = [];
 
 var errorchart, powerchart;
 
+var started;
+
 var logger = function(text) {
 
   log_list.push(text);
@@ -124,4 +126,48 @@ var monitor = function(e) {
     }
 }
 
+var startprogram = function() {
+  io.emit('start');
+  started = true;
+  controls()
+}
+
+var pauseprogram = function() {
+  io.emit('stop');
+  started = false;
+  controls()
+}
+
+var resetprogram = function() {
+  io.emit('reset');
+
+  errorchart = initChart(errorchart, '#errorcontainer', 'error rate', '#0000FF');
+  powerchart = initChart(powerchart, '#powercontainer', 'network power', '#FF0000');
+}
+
+var controls = function() {
+
+  if(started) {
+    $('#start').attr('disabled', 'true');
+    $('#reset').attr('disabled', 'true');
+
+    $('#pause').removeAttr('disabled');
+  } else {
+
+    $('#start').removeAttr('disabled');
+    $('#reset').removeAttr('disabled');
+
+    $('#pause').attr('disabled', 'true');
+  }
+
+}
+
 io.on('monitor', monitor);
+
+started = JSON.parse($('#started').val());
+
+controls();
+
+$('#start').click(startprogram);
+$('#pause').click(pauseprogram);
+$('#reset').click(resetprogram);
