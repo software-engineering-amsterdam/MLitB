@@ -54,7 +54,7 @@ var settings = {
 // Higher: predictions take longer, thus workers are added more slowly by clients
 // Lower: Clients with high latency (e.g. 500 MS or something) may starve.
 var nodeSettings = {
-  'runtime': 5000
+  'runtime': 2000
 }
 
 // make this a online setting
@@ -1571,10 +1571,12 @@ var join = function(req, datamap, settings) {
   // check if client is alive.
   if(req.io.socket.dataworker) {
     dwc = getDataworkerById(req.io.socket.dataworker);
-    dwc.emit('assignedData', {
-      data: testdata,
-      worker: req.io.socket.id
-    });
+    if(dwc) {
+      dwc.emit('assignedData', {
+        data: testdata,
+        worker: req.io.socket.id
+      });
+    }
   }
 
   req.io.socket.powertesting = true;
