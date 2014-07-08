@@ -35,11 +35,6 @@ var workerMessage = function(e) {
 
 var displayParameter = function(data) {
 
-  if(!worker) {
-  	worker = new Worker('/js/testworker.js');
-	worker.onmessage = workerMessage;
-  }
-
   worker.postMessage({
     type: 'data',
     data: data
@@ -158,5 +153,10 @@ var test = function(e) {
 }
 
 io.on('test', test);
+
+if(!worker) {
+  worker = new Worker('/js/testworker.js');
+  worker.onmessage = workerMessage;
+}
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
