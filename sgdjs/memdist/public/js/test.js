@@ -17,9 +17,10 @@ var workerMessage = function(e) {
 
 	discrete_loss = e.data.data.discrete_loss;
 	delta = e.data.data.delta;
+  nData = e.data.data.nData;
 
 	$('span#step.error').html(testIteration.toString());
-	$('span#error').html(discrete_loss.toString());
+	$('span#error').html(discrete_loss.toString()+"/"+nData.toString());
 	$('span#delta').html(delta.toString());
 
 	if(!errorchart) {

@@ -75,7 +75,8 @@ var data = function(data) {
   this.postMessage({
     data: {
     	discrete_loss: discrete_loss,
-    	delta: delta
+    	delta: delta,
+      nData : test_data.length
     }
   });
 
