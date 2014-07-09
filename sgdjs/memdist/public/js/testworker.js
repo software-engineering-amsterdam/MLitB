@@ -6,6 +6,7 @@ var discrete_loss,piece;
 var lastParameter;
 var log_list = [];
 var is_initialized = false;
+var nData;
 
 test_data = [];
 
@@ -76,7 +77,7 @@ var data = function(data) {
     data: {
     	discrete_loss: discrete_loss,
     	delta: delta,
-      nData : test_data.length
+      nData : nData
     }
   });
 
@@ -85,6 +86,7 @@ var data = function(data) {
 var fileupload = function(data) {
 
 	test_data = data;
+  nData = test_data.length;
 
 }
 
