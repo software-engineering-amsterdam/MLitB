@@ -477,6 +477,9 @@ var SGDTrainer = function (net, conf) {
   this.is_initialized = false;
   this.last_pred_loss = {}; // data_id : [loss, discrete_loss]. discrete loss = 0 if y=y', 1 otherwise
   this.proceeded_data = {};
+  this.lr_decay = typeof conf.lr_decay !== 'undefined' ? conf.lr_decay : 0.9;
+  this.lr_threshold= typeof conf.lr_threshold !== 'undefined' ? conf.lr_threshold : 0.001;
+  this.lr_decay_interval= typeof conf.lr_decay_interval !== 'undefined' ? conf.lr_decay_interval : 1;
 }
   
 SGDTrainer.prototype = {
@@ -678,11 +681,13 @@ SGDTrainer.prototype = {
     }
     
     this.iteration++;
-
-    if (this.iteration%10==0){
+    if (this.iteration % this.lr_decay_interval==0){
+      this.learning_rate = this.learning_rate*this.lr_decay> this.lr_threshold ? this.learning_rate*this.lr_decay : this.lr_threshold;
+    }
+    if (this.iteration%5==0){
       // USE CODE BELOW TO DECREASE LR OR INCREASE MOMENTUM
       // this.momentum = this.momentum+0.05 <=0.9 ? this.momentum+0.05 : 0.9;
-      // this.learning_rate = this.learning_rate*0.9 > 0.01 ? this.learning_rate*0.9 : 0.01;
+      // this.learning_rate = this.learning_rate*this.lr_decay > 0.001 ? this.learning_rate*this.lr_decay : 0.01;
       // ======================================
 
       var max,min,l = 0;
@@ -767,7 +772,16 @@ var reduce = function(markovResults) {
 
   if(step == 0) {
     //Create object SGD Trainer
-    SGD = new SGDTrainer({}, {momentum : 0.9,learning_rate : 0.1, batch_size : 16, l2_decay : 0.001});
+    trainer_param = {
+      learning_rate : 0.01, //starting value of learning rate
+      lr_decay : 0.9, //multiplication factor
+      lr_decay_interval : 5, //iteration interval of learning rate decay
+      lr_threshold : 0.001, //lower bound of learning rate
+      momentum : 0.9,
+      batch_size : 16, 
+      l2_decay : 0.001
+    }
+    SGD = new SGDTrainer({}, trainer_param);
   }
 
   SGD.reduce(markovResults);

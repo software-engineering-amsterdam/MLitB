@@ -18,6 +18,7 @@ var workerMessage = function(e) {
 	discrete_loss = e.data.data.discrete_loss;
 	delta = e.data.data.delta;
   nData = e.data.data.nData;
+  step = e.data.data.step;
 
 	$('span#step.error').html(testIteration.toString());
 	$('span#error').html(discrete_loss.toString()+"/"+nData.toString());
