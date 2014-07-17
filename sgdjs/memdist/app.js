@@ -472,6 +472,7 @@ var SGDTrainer = function (net, conf) {
   this.momentum = typeof conf.momentum !== 'undefined' ? conf.momentum : 0.9;
   this.iteration = 0;
   this.last_grads = [];
+  this.sum_square_gads = [];
   this.last_params = [];
   this.total_data_seen = 0;
   this.is_initialized = false;
@@ -615,6 +616,7 @@ SGDTrainer.prototype = {
         this.last_params = markovResults[0].parameter.parameters[0];
         for (var i = 0; i < this.last_params.length; i++) {
           this.last_grads.push(zeros(this.last_params[i].length));
+          this.sum_square_gads.push(zeros(this.last_params[i].length));
         }
         this.is_initialized = true;
       } else{
@@ -666,19 +668,27 @@ SGDTrainer.prototype = {
         };
         var plen = p.length;
         var lg = this.last_grads[i];
+        var ssg = this.sum_square_gads[i];
         for (var j = 0; j < plen; j++) {
           this.l2_loss += this.l2_decay*p[j]*p[j];
           this.l1_loss += this.l1_decay*Math.abs(p[j]);
           var l2_grad = this.l2_decay*p[j];
           var l1_grad = this.l1_decay*(p[j]>0 ? 1 : -1);
           var lgj = lg[j];
-          var dw = (1.0-this.momentum)*this.learning_rate*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lgj;
+          ssg[j] += ((g[j]/totalVector) *(g[j]/totalVector));
+          var tess = Math.sqrt(ssg[j]);
+          if (tess<=1){
+            tess=1;
+          }
+          // tess=1;
+          var dw = (1.0-this.momentum)*(this.learning_rate/tess)*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lgj;
           p[j] -= dw;
           lgj = dw;
           g[j] = 0.0;
         }
       }
     }
+
     
     this.iteration++;
     if (this.iteration % this.lr_decay_interval==0){
@@ -773,10 +783,10 @@ var reduce = function(markovResults) {
   if(step == 0) {
     //Create object SGD Trainer
     trainer_param = {
-      learning_rate : 0.01, //starting value of learning rate
-      lr_decay : 0.9, //multiplication factor
+      learning_rate : 0.1, //starting value of learning rate
+      lr_decay : 1, //multiplication factor
       lr_decay_interval : 5, //iteration interval of learning rate decay
-      lr_threshold : 0.001, //lower bound of learning rate
+      lr_threshold : 0.0, //0.001, //lower bound of learning rate
       momentum : 0.9,
       batch_size : 16, 
       l2_decay : 0.001
