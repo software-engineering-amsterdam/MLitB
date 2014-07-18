@@ -4,7 +4,7 @@ io.emit('monitor');
 
 var log_list = [];
 
-var errorchart, powerchart;
+var errorchart, powerchart, latencychart;
 
 var started;
 
@@ -41,11 +41,25 @@ var displayParameter = function(data) {
   $('span#error').html(data.error.toString());
   $('span#delta').html(delta.toString());
 
+  series = [{
+      data: [],
+      name: 'error rate',
+      color: '#0000FF',
+      type: 'line',
+      point: {
+        events: {
+            'click': function() {
+                if (this.series.data.length > 1) this.remove();
+            }
+        }
+      }
+    }];
+
   if(!errorchart) {
-    errorchart = initChart(errorchart, '#errorcontainer', 'error rate', '#0000FF');
+    errorchart = initChart(errorchart, series, '#errorcontainer');
   }
 
-  errorchart = drawChart(errorchart, [data.step, data.error]);
+  errorchart = drawChart(errorchart, 0, [data.step, data.error]);
 
 }
 
@@ -55,15 +69,61 @@ var displayPower = function(data) {
   $('span#power').html(data.power.toString());
   $('span#clients').html(data.clients.toString());
 
+  series = [{
+      data: [],
+      name: 'network power',
+      color: '#FF0000',
+      type: 'line',
+      point: {
+        events: {
+            'click': function() {
+                if (this.series.data.length > 1) this.remove();
+            }
+        }
+      }
+    }];
+
   if(!powerchart) {
-    powerchart = initChart(powerchart, '#powercontainer', 'network power', '#FF0000');
+    powerchart = initChart(powerchart, series, '#powercontainer');
   }
 
-  powerchart = drawChart(powerchart, [data.step, data.power]);
+  powerchart = drawChart(powerchart, 0, [data.step, data.power]);
 
 }
 
-var initChart = function(chart, selector, name, color) {
+var displayLatency = function(data) {
+
+  $('span#step.latency').html(data.step.toString());
+  $('span#latencymin').html(data.min.toString());
+  $('span#latencymax').html(data.max.toString());
+  $('span#latencyavg').html(data.avg.toString());
+
+  series = [{
+      name: 'average',
+      data: [],
+      color: '#FF0000',
+      type: 'line',
+      zIndex: 1
+  },{
+      data: [],
+      name: 'latency',
+      color: '#0000FF',
+      type: 'arearange',
+      linkedTo: ':previous',
+      fillOpacity: 0.3,
+      zIndex: 0
+  }];
+
+  if(!latencychart) {
+    latencychart = initChart(latencychart, series, '#latencycontainer');
+  }
+
+  latencychart = drawChart(latencychart, 1, [data.step, data.min, data.max]);
+  latencychart = drawChart(latencychart, 0, [data.step, data.avg]);
+
+}
+
+var initChart = function(chart, series, selector) {
 
   $(selector).highcharts({
     title: {
@@ -76,40 +136,34 @@ var initChart = function(chart, selector, name, color) {
         plotLines: [{
             value: 0,
             width: 1,
-            color: color
         }]
     },
     xAxis: {
       minTickInterval: 1
     },
-    series: [{
-      data: [],
-      name: name,
-      color: color,
-      point: {
-        events: {
-            'click': function() {
-                if (this.series.data.length > 1) this.remove();
-            }
-        }
-      }
-    }]
+    series: series
   });
 
   return $(selector).highcharts();
 
 }
 
-var drawChart = function(chart, point) {
+var drawChart = function(chart, id, point) {
 
   series = chart.series[0];
+
+  nice = true;
 
   shift = false;
   if(series.data.length >= 20) {
     shift = true;
   }
 
-  chart.series[0].addPoint(point, true, shift);
+  if(chart.options.chart.type == 'arearange') {
+    nice = false;
+  }
+
+  chart.series[id].addPoint(point, true, shift, nice);
 
   return chart;
 
@@ -121,6 +175,8 @@ var monitor = function(e) {
         displayParameter(e.data);
     } else if(e.type == 'power') {
         displayPower(e.data);
+    } else if(e.type == 'latency') {
+        displayLatency(e.data);
     }
 }
 

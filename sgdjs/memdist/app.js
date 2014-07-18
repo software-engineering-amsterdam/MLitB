@@ -54,7 +54,7 @@ var settings = {
 // Higher: predictions take longer, thus workers are added more slowly by clients
 // Lower: Clients with high latency (e.g. 500 MS or something) may starve.
 var nodeSettings = {
-  'runtime': 4000
+  'runtime': 6000
 }
 
 // make this a online setting
@@ -824,6 +824,10 @@ var reduce = function(markovResults) {
 
 }
 
+var latency_min = 9999;
+var latency_max = 0;
+var latency_avg = [];
+
 var prereduce = function(req) {
 
   dropClient = false;
@@ -848,7 +852,15 @@ var prereduce = function(req) {
   // determine lag.
   lag = hrtime() - req.io.socket.mapTime - runtime;
 
-  console.log('>> id/lag/AT/TRT:', id, lag, req.io.socket.runTime, runtime);
+  if(lag < latency_min) { 
+    latency_min = lag;
+  }
+
+  if(lag > latency_max) { 
+    latency_max = lag;
+  }
+
+  latency_avg.push(lag);
 
   if(lag < 0) {
     console.log('$$$ lag under zero:', lag);
@@ -918,6 +930,24 @@ var prereduce = function(req) {
     // what is the delay?
     delay = process.hrtime(markovFirstResult).join('')
     console.log('chain reception delay / last to arrive:', delay / 1000000, 'MS', req.io.socket.id);
+
+    avg = latency_avg.average();
+
+    console.log('min!! ', latency_min)
+
+    sendMonitor({
+      type: 'latency',
+      data: {
+        'min': latency_min,
+        'max': latency_max,
+        'avg': avg,
+        'step': step
+      }
+    });
+
+    latency_min = 9999;
+    latency_max = 0;
+    latency_avg = [];
 
     reduce(markovResults);
 
@@ -1027,8 +1057,6 @@ var initiator = function(datamap, req) {
       j += localset.lenght;
       continue;
     }
-
-    console.log('allocated power:', localset.length, client.id)
 
     set.push({
       'client': client.id,
@@ -1171,8 +1199,6 @@ var reallocate = function(datamap) {
     diff = currentPowerFloat - currentPower;
     client.powerDiff = diff;
 
-    console.log('client calculated power:', currentPower, client.id);
-
     // currentPower can not be more than allocated dataset
     if(client.device == 'mobile') {
       clientMaxData = MAX_MOBILE;
@@ -1310,7 +1336,7 @@ var reallocate = function(datamap) {
   }
 
   if(totalEmpty) {
-    console.log('manage unpowered data, number:', totalEmpty);
+    //console.log('manage unpowered data, number:', totalEmpty);
 
     // there are vectors in the datamap which are unprocessed, because some clients are full
     // find clients which are not full yet

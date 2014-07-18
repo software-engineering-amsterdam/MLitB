@@ -66,10 +66,31 @@ html
                             td
                                 span#clients
                 div#powercontainer
+            div.col-md-6
+                h4 Latency per timestep
+                table.table.table-condensed
+                    thead
+                        tr
+                            th Step
+                            th Minimum
+                            th Maximum
+                            th Average
+                    tbody
+                        tr
+                            td
+                                span#step.latency
+                            td
+                                span#latencymin
+                            td
+                                span#latencymax
+                            td
+                                span#latencyavg
+                div#latencycontainer                
 
     input(type='hidden', id='started', value='#{start}')
 
     script(src='/js/jquery.js')
     script(src='/js/highcharts.js')
+    script(src='/js/highcharts-more.js')
     script(src='//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js')
     script(src='/js/monitor.js')
