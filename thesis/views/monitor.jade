@@ -1,0 +1,96 @@
+doctype
+html
+  head
+    title ML in the Browser
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    script(src='/socket.io/socket.io.js')
+    link(rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css")
+    link(rel="stylesheet" href="/css/monitor.css")
+  body
+    nav.navbar.navbar-default(role="navigation")
+        div.container
+            div.navbar-header
+                a.navbar-brand(href="#") ML in the Browser
+                ul.nav.navbar-nav
+                    li
+                        //a step time: #{step} ms
+                        button.btn.btn-default.navbar-btn#start(type="button")
+                            span.glyphicon.glyphicon-play
+                            span.navtext  Start
+                        button.btn.btn-default.navbar-btn#pause(type="button")
+                            span.glyphicon.glyphicon-pause
+                            span.navtext  Pause
+                        button.btn.btn-default.navbar-btn#reset(type="button")
+                            span.glyphicon.glyphicon-repeat
+                            span.navtext  Reset
+                ul.nav.navbar-nav.steptext
+                    li
+                        a.navbar-link step time: #{step} ms
+
+
+    div.container
+        div.row
+            div.col-md-6
+                h4 Classifier error rate
+                table.table.table-condensed
+                    thead
+                        tr
+                            th Step
+                            th Error
+                            th Delta
+                    tbody
+                        tr
+                            td
+                                span#step.error
+                            td
+                                span#error
+                            td
+                                span#delta
+                // pre#log           
+                div#errorcontainer
+
+            div.col-md-6
+                h4 Network power in vectors per timestep
+                table.table.table-condensed
+                    thead
+                        tr
+                            th Step
+                            th Power
+                            th Clients
+                    tbody
+                        tr
+                            td
+                                span#step.power
+                            td
+                                span#power
+                            td
+                                span#clients
+                div#powercontainer
+            div.col-md-6
+                h4 Latency per timestep
+                table.table.table-condensed
+                    thead
+                        tr
+                            th Step
+                            th Minimum
+                            th Maximum
+                            th Average
+                    tbody
+                        tr
+                            td
+                                span#step.latency
+                            td
+                                span#latencymin
+                            td
+                                span#latencymax
+                            td
+                                span#latencyavg
+                div#latencycontainer                
+
+    input(type='hidden', id='started', value='#{start}')
+
+    script(src='/js/jquery.js')
+    script(src='/js/highcharts.js')
+    script(src='/js/highcharts-more.js')
+    script(src='//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js')
+    script(src='/js/monitor.js')

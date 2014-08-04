@@ -1,0 +1,54 @@
+doctype
+html
+  head
+    title ML in the Browser
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    script(src='/socket.io/socket.io.js')
+    link(rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css")
+    link(rel="stylesheet" href="/css/app.css")
+  body
+    nav.navbar.navbar-default(role="navigation")
+        div.container
+            div.navbar-header
+                a.navbar-brand(href="#") ML in the Browser
+                ul.nav.navbar-nav.navbar-right
+                    li
+                        button.btn.btn-default.navbar-btn#start(type="button")
+                            span.glyphicon.glyphicon-off
+                            span  Start
+                        span.btn.btn-default.btn-file.navbar-btn
+                            input#files(type="file" name="files")
+                            span.glyphicon.glyphicon-upload
+                            span  Upload
+                        span.btn.btn-default.btn-file.navbar-btn#addworker
+                            span.glyphicon.glyphicon-plus
+
+    div.container
+        div.row
+            div.col-lg-6
+                h4 Workers in operation: 
+                    span#nrworkers 0
+                table.table.table-condensed
+                    thead
+                        tr
+                            th ID
+                            th V/sec
+                            th Iter
+                            th TA
+                            th TRT
+                            th MS
+                    tbody#performance
+                    thead
+                        tr 
+                            th
+                            th.vsecaverage
+                            th
+                            th
+                            th
+                            th
+                h4 Log
+                pre.log
+
+    script(src='/js/jquery.js')
+    script(src='//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js')
+    script(src='/js/client.js')

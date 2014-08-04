@@ -1,0 +1,15 @@
+{
+  "name": "mlitb",
+  "version": "0.1.0",
+  "description": "Package run parallelized SGD/MCMC algorithms in a MapReduce network.",
+  "main": "app.js",
+  "author": "Remco Hendriks <r3mcohendriks@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express.io": "~1.1.13",
+    "jade": "~1.3.1",
+    "stylus": "~0.44.0",
+    "nib": "~1.0.2",
+    "colors": "~0.6.2"
+  }
+}
