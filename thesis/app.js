@@ -30,6 +30,7 @@
  * 3. Open one network testing instance, press upload-> select test dataset file filefrom /Data/
  * 4. Open one control panel instance, press start.
  * 5. Network is now operational and working. Network testing instance may be slow due to predicting the full dataset size each update.
+ * (6.) Observe generalization error results in the network testing instance.
  *
  * Add more working instances (slave nodes):
  * In worker instance, press + to add slave node (web worker). Optimal number is (number of CPU processing units * 2) - 1.
@@ -103,30 +104,23 @@ var nodeSettings = {
 var running = false;
 var start = false;
 
-var normalizeFactor;
+var normalizeFactor, markovLength, markovResults, markovFirstResult, proxyTimeout, SGD;
 var markovChain = [];
-var markovLength;
-var markovResults;
-var markovFirstResult;
 var markovIDs = [];
 var parameters = [];
+var dataToProxy = [];
+var latency_avg = [];
+var datamap = [];
+var timeouts = {};
+
 var markovRotationID = 0;
 var parameterRotationID = 0;
-
 var step = 0;
-var initial_parameter = INITIAL_PARAMETER;
-var timeouts = {};
-var SGD;
-
 var latency_min = 9999;
 var latency_max = 0;
-var latency_avg = [];
-
-var datamap = [];
 var nextIndex = 1;
 
-var dataToProxy = [];
-var proxyTimeout;
+var initial_parameter = INITIAL_PARAMETER;
 
 // helper functions
 
@@ -207,6 +201,9 @@ var sendTest = function(data) {
 /*
   map is build as such:
   id = index of remote data object.
+
+  note: the server node does not record any difference between S_n and D_n, they are both 'data'
+
   [
     {
       id: 1,
@@ -1172,14 +1169,30 @@ var reallocate = function(datamap) {
       assignedData = [];
       total = 0;
 
+      coverage_required = true;
+      coverage_count = 0;
+
       // while there is still data and allocation space left
       while(j-- && allocationLeft--) {
 
         piece = datamap[j];
 
+        // already allocated to this client
         if(piece.allocated.indexOf(client.id) > -1) {
           allocationLeft++;
           continue;
+        }
+
+        // already is covered enough
+        if(piece.allocated.length >= COVERAGE_EQ && coverage_required == true) {
+          allocationLeft++;
+          coverage_count++;
+          // when full dataset is covered, allocation is allowed
+          if(coverage_count == datamap.length) {
+            coverage_required = false;
+          }
+          continue;
+
         }
 
         piece.allocated.push(client.id);
@@ -1389,9 +1402,12 @@ var reset = function(req) {
   markovIDs = [];
 }
 
-/* Socket IO Router */
+/* Socket IO Settings */
+app.io.set('log', true);
+app.io.set('log level', 2);
+app.io.set('destroy buffer size', Infinity);
 
-app.io.set("heartbeat timeout", nodeSettings.runtime);
+/* Socket IO Router */
 
 app.io.route('processworkerstart', processworkerstart);
 app.io.route('dataworkerstart', dataworkerstart);

@@ -9,4 +9,6 @@ remco.hendriks@student.uva.nl
 
 r3mcohendriks@gmail.com (private)
 
+See app.js for usage instructions
+
 Source code licence: MIT
