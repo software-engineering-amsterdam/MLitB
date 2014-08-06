@@ -55,10 +55,12 @@ program.version('0.2.0')
 
 if(!program.time) {
   console.log('No training time supplied, run [node app.js -t <time>]');
+  process.kill()
 } 
 
 if(program.time < 2000) {
   console.log('Training time too short, set at least 2000 MS');
+  process.kill()
 }
 
 function compile(str, path) {
