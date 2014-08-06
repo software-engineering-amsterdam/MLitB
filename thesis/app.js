@@ -44,8 +44,22 @@ app = require('express.io')()
   , stylus = require('stylus')
   , nib = require('nib')
   , http = require('http')
+  , program = require('commander')
   , SGDTrainer = require('./reduction')
 app.http().io()
+
+
+program.version('0.2.0')
+  .option('-t, --time <t>', 'Training time', parseInt)
+  .parse(process.argv);
+
+if(!program.time) {
+  console.log('No training time supplied, run [node app.js -t <time>]');
+} 
+
+if(program.time < 2000) {
+  console.log('Training time too short, set at least 2000 MS');
+}
 
 function compile(str, path) {
   return stylus(str)
@@ -98,7 +112,7 @@ var settings = {
 // Higher: predictions take longer, thus workers are added more slowly by clients
 // Lower: Clients with high latency (e.g. 500 MS or something) may starve.
 var nodeSettings = {
-  'runtime': 4000
+  'runtime': program.time
 }
 
 var running = false;
