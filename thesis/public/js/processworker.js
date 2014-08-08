@@ -191,11 +191,11 @@ var map = function(obj) {
       Net = new mlitb.Net();
       conf = []
       conf.push({type : 'input', sx : 28, sy:28, depth :1});
-      // conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
-      // conf.push({type : 'pool', sx : 2, stride : 2});
+      conf.push({type : 'conv', sx : 5, stride : 1, filters : 8, activation : 'relu'});
+      conf.push({type : 'pool', sx : 2, stride : 2});
       conf.push({type : 'conv', sx : 5, stride : 1, filters : 16, activation : 'relu'});
       conf.push({type : 'pool', sx : 3, stride : 3});
-      // conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
+      conf.push({type : 'fc', num_neurons : 10, activation : 'relu'});
       conf.push({type : 'fc', num_neurons : 10, activation : 'softmax'});
       
       Net.createLayers(conf);
