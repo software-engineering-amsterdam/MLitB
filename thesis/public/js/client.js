@@ -209,7 +209,7 @@ var measurePerformance = function(data) {
 
   prevVsec = performance[id].vsec;
 
-  $('#' + id + ' .vsec').html(vsec.toFixed(3));
+  $('#' + id + ' .vsec').html(vsec);
 
   $('#' + id + ' .iter').html(iter);
 
