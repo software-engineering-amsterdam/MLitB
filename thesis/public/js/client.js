@@ -81,7 +81,7 @@ var metaPerformance = function() {
     vsecTotal += performance[k].vsec;
   }
 
-  $('.vsectotal').html(vsecTotal.toFixed(3));
+  $('.vsectotal').html(vsecTotal);
 
   var measureAvg = [];
 
