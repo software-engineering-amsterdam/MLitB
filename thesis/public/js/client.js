@@ -75,29 +75,13 @@ var metaPerformance = function() {
   // number of workers
   $('#nrworkers').html(processWorkerCounter - 1);
 
-  var vsecAverage = 0.0;
-  var isecAverage = 0.0;
-
-  var iseca = [];
+  var vsecTotal;
 
   for(k in performance) {
-    vsecAverage += performance[k].vsec;
-    isecAverage += performance[k].isec;
-    iseca.push(performance[k].iter);
+    vsecTotal += performance[k].vsec;
   }
 
-  iseca = iseca.sort();
-
-  min = iseca[0];
-  max = iseca[iseca.length-1];
-
-  df = max - min;
-
-  vsecAverage /= processWorkerCounter -1;
-  isecAverage /= processWorkerCounter -1
-
-  $('.vsecaverage').html(vsecAverage.toFixed(3));
-  $('.isecaverage').html(isecAverage.toFixed(3));
+  $('.vsectotal').html(vsecTotal.toFixed(3));
 
   var measureAvg = [];
 
