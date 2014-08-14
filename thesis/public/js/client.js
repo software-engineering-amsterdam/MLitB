@@ -75,7 +75,7 @@ var metaPerformance = function() {
   // number of workers
   $('#nrworkers').html(processWorkerCounter - 1);
 
-  var vsecTotal;
+  var vsecTotal = 0.0;
 
   for(k in performance) {
     vsecTotal += performance[k].vsec;
