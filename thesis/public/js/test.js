@@ -20,7 +20,7 @@ var workerMessage = function(e) {
   nData = e.data.data.nData;
   step = e.data.data.step;
 
-	$('span#step.error').html(testIteration.toString());
+	$('span#step.error').html(step.toString());
 	$('span#error').html(discrete_loss.toString()+"/"+nData.toString());
 	$('span#delta').html(delta.toString());
 
@@ -28,10 +28,10 @@ var workerMessage = function(e) {
 		errorchart = initChart(errorchart, '#errorcontainer', 'error rate', '#0000FF');
 	}
 
-	errorchart = drawChart(errorchart, [testIteration, discrete_loss]);
+	errorchart = drawChart(errorchart, [step, discrete_loss]);
 
 	is_running=false;
-	testIteration++;
+	//step++;
 
 }
 
@@ -148,10 +148,20 @@ var handleFileSelect = function(evt) {
   }
 }
 
+var reset = function() {
+
+  errorchart.destroy();
+  errorchart = null;
+  //testIteration = 0;
+
+}
+
 var test = function(e) {
 	if(e.type == 'parameter' && !is_running) {
-        displayParameter(e.data);
-    }
+      displayParameter(e.data);
+  } else if(e.type == 'reset') {
+      reset();
+  }
 }
 
 io.on('test', test);

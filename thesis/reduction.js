@@ -187,14 +187,6 @@ SGDTrainer.prototype = {
       }
     }
 
-    sendMonitor({
-      type: 'parameter',
-      data: {
-        'error': totalError/totalVector,
-        'step': step
-      }
-    });
-
     sendTest({
       type: 'parameter',
       data: {

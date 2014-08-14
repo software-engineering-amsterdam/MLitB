@@ -4,7 +4,7 @@ io.emit('monitor');
 
 var log_list = [];
 
-var errorchart, powerchart, latencychart;
+var powerchart, latencychart;
 
 var started;
 
@@ -22,44 +22,6 @@ var logger = function(text) {
   }
 
   $('pre#log').html(text);
-
-}
-
-var lastParameter;
-
-var displayParameter = function(data) {
-
-  delta = 0.0;
-  if(lastParameter) {
-    delta = data.error - lastParameter;
-    delta = delta.toFixed(3);
-  }
-
-  lastParameter = data.error;
-
-	$('span#step.error').html(data.step.toString());
-  $('span#error').html(data.error.toString());
-  $('span#delta').html(delta.toString());
-
-  series = [{
-      data: [],
-      name: 'error rate',
-      color: '#0000FF',
-      type: 'line',
-      point: {
-        events: {
-            'click': function() {
-                if (this.series.data.length > 1) this.remove();
-            }
-        }
-      }
-    }];
-
-  if(!errorchart) {
-    errorchart = initChart(errorchart, series, '#errorcontainer');
-  }
-
-  errorchart = drawChart(errorchart, 0, [data.step, data.error]);
 
 }
 
@@ -171,9 +133,7 @@ var drawChart = function(chart, id, point) {
 
 var monitor = function(e) {
 
-    if(e.type == 'parameter') {
-        displayParameter(e.data);
-    } else if(e.type == 'power') {
+    if(e.type == 'power') {
         displayPower(e.data);
     } else if(e.type == 'latency') {
         displayLatency(e.data);
@@ -195,8 +155,12 @@ var pauseprogram = function() {
 var resetprogram = function() {
   io.emit('reset');
 
-  errorchart = initChart(errorchart, '#errorcontainer', 'error rate', '#0000FF');
-  powerchart = initChart(powerchart, '#powercontainer', 'network power', '#FF0000');
+  latencychart.destroy();
+  powerchart.destroy();
+
+  latencychart = null;
+  powerchart = null;
+
 }
 
 var controls = function() {

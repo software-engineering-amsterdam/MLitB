@@ -94,8 +94,8 @@ Array.prototype.average = function () {
 
 // MAX DESKTOP = number of vectors a desktop machine can store.
 // MAX_MOBILE = number of vectors a mobile device can store.
-var MAX_DESKTOP       = 1000,
-    MAX_MOBILE        = 500,
+var MAX_DESKTOP       = 1500,
+    MAX_MOBILE        = 1000,
     // COVERAGE EQ: data redundancy level. Data with lower COVERAGE_EQ are prioritized in distribution.
     COVERAGE_EQ       = 3,
     // POWER_MEAN: number of historic vsec measures to average
@@ -1416,6 +1416,11 @@ var reset = function(req) {
   parameters = [];
   markovResults = [];
   markovIDs = [];
+
+  sendTest({
+    type: 'reset'
+  });
+
 }
 
 /* Socket IO Settings */
