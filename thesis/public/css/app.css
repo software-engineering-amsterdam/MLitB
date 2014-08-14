@@ -50,4 +50,8 @@
         font-size: 14px;
     }
 
+    .navtext {
+        display: none;
+    }
+
 }
