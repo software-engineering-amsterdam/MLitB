@@ -4,6 +4,7 @@ html
     title ML in the Browser
     meta(name="viewport" content="width=device-width, initial-scale=1")
     script(src='/socket.io/socket.io.js')
+    script(src='http://d3js.org/d3.v3.min.js')
     link(rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css")
     link(rel="stylesheet" href="/css/monitor.css")
   body
@@ -85,7 +86,9 @@ html
                                 span#latencymax
                             td
                                 span#latencyavg
-                div#latencycontainer                
+                div#latencycontainer
+            div#d3vis
+                script(src='/d3/topology.js')
 
     input(type='hidden', id='started', value='#{start}')
 

@@ -941,6 +941,7 @@ var prereduce = function(req) {
         'min': latency_min,
         'max': latency_max,
         'avg': avg,
+        'latencies': latency_avg, //all latencies
         'step': step
       }
     });
@@ -1144,6 +1145,7 @@ var reallocate = function(datamap) {
   // add up the power of all nodes
   var powerAvailable = 0;
   var i = clientsOnline();
+  var pows = []//
   while(i--) {
     
     client = app.io.sockets.clients('room')[i]
@@ -1151,16 +1153,17 @@ var reallocate = function(datamap) {
     // do not determine when powertesting
     if(!client.powertesting) {
       powerAvailable += client.power;
+      pows.push(client.power);
     }
 
   }
-
   console.log('> power:', powerAvailable);
 
   sendMonitor({
     type: 'power',
     data: {
       'power': powerAvailable,
+      'powers': pows,//
       'clients': clientsOnline(),
       'step': step
     }

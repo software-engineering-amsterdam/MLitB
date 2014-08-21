@@ -67,6 +67,7 @@ var displayPower = function(data) {
 
   $('span#step.power').html(data.step.toString());
   $('span#power').html(data.power.toString());
+  savePower(data.powers.toString());
   $('span#clients').html(data.clients.toString());
 
   series = [{
@@ -97,6 +98,8 @@ var displayLatency = function(data) {
   $('span#latencymin').html(data.min.toString());
   $('span#latencymax').html(data.max.toString());
   $('span#latencyavg').html(data.avg.toString());
+  //Call d3 topology drawing
+  drawTopology(data.latencies);
 
   series = [{
       name: 'average',
