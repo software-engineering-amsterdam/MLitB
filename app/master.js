@@ -4,11 +4,11 @@ Client = require("./client");
 
 var Master = function() {
 
-	this.redis1 = redis_lib.createClient();
-	this.redis2 = redis_lib.createClient();
+    this.redis1 = redis_lib.createClient();
+    this.redis2 = redis_lib.createClient();
 
-	this.bosses = [];
-	this.slaves = [];
+    this.bosses = [];
+    this.slaves = [];
 
     this.nns = [];
 
@@ -124,12 +124,12 @@ Master.prototype = {
 
     },
 
-	send_message_to_slave: function(client, data) {
+    send_message_to_slave: function(client, data) {
 
         var send = false;
 
         var d = {
-			socket: client.id,
+            socket: client.id,
             data: data
         }
 
@@ -137,7 +137,7 @@ Master.prototype = {
         while(i--) {
 
             if(this.slaves[i].id == client.id) {
-            	this.redis1.publish(this.slaves[i].server, JSON.stringify(d));
+                this.redis1.publish(this.slaves[i].server, JSON.stringify(d));
                 send = true;
             }
         }
@@ -153,7 +153,7 @@ Master.prototype = {
         var send = false;
 
         var d = {
-			socket: socket,
+            socket: socket,
             data: data
         }
 
@@ -162,7 +162,7 @@ Master.prototype = {
 
             if(this.bosses[i][1] == socket) {
 
-            	this.redis1.publish(this.bosses[i][0], JSON.stringify(d));
+                this.redis1.publish(this.bosses[i][0], JSON.stringify(d));
                 send = true;
             }
         }
@@ -182,7 +182,7 @@ Master.prototype = {
 
     },
 
-	new_boss_connected: function(data, server, socket) {
+    new_boss_connected: function(data, server, socket) {
 
         this.bosses.push([server, socket]);
 
@@ -242,8 +242,8 @@ Master.prototype = {
         this.slaves.push(new_client);
 
         this.send_message_to_slave(new_client, {
-        	type: 'slave_id',
-        	data: new_client.id
+            type: 'slave_id',
+            data: new_client.id
         });
 
         console.log("> New slave connected (with boss):", new_client.id, new_client.boss);
@@ -308,24 +308,24 @@ Master.prototype = {
 
     },
 
-	client_disconnected: function(socket) {
+    client_disconnected: function(socket) {
 
-		// walk over bosses, is a shorter list (should be)
+        // walk over bosses, is a shorter list (should be)
 
-		var found = false;
+        var found = false;
 
-		var i = this.bosses.length;
-		while(i--) {
-			if(this.bosses[i][1] == socket) {
-				this.boss_disconnected(socket);
-				found = true;
-				break;
-			}
-		}
+        var i = this.bosses.length;
+        while(i--) {
+            if(this.bosses[i][1] == socket) {
+                this.boss_disconnected(socket);
+                found = true;
+                break;
+            }
+        }
 
-		if(!found) {
-			this.slave_disconnected(socket);
-		}
+        if(!found) {
+            this.slave_disconnected(socket);
+        }
 
     },
 
@@ -448,15 +448,15 @@ Master.prototype = {
         nn.remove_stats(boss);
     },
 
-	master_message: function(data) {
+    master_message: function(data) {
 
-		data = JSON.parse(data);
+        data = JSON.parse(data);
 
-		socket = data.socket;
-		server = data.server;
-		message = data.data;
+        socket = data.socket;
+        server = data.server;
+        message = data.data;
 
-		if(message.type == "new_boss") {
+        if(message.type == "new_boss") {
             this.new_boss_connected(message, server, socket);
         } else if(message.type == "new_slave") {
             this.new_slave_connected(message, server, socket);
@@ -478,26 +478,26 @@ Master.prototype = {
             console.log("! Received unknown message from client:", socket, message);
         }
 
-	},
+    },
 
-	message: function(channel, data) {
+    message: function(channel, data) {
 
-		if(channel == "master") {
-			this.master_message(data);
-		}
+        if(channel == "master") {
+            this.master_message(data);
+        }
 
-	},
+    },
 
-	start: function() {
+    start: function() {
 
-		that = this;
-		
-		this.redis2.on("message", function(c, d) { that.message(c,d); });
-		this.redis2.subscribe("master");
+        that = this;
+        
+        this.redis2.on("message", function(c, d) { that.message(c,d); });
+        this.redis2.subscribe("master");
 
         console.log("System ready");
 
-	},
+    },
 
     add_nn: function(boss, data) {
 

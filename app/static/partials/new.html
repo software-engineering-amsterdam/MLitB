@@ -1,258 +1,258 @@
-	<div class="container" ng-controller="join" ng-init="update_nns()">
-		<div class="row">
-			<div class="col-xs-12">
+    <div class="container" ng-controller="join" ng-init="update_nns()">
+        <div class="row">
+            <div class="col-xs-12">
 
-				<h3>New network</h3>
+                <h3>New network</h3>
 
-				<form role="form" name="nn_form">
+                <form role="form" name="nn_form">
 
-					<div class="row">
-				    <div class="col-xs-6">
+                    <div class="row">
+                    <div class="col-xs-6">
 
-					  <div class="row">
-					    <div class="col-xs-12">
-						  <div class="form-group">
-						    <label for="name">Network name</label>
-						    <input type="text" class="form-control" id="name" ng-model="nn.name" required>
-						  </div>
-					    </div>
-					  </div>
-					  <div class="row">
-					    <div class="col-xs-8">
-						  <div class="form-group">
-						    <label for="max_workers">Maximum number of parallel workers</label>
-						    <input type="number" class="form-control" id="max_workers" ng-model="nn.parallelism">
-						  </div>
-					    </div>
-				        <div class="col-xs-4">
-				          <div class="checkbox">
-	  				        <label>
-					          <br /><input type="checkbox" name="max_workers_infinite" ng-model="nn.parallelism_infinite"> Infinite
-					        </label>
-				          </div>
-					    </div>
-					  </div>
-					  <div class="row">
-					    <div class="col-xs-8">
-						  <div class="form-group">
-						    <label for="runtime">Total runtime in mS</label>
-						    <input type="number" class="form-control" id="runtime" ng-model="nn.runtime">
-						  </div>
-					    </div>
-				        <div class="col-xs-4">
-				          <div class="checkbox">
-	  				        <label>
-					          <br /><input type="checkbox" name="runtime_infinite" ng-model="nn.runtime_infinite"> Infinite
-					        </label>
-				          </div>
-					    </div>
-					  </div>
-					  <div class="form-group">
-					    <label for="iteration_time">Iteration time in mS</label>
-					    <br />
-						<label class="radio-inline">
-						  <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="5000"> 5000
-						</label>
-						<label class="radio-inline">
-						  <input type="radio" name="iteration_time" id="inlineRadio2" ng-model="nn.iteration_time" value="10000"> 10000
-						</label>
-						<label class="radio-inline">
-						  <input type="radio" name="iteration_time" id="inlineRadio3" ng-model="nn.iteration_time" value="15000"> 15000
-						</label>				   
-						<label class="radio-inline">
-						  <input type="radio" name="iteration_time" id="inlineRadio4" ng-model="nn.iteration_time" value="30000"> 30000
-						</label>				   
-					  </div>
-					</div>
-					<div class="col-xs-6">
-						<h4>Templates</h4>
-						<ul>
-							<li>
-								<a ng-click="load_template('simple_mnist')">Simple MNIST digit classifier</a>
-							</li>
-							<li>
-								<a ng-click="load_template('elaborate_mnist')">Elaborate MNIST digit classifier</a>
-							</li>
-						</ul>
-					</div>
-				</div>
+                      <div class="row">
+                        <div class="col-xs-12">
+                          <div class="form-group">
+                            <label for="name">Network name</label>
+                            <input type="text" class="form-control" id="name" ng-model="nn.name" required>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-xs-8">
+                          <div class="form-group">
+                            <label for="max_workers">Maximum number of parallel workers</label>
+                            <input type="number" class="form-control" id="max_workers" ng-model="nn.parallelism">
+                          </div>
+                        </div>
+                        <div class="col-xs-4">
+                          <div class="checkbox">
+                            <label>
+                              <br /><input type="checkbox" name="max_workers_infinite" ng-model="nn.parallelism_infinite"> Infinite
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-xs-8">
+                          <div class="form-group">
+                            <label for="runtime">Total runtime in mS</label>
+                            <input type="number" class="form-control" id="runtime" ng-model="nn.runtime">
+                          </div>
+                        </div>
+                        <div class="col-xs-4">
+                          <div class="checkbox">
+                            <label>
+                              <br /><input type="checkbox" name="runtime_infinite" ng-model="nn.runtime_infinite"> Infinite
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label for="iteration_time">Iteration time in mS</label>
+                        <br />
+                        <label class="radio-inline">
+                          <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="5000"> 5000
+                        </label>
+                        <label class="radio-inline">
+                          <input type="radio" name="iteration_time" id="inlineRadio2" ng-model="nn.iteration_time" value="10000"> 10000
+                        </label>
+                        <label class="radio-inline">
+                          <input type="radio" name="iteration_time" id="inlineRadio3" ng-model="nn.iteration_time" value="15000"> 15000
+                        </label>                   
+                        <label class="radio-inline">
+                          <input type="radio" name="iteration_time" id="inlineRadio4" ng-model="nn.iteration_time" value="30000"> 30000
+                        </label>                   
+                      </div>
+                    </div>
+                    <div class="col-xs-6">
+                        <h4>Templates</h4>
+                        <ul>
+                            <li>
+                                <a ng-click="load_template('simple_mnist')">Simple MNIST digit classifier</a>
+                            </li>
+                            <li>
+                                <a ng-click="load_template('elaborate_mnist')">Elaborate MNIST digit classifier</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
 
-				  <div class="row">
-				    <div class="col-xs-6">
-				    	<label for="config">Layer configuration</label>
-					    	<div class="form-group">
+                  <div class="row">
+                    <div class="col-xs-6">
+                        <label for="config">Layer configuration</label>
+                            <div class="form-group">
 
-							    <div class="row">
-								    <div class="col-xs-8">
-									    <select class="form-control" ng-model="conf_type">
-										  <option value="input" selected>Input</option>
-										  <option value="conv">Conv</option>
-										  <option value="pool">Pool</option>
-										  <option value="fc">FC</option>
-										</select>
-									</div>
-								</div>
-								<br />
-								<div ng-show="conf_type == 'input'">
-									<form role="form" novalidate name="layer_conf_input">
-										<div class="row">
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">SX</label>
-											    	<input type="number" class="form-control" ng-model="layer.input.sx" id="sx">
-											  	</div>
-										    </div>
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">SY</label>
-											    	<input type="number" class="form-control" ng-model="layer.input.sy" id="sy">
-											  	</div>
-										    </div>
-										</div>
-										<div class="row">
-										    <div class="col-xs-5">
-										    	<div class="form-group">
-											    	<label for="name">Depth</label>
-											    	<input type="number" class="form-control" ng-model="layer.input.depth" id="input">
-											  	</div>
-										   	</div>
-										</div>
-										<button type="submit" ng-click="add_layer(layer.input, conf_type)" class="btn btn-default">Add</button>
-									</form>
-								</div>
-								<div ng-show="conf_type == 'conv'">
-									<form role="form" novalidate name="layer_conf_conv">
-										<div class="row">
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">SX</label>
-											    	<input type="number" class="form-control" ng-model="layer.conv.sx" id="sx">
-											  	</div>
-										    </div>
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">Stride</label>
-											    	<input type="number" class="form-control" ng-model="layer.conv.stride" id="stride">
-											  	</div>
-										    </div>
-										</div>
-										<div class="row">
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">Filters</label>
-											    	<input type="number" class="form-control" ng-model="layer.conv.filters" id="filters">
-											  	</div>
-										    </div>
-										    <div class="col-xs-5">
-										    	<label for="name">Activation</label>
-											    <select class="form-control" ng-model="layer.conv.activation">
-												  <option value="relu" selected>ReLu</option>
-												  <option value="softmax">SoftMax</option>
-												  <option value="sigmoid">Sigmoid</option>
-												  <option value="tanh">TanH</option>
-												  <option value="maxout">Maxout</option>
-												  <option value="dropout">Dropout</option>
-												</select>
-											</div>
-										</div>
-										<button type="submit" ng-click="add_layer(layer.conv, conf_type)" class="btn btn-default">Add</button>
-									</form>
-								</div>
-								<div ng-show="conf_type == 'pool'">
-									<form role="form" novalidate name="layer_conf_pool">
-										<div class="row">
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">SX</label>
-											    	<input type="number" class="form-control" ng-model="layer.pool.sx" id="sx">
-											  	</div>
-										    </div>
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">Stride</label>
-											    	<input type="number" class="form-control" ng-model="layer.pool.stride" id="stride">
-											  	</div>
-										    </div>
-										</div>
-										<button type="submit" ng-click="add_layer(layer.pool, conf_type)" class="btn btn-default">Add</button>
-									</form>
-								</div>
-								<div ng-show="conf_type == 'fc'">
-									<form role="form" novalidate name="layer_conf_fc">
-										<div class="row">
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">Number of neurons:</label>
-											    	<input type="number" class="form-control" ng-model="layer.fc.num_neurons" id="num_neurons">
-											  	</div>
-										    </div>
-										    <div class="col-xs-5">
-												<div class="form-group">
-											    	<label for="name">Activation</label>
-												    <select class="form-control" ng-model="layer.fc.activation">
-													  <option value="relu" selected>ReLu</option>
-													  <option value="softmax">SoftMax</option>
-													  <option value="sigmoid">Sigmoid</option>
-													  <option value="tanh">TanH</option>
-													  <option value="maxout">Maxout</option>
-													  <option value="dropout">Dropout</option>
-													</select>
-											  	</div>
-										    </div>
-										</div>
-										<button type="submit" ng-click="add_layer(layer.fc, conf_type)" class="btn btn-default">Add layer</button>
-									</form>
-								</div>
-								
-							 </div>
+                                <div class="row">
+                                    <div class="col-xs-8">
+                                        <select class="form-control" ng-model="conf_type">
+                                          <option value="input" selected>Input</option>
+                                          <option value="conv">Conv</option>
+                                          <option value="pool">Pool</option>
+                                          <option value="fc">FC</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <br />
+                                <div ng-show="conf_type == 'input'">
+                                    <form role="form" novalidate name="layer_conf_input">
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">SX</label>
+                                                    <input type="number" class="form-control" ng-model="layer.input.sx" id="sx">
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">SY</label>
+                                                    <input type="number" class="form-control" ng-model="layer.input.sy" id="sy">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Depth</label>
+                                                    <input type="number" class="form-control" ng-model="layer.input.depth" id="input">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" ng-click="add_layer(layer.input, conf_type)" class="btn btn-default">Add</button>
+                                    </form>
+                                </div>
+                                <div ng-show="conf_type == 'conv'">
+                                    <form role="form" novalidate name="layer_conf_conv">
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">SX</label>
+                                                    <input type="number" class="form-control" ng-model="layer.conv.sx" id="sx">
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Stride</label>
+                                                    <input type="number" class="form-control" ng-model="layer.conv.stride" id="stride">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Filters</label>
+                                                    <input type="number" class="form-control" ng-model="layer.conv.filters" id="filters">
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-5">
+                                                <label for="name">Activation</label>
+                                                <select class="form-control" ng-model="layer.conv.activation">
+                                                  <option value="relu" selected>ReLu</option>
+                                                  <option value="softmax">SoftMax</option>
+                                                  <option value="sigmoid">Sigmoid</option>
+                                                  <option value="tanh">TanH</option>
+                                                  <option value="maxout">Maxout</option>
+                                                  <option value="dropout">Dropout</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button type="submit" ng-click="add_layer(layer.conv, conf_type)" class="btn btn-default">Add</button>
+                                    </form>
+                                </div>
+                                <div ng-show="conf_type == 'pool'">
+                                    <form role="form" novalidate name="layer_conf_pool">
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">SX</label>
+                                                    <input type="number" class="form-control" ng-model="layer.pool.sx" id="sx">
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Stride</label>
+                                                    <input type="number" class="form-control" ng-model="layer.pool.stride" id="stride">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" ng-click="add_layer(layer.pool, conf_type)" class="btn btn-default">Add</button>
+                                    </form>
+                                </div>
+                                <div ng-show="conf_type == 'fc'">
+                                    <form role="form" novalidate name="layer_conf_fc">
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Number of neurons:</label>
+                                                    <input type="number" class="form-control" ng-model="layer.fc.num_neurons" id="num_neurons">
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Activation</label>
+                                                    <select class="form-control" ng-model="layer.fc.activation">
+                                                      <option value="relu" selected>ReLu</option>
+                                                      <option value="softmax">SoftMax</option>
+                                                      <option value="sigmoid">Sigmoid</option>
+                                                      <option value="tanh">TanH</option>
+                                                      <option value="maxout">Maxout</option>
+                                                      <option value="dropout">Dropout</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" ng-click="add_layer(layer.fc, conf_type)" class="btn btn-default">Add layer</button>
+                                    </form>
+                                </div>
+                                
+                             </div>
 
-							 <button type="submit" ng-click="add_nn(nn)" class="btn btn-default">Add Neural Network</button>
-						</form>
-					</div>
-			        <div class="col-xs-6">
-			        	<label for="config_overview">Configuration overview</label>
+                             <button type="submit" ng-click="add_nn(nn)" class="btn btn-default">Add Neural Network</button>
+                        </form>
+                    </div>
+                    <div class="col-xs-6">
+                        <label for="config_overview">Configuration overview</label>
 
-			        	<div ng-hide="layers.length">
-			        		<h4>Add layers on the left.</h4>
-			        		<p>Begin with an "input" layer. Add conv/pool/FC layers in the middle, end with a FC layer.
-			        		<h3><span class="glyphicon glyphicon-arrow-left"></span></h3>
-			        	</div>
+                        <div ng-hide="layers.length">
+                            <h4>Add layers on the left.</h4>
+                            <p>Begin with an "input" layer. Add conv/pool/FC layers in the middle, end with a FC layer.
+                            <h3><span class="glyphicon glyphicon-arrow-left"></span></h3>
+                        </div>
 
-			        	<ul ng-show="layers.length" class="sortable" data-sortable="dragControlListeners" data-ng-model="layers">
-						  <li data-ng-repeat="item in layers" data-sortable-item>
-						  	{{ item.type }}: {{ item.conf }}
+                        <ul ng-show="layers.length" class="sortable" data-sortable="dragControlListeners" data-ng-model="layers">
+                          <li data-ng-repeat="item in layers" data-sortable-item>
+                            {{ item.type }}: {{ item.conf }}
 
-						    <div data-sortable-item-handle>
-						    	<span class="glyphicon glyphicon-sort"></span>
-						    </div>
+                            <div data-sortable-item-handle>
+                                <span class="glyphicon glyphicon-sort"></span>
+                            </div>
 
-						    <span class="glyphicon glyphicon-trash trash" ng-click="remove_layer(item)"></span>
-						  </li>
-					    </ul>
+                            <span class="glyphicon glyphicon-trash trash" ng-click="remove_layer(item)"></span>
+                          </li>
+                        </ul>
 
-					    <div ng-show="layer_errors.length">
-					    	<strong>Configuration notes:</strong>
-					    	<ul>
-					    		<li ng-repeat="error in layer_errors">
-					    			{{ error}}
-					    		</li>
-					    	</ul>
-					    </div>
+                        <div ng-show="layer_errors.length">
+                            <strong>Configuration notes:</strong>
+                            <ul>
+                                <li ng-repeat="error in layer_errors">
+                                    {{ error}}
+                                </li>
+                            </ul>
+                        </div>
 
-					    <div ng-show="errors.length">
-					    	<ul>
-					    		<li ng-repeat="error in errors">
-					    			<strong>{{ error}}</strong>
-					    		</li>
-					    	</ul>
-					    </div>
-				    </div>
-				    
-				  </div>
+                        <div ng-show="errors.length">
+                            <ul>
+                                <li ng-repeat="error in errors">
+                                    <strong>{{ error}}</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                  </div>
 
-				</form>
+                </form>
 
 
-			</div>
-		</div>
-	</div>
+            </div>
+        </div>
+    </div>

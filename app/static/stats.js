@@ -14,11 +14,11 @@ var data = function(d) {
 
   if(!test_data.length) {
     console.log('no test data');
-  	return;
+    return;
   }
 
   if(d.step == 0) {
-	   is_initialized = false;
+       is_initialized = false;
   }
 
   if (!is_initialized) { 
@@ -73,8 +73,8 @@ var data = function(d) {
 
   this.postMessage({
     data: {
-    	discrete_loss: discrete_loss,
-    	delta: delta,
+        discrete_loss: discrete_loss,
+        delta: delta,
       nData : nData,
       step : d.step
     }
@@ -84,17 +84,17 @@ var data = function(d) {
 
 var fileupload = function(data) {
 
-	test_data = data;
+    test_data = data;
   nData = test_data.length;
 
 }
 
 this.onmessage = function(e) {
-	
-	if(e.data.type == 'data') {
-		data(e.data.data);
-	} else if(e.data.type == 'fileupload') {
-		fileupload(e.data.data);
-	}
+    
+    if(e.data.type == 'data') {
+        data(e.data.data);
+    } else if(e.data.type == 'fileupload') {
+        fileupload(e.data.data);
+    }
 
 }
