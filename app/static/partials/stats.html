@@ -1,0 +1,37 @@
+	<div class="container" ng-controller="join" ng-init="update_nns()">
+		<div class="row">
+			<div class="col-lg-8">
+
+				<h3>Network stats</h3>
+				
+				<span class="btn btn-default btn-file btn-xs"><input id="files_stats" name="files"type="file"><span class="glyphicon glyphicon-cloud-upload"></span> Add</button></span>
+
+				<table class="table table-condensed">
+					<thead>
+						<tr>
+							<th>Step</th>
+							<th>Error</th>
+							<th>Delta</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						<tr>
+							<td>
+								<span class="error" id="step"></span>
+							</td>
+							<td><span id="error"></span></td>
+							<td><span id="delta"></span></td>
+						</tr>
+					</tbody>
+				</table>
+
+				<div id="chartcontainer"> </div>
+
+				<h3>Log</h3>
+				<pre class="log">{{ log }}</pre>
+
+			</div>
+
+		</div>
+	</div>

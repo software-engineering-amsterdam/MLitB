@@ -1,0 +1,62 @@
+	<div class="container" ng-controller="join" ng-init="update_nns()">
+		<div class="row">
+			<div class="col-lg-8">
+
+				<h3>Join a network</h3>
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th ng-click="changeSort('name')">Name</th>
+							<th ng-click="changeSort('clients')">Workers</th>
+							<th ng-click="changeSort('power')">Power</th>
+							<th ng-click="changeSort('runtime')">Runtime</th>
+							<th ng-click="changeSort('runtime_elapsed')">Elapsed</th>
+							<th ng-click="changeSort('realtime_elapsed')">Real time</th>
+							<th>My workers</th>
+							<th>Add worker</th>
+							<th>Add data</th>
+							<th><span class="glyphicon glyphicon-stats"></span></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="info">
+							<td>{{ total.name }}</td>
+							<td>{{ total.clients }}</td>
+							<td>{{ total.power }} v/S</td>
+							<td>{{ total.runtime }} mS</td>
+							<td>{{ total.runtime_elapsed }} mS</td>
+							<td>{{ total.realtime_elapsed }} mS</td>
+							<td>0</td>
+							<td><!-- <button type="button" ng-click="join_any()" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span> Add</button> --></td>
+							<td></td>
+							<td></td>
+						</tr>
+						<tr ng-repeat="nn in client.nns | filter:namequery | orderBy:sort:reverse">
+							<td>{{ nn.name }}</td>
+							<td>{{ nn.clients }} / {{ nn.max_clients }}</td>
+							<td>{{ nn.power }} v/S</td>
+							<td>{{ nn.runtime }} mS</td>
+							<td>{{ nn.runtime_elapsed }} mS</td>
+							<td>{{ nn.realtime_elapsed }} mS</td>	
+							<td>0</td>
+							<td><button type="button" ng-disabled="nn.clients >= nn.max_clients" ng-click="join(nn.id)" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span> Add</button></td>
+							<td><span class="btn btn-default btn-file btn-xs"><input type="file" onchange="angular.element(this).scope().add_data(angular.element(this).scope().nn, this.files)"><span class="glyphicon glyphicon-cloud-upload"></span> Add</button></span></td>
+							<td><a href="#/stats/{{ nn.id }}/"><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-stats"></span></button></a></td>
+						</tr>
+					</tbody>
+				</table>
+
+				<h3>Log</h3>
+				<pre class="log">{{ log }}</pre>
+
+			</div>
+			<div class="col-lg-4">
+				<h3>Filter</h3>
+				<div class="input-group input-group-sm">
+				  	<span class="input-group-addon">Search </span>
+				  	<input type="text" class="form-control" ng-model="namequery">
+				</div>
+			</div>
+
+		</div>
+	</div>
