@@ -76,10 +76,10 @@
 			};
 		},
 
-		forward : function (X) {
+		forward : function (X, is_training) {
 			var Prev_out = X;
 			for (var i = 0; i < this.layers.length; i++) {
-				var V_out = this.layers[i].forward(Prev_out);
+				var V_out = this.layers[i].forward(Prev_out, is_training);
 				Prev_out = V_out;
 				// console.log('V_out '+i);
 				// console.log(V_out);

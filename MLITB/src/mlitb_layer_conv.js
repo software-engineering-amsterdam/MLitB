@@ -12,6 +12,7 @@
 		//optional
 		this.sy = typeof conf.sy !== 'undefined' ? conf.sy : conf.sx; //default is the same size with x
 		this.stride = (typeof conf.stride !== 'undefined' && conf.stride <= Math.min(this.sx,this.sy)) ? conf.stride : 1; //default stride is 1 
+		this.drop_conn_prob = typeof conf.drop_conn_prob === 'number' ? conf.drop_conn_prob : 0.0;
 
 		
 		this.out_sx = Math.ceil(conf.in_sx/this.stride); //could be floor for valid conv
@@ -31,6 +32,18 @@
 	ConvLayer.prototype = {
 		forward : function (V, is_training) {
 			this.V_in = V;
+			//Mask drop connect
+			this.Mask = []
+			if (is_training){
+				for (var i = 0; i < this.filters.length i++) {
+					this.Mask.push(new Vol(this.sx, this.sy, this.in_depth,{type : 'bern', prob : this.drop_conn_prob}));
+				};
+			} else {
+				for (var i = 0; i < this.filters.length; i++) {
+					this.Mask.push(new Vol(this.sx, this.sy, this.in_depth,{type : 'bern', prob : 0.0}));
+				};
+			}
+			
 			var hx = Math.floor(this.sx/2.0);
 			var hy = Math.floor(this.sy/2.0);
 			var dim = this.out_sx*this.out_sy;
@@ -44,6 +57,7 @@
 			};
 			for (var od=0;od<A.depth;od++) {
 				var f=this.filters[od]; //filter/weight data
+				var m=this.Mask[od];
 				for (var id=0,oi=od*dim;id<f.depth;id++,oi=od*dim){ //reset index of output data. we want to refill from x=0 y=0 again
 					for (var cy=0;cy<V.sy;cy+=this.stride) { //if use floor stride, then add an index here
 						for (var cx=0;cx<V.sx; cx+=this.stride,oi++) {
@@ -55,7 +69,7 @@
 									var ix=fx-hx;
 									if (ix>=0&&iy>=0&&ix<V.sx&&iy<V.sy){
 										// a+=f.data[fi]*V.get(ix,iy,id); //try function call here
-										a+=f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
+										a+=m.data[fi]*f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
 									}
 								};
 							};
@@ -81,6 +95,7 @@
 			};
 			for (var od=0;od<V_out.depth;od++) {
 				var f=this.filters[od]; //filter/weight data
+				var m = this.Mask[od];
 				for (var id=0,oi=od*dim;id<f.depth;id++,oi=od*dim){ //reset index of output data. we want to refill from x=0 y=0 again
 					for (var cy=0;cy<V_in.sy;cy+=this.stride) { //if use floor stride, then add an index here
 						for (var cx=0;cx<V_in.sx; cx+=this.stride,oi++) {
@@ -95,7 +110,7 @@
 										// a+=f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
 										// console.log(ix,iy,id);
 										V_in.drv[((V_in.sx * iy)+ix)+V_in.sx*V_in.sy*id] += f.data[fi]*V_out.drv[oi];
-										f.drv[fi]+= V_in.data[((V_in.sx * iy)+ix)+V_in.sx*V_in.sy*id]*V_out.drv[oi];
+										f.drv[fi]+= m.data[fi]*V_in.data[((V_in.sx * iy)+ix)+V_in.sx*V_in.sy*id]*V_out.drv[oi];
 									}
 								};
 							};

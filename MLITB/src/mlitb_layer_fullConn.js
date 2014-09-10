@@ -9,18 +9,21 @@
 		this.out_sy = 1;
 		this.weights = new Vol(1, this.in_neurons, this.out_depth); // we assume y as the number of connection come to this layer
 		this.biases = new Vol(1,1, this.out_depth, 0.1);
-		this.drop_conn_prob = typeof conf.drop_conn_prob === 'number' ? conf.drop_conn_prob : 0.5;
+		this.drop_conn_prob = typeof conf.drop_conn_prob === 'number' ? conf.drop_conn_prob : 0.0;
 		this.layer_type = 'fc';
 	}
 
 	FullConnLayer.prototype = {
 		forward : function (V, is_training) {
 			this.V_in = V;
-			// console.log("V");
-			// console.log(V);
-			// console.log("W");
-			// console.log(this.weights);
-			this.Mask = new Vol(1, this.in_neurons, this.out_depth, {type: 'bern', prob : this.drop_conn_prob})
+
+			//Masking for drop connect
+			if (is_training){
+				this.Mask = new Vol(1, this.in_neurons, this.out_depth, {type: 'bern', prob : this.drop_conn_prob})	
+			} else {
+				this.Mask = new Vol(1, this.in_neurons, this.out_depth, {type: 'bern', prob : 0.0})
+			}
+			
 			var M = this.Mask.data;
 			var in_data = V.data; //since full conn, dimension is not important, can traverse and calculate directly without get method
 			var Out = new Vol(1, 1, this.out_depth);
