@@ -2,12 +2,12 @@
 //todo: check leave behaviour; margin; autoscale; collision detection http://bl.ocks.org/mbostock/3231298 ; sync power latency
 
 top_width = 500;
-top_height = 400;
+top_height = 520;
 var top_svg = d3.select("#d3vis").append("svg")
     .attr("width", top_width)
     .attr("height", top_height)
     .attr("border", 1);
-
+/*
 var borderPath = top_svg.append("rect")
     .attr("x", 0)
     .attr("y", 0)
@@ -16,7 +16,7 @@ var borderPath = top_svg.append("rect")
     .style("stroke", 'black')
     .style("fill", "none")
     .style("stroke-width", 1);
-
+*/
 //start graphcode
 var force = d3.layout.force()
     .size([top_width, top_height])
@@ -33,6 +33,8 @@ var top_r_scale = d3.scale.linear()
 var top_c_scale = d3.scale.linear()
     .domain([0,100]).range([200,0]);
 
+
+//toString!!!
 function savePower(pows){
 //    a = pows.slice(0)
 //    top_r_scale.domain(d3.extent(pows));
@@ -87,7 +89,7 @@ function drawTopology(latencies){
     force.start();
 
     //temp sanity check
-    console.log(latencies)
+    //console.log(latencies)
 }
 
 

@@ -69,6 +69,7 @@ var displayPower = function(data) {
   $('span#power').html(data.power.toString());
   savePower(data.powers.toString());
   $('span#clients').html(data.clients.toString());
+  drawRedundancy(data.clients);
 
   series = [{
       data: [],
