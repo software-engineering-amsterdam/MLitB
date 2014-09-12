@@ -19,6 +19,9 @@ var Client = function(scope) {
 
     this.nns = [];
 
+    this.host;
+    this.port;
+
 }
 
 Client.prototype = {
@@ -142,6 +145,48 @@ Client.prototype = {
             boss: this.id,
             nn: nn_id
         });
+
+    },
+
+    request_download_parameters: function(nn_id) {
+
+        if(!this.nn_exists(nn_id)) {
+            return;
+        }
+
+
+        this.send_message_to_master('download_parameters', {
+            boss: this.id,
+            nn: nn_id
+        });
+
+    },
+
+    download_parameters: function(d) {
+
+        parameters = d.data;
+
+        var blob = new Blob([JSON.stringify(parameters)], {type: "application/json;charset=utf-8"});
+        saveAs(blob, "parameters.json");
+
+    },
+
+    upload_parameters: function(nn_id, data) {
+
+        if(!this.nn_exists(nn_id)) {
+            return;
+        }
+
+        this.send_message_to_master('upload_parameters', {
+            boss: this.id,
+            nn: nn_id,
+            data: data
+        });
+    },
+
+    upload_parameters_complete: function() {
+
+        this.logger('Parameter upload complete.');
 
     },
 
@@ -392,8 +437,12 @@ Client.prototype = {
             this.upload_to_slave(data);
         } else if(data.type == 'send_stats') {
             this.update_stats(data);
+        } else if(data.type == 'download_parameters') {
+            this.download_parameters(data);
+        } else if(data.type == 'upload_parameters_complete') {
+            this.upload_parameters_complete();
         }
-  
+
     },
 
     send_message_to_master: function(type, data) {
@@ -448,7 +497,10 @@ Client.prototype = {
 
         this.message_to_slave(slave, 'start', {
             boss_id: this.id,
-            nn: nn
+            nn: nn,
+            host: that.host,
+            portMin: that.portMin,
+            portMax: that.portMax
         });
 
         slave.nn = nn;
@@ -466,15 +518,27 @@ Client.prototype = {
 
         var that = this;
 
-        var port = Math.floor(Math.random() * (8004 - 8001 + 1)) + 8001;
+        $.ajax({
+          url: "/server_settings/",
+        }).done(function(data) {
+          
+            that.portMin = data.portMin;
+            that.portMax = data.portMax;
 
-        this.socket = io('http://localhost:' + port);
+            that.port = Math.floor(Math.random() * (that.portMax - that.portMin + 1)) + that.portMin;
+            that.host = data.location;
+
+            that.socket = io(that.host + ':' + that.port);
+            
+            that.socket.on('message', function (d) { that.message_from_master(d); });
+
+            that.send_message_to_master('new_boss', null);
+
+            that.logger("Client connected");
+
+        });
+
         
-        this.socket.on('message', function (d) { that.message_from_master(d); });
-
-        this.send_message_to_master('new_boss', null);
-
-        this.logger("Client connected");
 
     }
 }

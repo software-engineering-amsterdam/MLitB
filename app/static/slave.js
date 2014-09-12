@@ -237,8 +237,14 @@ Slave.prototype = {
         id = data.boss_id;
         nn = data.nn;
 
+        host = data.host;
+        portMin = data.portMin;
+        portMax = data.portMax;
+
+        port = Math.floor(Math.random() * (portMax - portMin + 1)) + portMin;
+
         this.boss_id = id;
-        this.start_socket(id);
+        this.start_socket(id, host, port);
         this.send_message_to_master('new_slave', { 
             boss_id: this.boss_id ,
             nn: nn

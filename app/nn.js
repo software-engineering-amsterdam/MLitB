@@ -199,6 +199,37 @@ NN.prototype = {
 
     },
 
+    download_parameters: function(boss) {
+
+        this.master.send_message_to_boss(boss, {
+            type: 'download_parameters',
+            data: {
+                parameters: this.parameters,
+                step: this.step,
+                sgd: this.SGD
+            }
+        });
+
+    },
+
+    upload_parameters: function(boss, d) {
+
+        parameters = d.parameters;
+        step = d.step;
+        sgd = d.sgd;
+
+        this.parameters = parameters;
+        this.step = step;
+
+        this.SGD = new SGDTrainer({}, {});
+        this.SGD.load(sgd);
+
+        this.master.send_message_to_boss(boss, {
+            type: 'upload_parameters_complete'
+        });
+
+    },
+
     add_client: function(client) {
 
         if(!this.client_space_available()) {
@@ -683,6 +714,11 @@ NN.prototype = {
     },
 
     aggregation: function() {
+
+        if(!this.operation_results.length) {
+            console.log("! Cannot aggregate (NN): No operation results.", this.id);
+            return;
+        }
 
         if(this.step == 0) {
             //Create object SGD Trainer

@@ -12,6 +12,7 @@ importScripts('lastmlitb.js')
 importScripts('slave.js');
 
 var Worker = function() {
+    this.host;
     this.port;
     this.socket;
 }
@@ -19,13 +20,11 @@ var Worker = function() {
 Worker.prototype = new Slave();
 Worker.prototype.contructor = Worker;
 
-Worker.prototype.start_socket = function(id) {
+Worker.prototype.start_socket = function(id, host, port) {
 
     var that = this;
 
-    var port = Math.floor(Math.random() * (8004 - 8001 + 1)) + 8001;
-
-    this.socket = io('http://localhost:' + port);
+    this.socket = io(host + ':' + port);
     this.socket.on('message', function (d) { that.message_from_master(d); });
 
 }

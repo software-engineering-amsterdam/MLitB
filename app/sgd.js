@@ -42,6 +42,32 @@ var SGDTrainer = function (net, conf) {
 };
     
 SGDTrainer.prototype = {
+
+  load: function(sgd) {
+    this.net = sgd.net;
+    this.loss = sgd.loss;
+    this.l2_loss = sgd.l2_loss;
+    this.l1_loss = sgd.l1_loss;
+
+    this.learning_rate = sgd.learning_rate;
+    this.l1_decay = sgd.l1_decay;
+    this.l2_decay = sgd.l2_decay;
+    this.batch_size = sgd.batch_size;
+    this.momentum = sgd.momentum;
+    this.iteration = sgd.iteration;
+    this.last_grads = sgd.last_grads;
+    this.sum_square_gads = sgd.sum_square_gads;
+    this.last_params = sgd.last_params;
+    this.total_data_seen = sgd.total_data_seen;
+    this.is_initialized = sgd.is_initialized;
+    this.last_pred_loss = sgd.last_pred_loss;
+    this.proceeded_data = sgd.proceeded_data;
+    this.lr_decay = sgd.lr_decay;
+    this.lr_threshold = sgd.lr_threshold;
+    this.lr_decay_interval = sgd.lr_decay_interval;
+
+  },
+
   reduce : function(nn){
 
     old_parameters = nn.parameters;

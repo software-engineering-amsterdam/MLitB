@@ -1,6 +1,6 @@
 var redis_lib = require("redis");
-NN = require("./nn");
-Client = require("./client");
+var NN = require("./nn");
+var Client = require("./client");
 
 var Master = function() {
 
@@ -441,11 +441,58 @@ Master.prototype = {
         nn = this.nn_by_id(nn_id);
 
         if(!nn) {
-            console.log("! Cannot rmove stats listener (boss) to (NN): NN does not exist", boss_id, nn_id);
+            console.log("! Cannot remove stats listener (boss) to (NN): NN does not exist", boss_id, nn_id);
             return;
         }
 
         nn.remove_stats(boss);
+    },
+
+    download_parameters: function(d) {
+
+        nn_id = d.nn;
+        boss_id = d.boss;
+
+        boss = this.boss_by_id(boss_id);
+
+        if(!boss) {
+            console.log("! Cannot download parameters to (boss) of (NN): boss does not exist", boss_id, nn_id);
+            return;
+        }
+
+        nn = this.nn_by_id(nn_id);
+
+        if(!nn) {
+            console.log("! Cannot download parameters to (boss) of (NN): NN does not exist", boss_id, nn_id);
+            return;
+        }
+
+        nn.download_parameters(boss);
+
+    },
+
+    upload_parameters: function(d) {
+
+        nn_id = d.nn;
+        boss_id = d.boss;
+        data = d.data;
+
+        boss = this.boss_by_id(boss_id);
+
+        if(!boss) {
+            console.log("! Cannot upload parameters from (boss) to (NN): boss does not exist", boss_id, nn_id);
+            return;
+        }
+
+        nn = this.nn_by_id(nn_id);
+
+        if(!nn) {
+            console.log("! Cannot upload parameters from (boss) to (NN): NN does not exist", boss_id, nn_id);
+            return;
+        }
+
+        nn.upload_parameters(boss, data);
+
     },
 
     master_message: function(data) {
@@ -474,6 +521,10 @@ Master.prototype = {
             this.add_stats(message.data);
         } else if(message.type == "remove_stats") {
             this.remove_stats(message.data);
+        } else if(message.type == "download_parameters") {
+            this.download_parameters(message.data);
+        } else if(message.type == "upload_parameters") {
+            this.upload_parameters(message.data);
         } else {
             console.log("! Received unknown message from client:", socket, message);
         }

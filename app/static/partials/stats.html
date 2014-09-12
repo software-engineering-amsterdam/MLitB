@@ -3,8 +3,18 @@
             <div class="col-lg-8">
 
                 <h3>Network stats</h3>
-                
-                <span class="btn btn-default btn-file btn-xs"><input id="files_stats" name="files"type="file"><span class="glyphicon glyphicon-cloud-upload"></span> Add</button></span>
+
+                <div class="row">
+                    <div class="col-xs-4">
+                        <span class="btn btn-default btn-file btn-xs"><input id="files_stats" name="files" type="file"><span class="glyphicon glyphicon-cloud-upload"></span> Load test data</button></span>
+                    </div>
+                    <div class="col-xs-4">
+                        <span class="btn btn-default btn-file btn-xs"><input name="download_parameters" type="button" ng-click="download_parameters()"><span class="glyphicon glyphicon-download-alt"></span> Download parameters</button></span>
+                    </div>
+                    <div class="col-xs-4">
+                        <span class="btn btn-default btn-file btn-xs"><input id="upload_parameters" name="upload_parameters" type="file"><span class="glyphicon glyphicon-upload"></span> Upload parameters</button></span>
+                    </div>
+                </div>
 
                 <table class="table table-condensed">
                     <thead>

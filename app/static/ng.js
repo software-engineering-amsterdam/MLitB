@@ -111,7 +111,7 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     }
 
-    processUploadedData = function(file) {
+    processTestUpload = function(file) {
 
         newData = JSON.parse(file.target.result);
         var msg = "Upload Stats data file not OK.";
@@ -128,9 +128,23 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     }
 
-    clearFileInput = function() { 
+    processParameterUpload = function(file) {
 
-        var oldInput = document.getElementById("files_stats"); 
+        newData = JSON.parse(file.target.result);
+        var msg = "Upload Parameter data file not OK.";
+        if(newData) {
+            msg = "Upload Parameter data file OK";
+        }
+
+        $rootScope.client.logger(msg);
+
+        $rootScope.client.upload_parameters($scope.nn_id, newData);
+
+    }
+
+    clearFileInput = function(selector, handler) { 
+
+        var oldInput = document.getElementById(selector); 
         var newInput = document.createElement("input"); 
          
         newInput.type = "file"; 
@@ -141,11 +155,12 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
         // copy any other relevant attributes 
          
         oldInput.parentNode.replaceChild(newInput, oldInput);
-        newInput.addEventListener('change', handleFileSelect, false);
+        newInput.addEventListener('change', handler, false);
 
     }
 
     handleFileSelect = function(evt) {
+
         var files = evt.target.files; // FileList object
 
         // Loop through the FileList and render image files as thumbnails.
@@ -156,8 +171,30 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
             // Closure to capture the file information.
             reader.onload = (function(theFile) {
                 return function(e) {
-                    processUploadedData(e);
-                    clearFileInput();
+                    processTestUpload(e);
+                    clearFileInput('files_stats', handleFileSelect);
+                };
+            })(f);
+
+            // Read in the image file as a data URL.
+            reader.readAsText(f);
+        }
+    }
+
+    handleParameterUpload = function(evt) {
+
+        var files = evt.target.files; // FileList object
+
+        // Loop through the FileList and render image files as thumbnails.
+        for (var i = 0, f; f = files[i]; i++) {
+
+            var reader = new FileReader();
+
+            // Closure to capture the file information.
+            reader.onload = (function(theFile) {
+                return function(e) {
+                    processParameterUpload(e);
+                    clearFileInput('upload_parameters', handleParameterUpload);
                 };
             })(f);
 
@@ -175,6 +212,12 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     }
 
+    $scope.download_parameters = function() {
+
+        $rootScope.client.request_download_parameters($scope.nn_id);
+
+    }
+
     $scope.$on("$destroy", function() {
         $rootScope.client.remove_stats($scope.nn_id);
         $scope.worker.terminate();
@@ -184,6 +227,8 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
     $scope.worker.onmessage = workerMessage;
 
     document.getElementById('files_stats').addEventListener('change', handleFileSelect, false);
+
+    document.getElementById('upload_parameters').addEventListener('change', handleParameterUpload, false);
 
 });
 

@@ -1,36 +1,38 @@
-cluster = require('cluster')
-
-numCPUs = 4; //require('os').cpus().length;
+var cluster = require('cluster');
+var program = require('commander');
 
 workers = function() {
 
-    var app = require('http').createServer(h)
-    var io = require('socket.io')(app);
+    var express = require('express');
+    var app = express();
+    var http = require('http').Server(app);
+    var io = require('socket.io')(http);
     var fs = require('fs');
     var url = require('url');
     var redis_lib = require("redis");
-    var staticResource = require('static-resource');
     var uuid = require('node-uuid');
+    
+    app.use(express.static(__dirname + '/static'));
 
-    var handler = staticResource.createHandler(fs.realpathSync('./static'));
+    var location = process.env['location'];
+    var portMin = parseInt(process.env['portMin']);
+    var portMax = parseInt(process.env['portMax']);
 
-    function h (req, res) {
-        var path = url.parse(req.url).pathname;
-
-        if(!handler.handle(path, req, res)) {
-            res.writeHead(404);
-            res.write('404');
-            res.end();
-        }
-    }
+    app.get('/server_settings/', function(req, res) {
+        res.send({
+            location: location,
+            portMin: portMin,
+            portMax: portMax
+        });
+    });
 
     var Worker = function() {
-
 
         this.redis1 = redis_lib.createClient();
         this.redis2 = redis_lib.createClient();
         this.clusterid = cluster.worker.id;
-        this.port = 8000 + this.clusterid;
+        this.port = (portMin - 1) + this.clusterid;
+
         this.id = uuid.v4();
 
         this.clients = [];
@@ -45,7 +47,7 @@ workers = function() {
 
             io.set('destroy buffer size', Infinity);
 
-            app.listen(this.port);
+            http.listen(this.port);
 
             this.redis2.subscribe(this.id);
             this.redis2.on("message", function(c,d) { that.receive_message_from_master(c, d); });
@@ -88,11 +90,11 @@ workers = function() {
             // ONLY for boss->server->server->boss messaging!
             // ignores master! efficient!
 
-            server = message.server;
-            socket = message.socket;
-            data = message.data;
+            var server = message.server;
+            var socket = message.socket;
+            var data = message.data;
 
-            d = {
+            var d = {
                 socket: socket,
                 data: data
             }
@@ -140,5 +142,42 @@ workers = function() {
 }
 
 if (cluster.isMaster) {
-    for (var i = 0; i < numCPUs; i++) { cluster.fork() } 
+
+    function range(val) {
+        return val.split('-').map(Number);
+    }
+
+    program
+        .version('2.0.0 beta 1')
+        .option('-h, --host [value]', 'Host to bind to (http(s) + ip)')
+        .option('-p, --port <a>-<b>', '(optional) Port range', range)
+        .parse(process.argv);
+
+        if(!program.host) {
+            console.log('Host not defined. Run with -h [host] (e.g. http://localhost)');
+            console.log('Look up node app.js --help for more options');
+            process.kill();
+        }
+
+        if(!program.port) {
+            portMin = 8001;
+            portMax = 8000 + require('os').cpus().length;
+        } else {
+            portMin = program.port[0];
+            portMax = program.port[1];
+        }
+
+        location = program.host;
+        
+
+        ports = portMax - portMin + 1
+
+        var d = {
+            location: location,
+            portMin: portMin,
+            portMax: portMax
+        }
+
+    for (var i = 0; i < ports; i++) { cluster.fork(d) } 
+
 } else { workers() }
