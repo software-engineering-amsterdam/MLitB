@@ -941,7 +941,7 @@ var prereduce = function(req) {
         'min': latency_min,
         'max': latency_max,
         'avg': avg,
-        'latencies': latency_avg, //all latencies
+        'latencies': latency_avg, //array of all latencies
         'step': step
       }
     });
@@ -1163,7 +1163,7 @@ var reallocate = function(datamap) {
     type: 'power',
     data: {
       'power': powerAvailable,
-      'powers': pows,//
+      'powers': pows, //used in topology visusalisation
       'clients': clientsOnline(),
       'step': step
     }

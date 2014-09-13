@@ -67,7 +67,7 @@ var displayPower = function(data) {
 
   $('span#step.power').html(data.step.toString());
   $('span#power').html(data.power.toString());
-  savePower(data.powers.toString());
+  savePower(data.powers);
   $('span#clients').html(data.clients.toString());
   drawRedundancy(data.clients);
 
