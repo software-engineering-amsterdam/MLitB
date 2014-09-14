@@ -12,8 +12,6 @@ var Master = function() {
 
     this.nns = [];
 
-    this.unassigned_clients = [];
-
 }
 
 Master.prototype = {
@@ -85,10 +83,6 @@ Master.prototype = {
 
     assign_slave: function(slave) {
 
-        filter_nn = function(el) {
-            return el.client_space_available() || el.real_time_left() > 60;
-        }
-
         sort_nn = function(a,b) {
             // MIN TO MAX
             return b.clients.length - a.clients.length;
@@ -100,23 +94,10 @@ Master.prototype = {
         }
 
         // assign slave based on less-assigned
-
-        // first filter based on NNs which are full, or nearly done
-        // nearly done is defined as less than 60s real time left.
-        nn_filtered = this.nns.filter(filter_nn);
-        nn_sorted = nn_filtered.sort(sort_nn);
-
-        if(!nn_sorted.length) {
-            // unassigned, should almost never be the case.
-            this.unassigned_clients.push(slave);
-            console.log("! Cannot assign slave: all NNs saturated");
-            return
-        }
+        nn_sorted = this.nns.sort(sort_nn);
 
         // assign to first nn in sorted list
         nn_sorted[0].add_client(slave);
-
-        //nn_sorted[0].run();
         
         console.log("> Assigned (slave) to (NN):", slave.id, nn_sorted[0].id);
 
@@ -227,11 +208,6 @@ Master.prototype = {
 
         if(!nn) {
             console.log("! Could not connect slave: NN not found (NN id): ", socket, nn_id);
-            return
-        }
-
-        if(!nn.client_space_available()) {
-            console.log("! Could not connect slave: No space available in NN: ", socket, nn_id);
             return
         }
 
@@ -559,8 +535,8 @@ Master.prototype = {
         }
 
         // called externally to add NN
-        
-        var nn = new NN(this, null, data.name, data.conf, data.iteration_time, data.runtime, data.parallelism);
+
+        var nn = new NN(this, null, data.name, data.conf, data.iteration_time);
 
         this.nns.push(nn);
 
