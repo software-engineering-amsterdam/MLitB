@@ -86,7 +86,9 @@ NN.prototype = {
     },
 
     client_space_available: function() {
-        return this.clients.length - this.parallelism;
+        // put this back when parallelism restriction requirement is needed:
+        // return this.clients.length - this.parallelism;
+        return true;
     },
 
     total_power: function() {

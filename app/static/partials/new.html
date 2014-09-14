@@ -17,36 +17,6 @@
                           </div>
                         </div>
                       </div>
-                      <div class="row">
-                        <div class="col-xs-8">
-                          <div class="form-group">
-                            <label for="max_workers">Maximum number of parallel workers</label>
-                            <input type="number" class="form-control" id="max_workers" ng-model="nn.parallelism">
-                          </div>
-                        </div>
-                        <div class="col-xs-4">
-                          <div class="checkbox">
-                            <label>
-                              <br /><input type="checkbox" name="max_workers_infinite" ng-model="nn.parallelism_infinite"> Infinite
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <div class="col-xs-8">
-                          <div class="form-group">
-                            <label for="runtime">Total runtime in mS</label>
-                            <input type="number" class="form-control" id="runtime" ng-model="nn.runtime">
-                          </div>
-                        </div>
-                        <div class="col-xs-4">
-                          <div class="checkbox">
-                            <label>
-                              <br /><input type="checkbox" name="runtime_infinite" ng-model="nn.runtime_infinite"> Infinite
-                            </label>
-                          </div>
-                        </div>
-                      </div>
                       <div class="form-group">
                         <label for="iteration_time">Iteration time in mS</label>
                         <br />
@@ -155,6 +125,15 @@
                                                 </select>
                                             </div>
                                         </div>
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="checkbox">
+                                                  <label>
+                                                    <input type="checkbox" ng-model="layer.conv.is_train" id="is_train"> Train layer
+                                                  </label>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <button type="submit" ng-click="add_layer(layer.conv, conf_type)" class="btn btn-default">Add</button>
                                     </form>
                                 </div>
@@ -171,6 +150,14 @@
                                                 <div class="form-group">
                                                     <label for="name">Stride</label>
                                                     <input type="number" class="form-control" ng-model="layer.pool.stride" id="stride">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Dropout probability</label>
+                                                    <input type="number" class="form-control" ng-model="layer.pool.drop_prob" id="drop_prob" step="0.1">
                                                 </div>
                                             </div>
                                         </div>
@@ -197,6 +184,15 @@
                                                       <option value="maxout">Maxout</option>
                                                       <option value="dropout">Dropout</option>
                                                     </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="checkbox">
+                                                  <label>
+                                                    <input type="checkbox" ng-model="layer.fc.is_train" id="is_train"> Train layer
+                                                  </label>
                                                 </div>
                                             </div>
                                         </div>

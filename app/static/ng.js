@@ -250,9 +250,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
     $scope.layer_errors = [];
 
     $scope.nn = {
-        iteration_time: 10000,
-        runtime: 3600000,
-        parallelism: 16
+        iteration_time: 10000
     };
 
     $scope.errors = [];
@@ -275,19 +273,19 @@ app.controller('new', function ($scope, $rootScope, $location) {
 
             $scope.layers = [
                 {type: 'input', conf: {"sx":28,"sy":28,"depth":1}},
-                {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu"}},
+                {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu", "is_train":true}},
                 {type: 'pool', conf: {"sx":3,"stride":3}},
-                {type: 'fc', conf: {"num_neurons":10,"activation":"softmax"}}
+                {type: 'fc', conf: {"num_neurons":10,"activation":"softmax", "is_train":true}}
             ]
         } else if(type == 'elaborate_mnist') {
 
             $scope.layers = [
                 {type: 'input', conf: {"sx":28,"sy":28,"depth":1}},
-                {type: 'conv', conf: {"sx":5,"stride":1,"filters":8,"activation":"relu"}},
+                {type: 'conv', conf: {"sx":5,"stride":1,"filters":8,"activation":"relu", "is_train":true}},
                 {type: 'pool', conf: {"sx":2,"stride":2}},
-                {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu"}},
+                {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu", "is_train":true}},
                 {type: 'pool', conf: {"sx":3,"stride":3}},
-                {type: 'fc', conf: {"num_neurons":10,"activation":"softmax"}}
+                {type: 'fc', conf: {"num_neurons":10,"activation":"softmax", "is_train":true}}
             ]
         }
 
@@ -356,24 +354,6 @@ app.controller('new', function ($scope, $rootScope, $location) {
             return  
         }
 
-        if(!nn.parallelism && (nn.parallelism_infinite == undefined)) {
-            $scope.errors.push('Please choose a maximum number of parallel workers')
-            return  
-        }
-
-        if(nn.parallelism_infinite) {
-            nn.parallelism = Infinity;
-        }
-
-        if(!nn.runtime && (nn.runtime_infinite == undefined)) {
-            $scope.errors.push('Please insert a runtime')
-            return  
-        }
-
-        if(nn.runtime_infinite) {
-            nn.runtime = Infinity;
-        }
-
         if(!nn.iteration_time) {
             $scope.errors.push('Please select an iteration tims')
             return  
@@ -412,12 +392,11 @@ app.controller('join', function ($scope, $rootScope) {
 
     $rootScope.update_nns = function() {
 
-        $scope.total = {name: "All networks", runtime: 0, runtime_elapsed: 0, iteration_time: 0, realtime_elapsed: 0, data_seen: 0, clients: 0, power: 0};
+        $scope.total = {name: "All networks", runtime_elapsed: 0, iteration_time: 0, realtime_elapsed: 0, data_seen: 0, clients: 0, power: 0};
 
         i = $scope.client.nns.length;
         while(i--) {
 
-            $scope.total.runtime += $scope.client.nns[i].runtime;
             $scope.total.runtime_elapsed += $scope.client.nns[i].runtime_elapsed;
             $scope.total.realtime_elapsed += $scope.client.nns[i].realtime_elapsed;
             $scope.total.iteration_time += $scope.client.nns[i].iteration_time;

@@ -70,8 +70,6 @@ Master.prototype = {
                 id: nn.id,
                 name: nn.name,
                 clients: nn.clients.length,
-                max_clients: nn.parallelism,
-                runtime: nn.runtime,
                 runtime_elapsed: nn.runtime_elapsed,
                 realtime_elapsed: nn.realtime_elapsed,
                 iteration_time: nn.iteration_time,

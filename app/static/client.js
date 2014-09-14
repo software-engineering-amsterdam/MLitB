@@ -542,3 +542,7 @@ Client.prototype = {
 
     }
 }
+
+if(typeof(module) !== 'undefined') {
+    module.exports = Client;
+}

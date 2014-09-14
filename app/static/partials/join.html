@@ -9,7 +9,6 @@
                             <th ng-click="changeSort('name')">Name</th>
                             <th ng-click="changeSort('clients')">Workers</th>
                             <th ng-click="changeSort('power')">Power</th>
-                            <th ng-click="changeSort('runtime')">Runtime</th>
                             <th ng-click="changeSort('runtime_elapsed')">Elapsed</th>
                             <th ng-click="changeSort('realtime_elapsed')">Real time</th>
                             <th>My workers</th>
@@ -23,7 +22,6 @@
                             <td>{{ total.name }}</td>
                             <td>{{ total.clients }}</td>
                             <td>{{ total.power }} v/S</td>
-                            <td>{{ total.runtime }} mS</td>
                             <td>{{ total.runtime_elapsed }} mS</td>
                             <td>{{ total.realtime_elapsed }} mS</td>
                             <td>0</td>
@@ -33,9 +31,8 @@
                         </tr>
                         <tr ng-repeat="nn in client.nns | filter:namequery | orderBy:sort:reverse">
                             <td>{{ nn.name }}</td>
-                            <td>{{ nn.clients }} / {{ nn.max_clients }}</td>
+                            <td>{{ nn.clients }}</td>
                             <td>{{ nn.power }} v/S</td>
-                            <td>{{ nn.runtime }} mS</td>
                             <td>{{ nn.runtime_elapsed }} mS</td>
                             <td>{{ nn.realtime_elapsed }} mS</td>   
                             <td>0</td>

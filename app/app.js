@@ -155,7 +155,7 @@ if (cluster.isMaster) {
 
         if(!program.host) {
             console.log('Host not defined. Run with -h [host] (e.g. http://localhost)');
-            console.log('Look up node app.js --help for more options');
+            console.log('Look up node app.js --help for options');
             process.kill();
         }
 
