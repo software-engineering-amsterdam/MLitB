@@ -1,6 +1,6 @@
 var SGDTrainer = require('./sgd');
 
-var NN = function(master, id, name, configuration, iteration_time, runtime, parallelism) {
+var NN = function(master, id, name, configuration, iteration_time) {
 
     this.master = master; // master server
 
@@ -16,14 +16,11 @@ var NN = function(master, id, name, configuration, iteration_time, runtime, para
 
     this.iteration_time = iteration_time; // time per iteration
 
-    this.runtime = runtime; // total runtime (factor of iteration)
     this.runtime_elapsed = 0; // time elapsed
 
     this.realtime_elapsed = 0; // real time elapsed
 
     this.step = 0; // nn step
-
-    this.parallelism = parallelism; // number of slave nodes allowed in parallel at any iteration
 
     this.data_seen = 0; // data points seen
 
@@ -79,16 +76,6 @@ NN.prototype = {
 
         return false
 
-    },
-
-    real_time_left: function() {
-        return ((this.runtime - this.runtime.elapsed ) / (this.iteration_time * this.clients.length)) * this.iteration_time;
-    },
-
-    client_space_available: function() {
-        // put this back when parallelism restriction requirement is needed:
-        // return this.clients.length - this.parallelism;
-        return true;
     },
 
     total_power: function() {
@@ -233,11 +220,6 @@ NN.prototype = {
     },
 
     add_client: function(client) {
-
-        if(!this.client_space_available()) {
-            console.log("! Cannot add client (nn): no client space available", this.id);
-            return
-        }
 
         this.clients.push(client);
 

@@ -391,7 +391,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       this.out_depth = conf.filters;
       this.n_params = conf.filters;
       this.n_biases = 1;
-      this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : 'yes'; //default : train every layer
+      this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
       //optional
       this.sy = typeof conf.sy !== 'undefined' ? conf.sy : conf.sx; //default is the same size with x
       this.stride = (typeof conf.stride !== 'undefined' && conf.stride <= Math.min(this.sx,this.sy)) ? conf.stride : 1; //default stride is 1 
@@ -498,7 +498,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         },
 
     setParamsAndGrads : function (json, is_initialization) {
-      if (this.is_train==='yes' || is_initialization){
+      if (this.is_train || is_initialization){
         for (var i = 0; i < this.filters.length; i++) {
           this.filters[i].data = json[i].params;
         };
@@ -520,7 +520,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
 
     setParams : function (json, is_initialization) {
-      if (this.is_train==='yes' || is_initialization){
+      if (this.is_train || is_initialization){
         for (var i = 0; i < this.filters.length; i++) {
           this.filters[i].data = json[i];
         };
@@ -608,7 +608,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         this.n_params = 1;
         this.n_biases = 1;
         this.layer_type = 'fc';
-        this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : 'yes'; //default : train every layer
+        this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
     }
 
     FullConnLayer.prototype = {
@@ -658,7 +658,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
             return out;
         },
     setParamsAndGrads : function (json, is_initialization) {
-      if (this.is_train==='yes' || is_initialization){
+      if (this.is_train || is_initialization){
         this.filters.data = json[0].params;  
         this.biases.data = json[1].params;
       }
@@ -673,7 +673,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
 
     setParams : function (json, is_initialization) {
-      if (this.is_train==='yes' || is_initialization){
+      if (this.is_train || is_initialization){
         this.filters.data = json[0];
         this.biases.data = json[1];
       }
