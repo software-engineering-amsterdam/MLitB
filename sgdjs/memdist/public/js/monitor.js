@@ -69,7 +69,6 @@ var displayPower = function(data) {
   $('span#power').html(data.power.toString());
   savePower(data.powers);
   $('span#clients').html(data.clients.toString());
-  drawRedundancy(data.clients);
 
   series = [{
       data: [],
@@ -127,6 +126,11 @@ var displayLatency = function(data) {
 
 }
 
+var displayRedundancy = function(data) {
+  //Call d3 topology drawing
+  drawRedundancy(data.counts);
+}
+
 var initChart = function(chart, series, selector) {
 
   $(selector).highcharts({
@@ -181,6 +185,8 @@ var monitor = function(e) {
         displayPower(e.data);
     } else if(e.type == 'latency') {
         displayLatency(e.data);
+    } else if(e.type == 'redundancy') {
+        displayRedundancy(e.data)
     }
 }
 

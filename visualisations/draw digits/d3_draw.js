@@ -191,7 +191,7 @@
         mouseDown = 0;
     }
 
-    //background is 26x26 rectangles whose colours can change;
+    //background is 24x24 rectangles whose colours can change;
     //create and store rectangles
     var rectbackground = []
     var boxsize = widthd / 24

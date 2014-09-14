@@ -132,7 +132,7 @@ function drawTopology(latencies){
     force.start();
 
     //temp sanity check
-    console.log(latencies)
+    //console.log(latencies)
 }
 
 

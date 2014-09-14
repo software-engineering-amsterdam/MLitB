@@ -72,6 +72,7 @@ var markovRotationID = 0;
 var parameterRotationID = 0;
 
 var step = 0;
+var vectorsLost = 0;
 
 var initial_parameter = INITIAL_PARAMETER;
 
@@ -343,6 +344,7 @@ var removeClient = function(datamap, client) {
   }
 
   if(lostData) {
+    vectorsLost = vectorsLost + lostData;
     console.log('Lost', lostData, 'data vectors from the network.');
   }
 
@@ -415,6 +417,11 @@ var processingPower = function() {
 
   return total;
 
+}
+
+var datamapVis = function(datamap) {
+    // send info for the datamap visualisation
+    // called when data is lost
 }
 
 var coverage = function(datamap) { 
@@ -955,6 +962,43 @@ var prereduce = function(req) {
     markovResults = [];
     // run next chain
     run(parameters);
+
+
+    // monitor for d3 visualisations
+    //TODO add some mechanism to update every 10 cycles instead (50 after demo)
+
+    // find data redundancy counts
+    var red_counts = [];
+    // number of broken points are added as zeroes
+    for(ind = 0; ind < vectorsLost; ind++)
+        red_counts.push(0);
+    for(ind = 0; ind < datamap.length; ind++)
+        red_counts.push(datamap[ind].allocated.length);
+
+    // some 'clustering': sort and then make evenly sized segments that
+    // fill each of the clusters
+
+    // test if there are less values than clusters (24x48)
+    var nclusters = 1152;
+    var red_counts2 = [];
+    if(red_counts.length > nclusters) {
+        red_counts.sort();
+        var breakpoint = Math.floor(red_counts.length / nclusters);
+        var value;
+        for(ind = 0; ind < nclusters; ind++) {
+            value = 0;
+            for(indj = 0; indj < breakpoint; indj++)
+                value = value + red_counts[ind * breakpoint + indj];
+            red_counts2.push(value / breakpoint);
+        }
+        red_counts = red_counts2
+    }
+    sendMonitor({
+      type: 'redundancy',
+      data: {
+        'counts': red_counts
+      }
+    });
 
   }
 
