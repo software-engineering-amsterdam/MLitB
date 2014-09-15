@@ -477,9 +477,17 @@ Client.prototype = {
 
     },
 
+    new_worker_instance: function(slave, cb) {
+
+        slave = new Worker('webworker.js');
+        return cb(slave);
+
+    },
+
     start_slave: function(nn) {
 
         var that = this;
+        var slave;
 
         if(!this.id) {
             this.logger('! Cannot start slave: not connected to server.');
@@ -491,21 +499,25 @@ Client.prototype = {
             return;   
         }
 
-        slave = new Worker('webworker.js');
+        this.new_worker_instance(slave, function(slave) {
 
-        slave.onmessage = function(e) { that.message_from_slave(this, e); }
+            slave.onmessage = function(e) { that.message_from_slave(this, e); }
 
-        this.message_to_slave(slave, 'start', {
-            boss_id: this.id,
-            nn: nn,
-            host: that.host,
-            portMin: that.portMin,
-            portMax: that.portMax
+            that.message_to_slave(slave, 'start', {
+                boss_id: that.id,
+                nn: nn,
+                host: that.host,
+                portMin: that.portMin,
+                portMax: that.portMax
+            });
+
+            slave.nn = nn;
+
+            that.slaves.push(slave);
+
         });
 
-        slave.nn = nn;
-
-        this.slaves.push(slave);
+        
 
     },
 

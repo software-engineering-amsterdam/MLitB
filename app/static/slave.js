@@ -18,7 +18,7 @@ var Slave = function() {
     this.data = {};
 
     this.Net; // the NN
-    this.is_initialised
+    this.is_initialised;
 
 }
 
@@ -156,7 +156,7 @@ Slave.prototype = {
                     conf.push(layer);
                 }
 
-                that.Net = new mlitb.Net();
+                that.Net = new that.mlitb.Net();
                 that.Net.createLayers(conf);
                 that.is_initialised = true;     
 
@@ -182,7 +182,7 @@ Slave.prototype = {
 
                 point = workingset.pop();
 
-                Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
+                Input = new that.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
                 Input.data = point.data;
                 that.Net.forward(Input,true);
                 error += that.Net.backward(point.label);
@@ -276,4 +276,8 @@ Slave.prototype = {
         
     }
 
+}
+
+if(typeof(module) !== 'undefined') {
+    module.exports = Slave;
 }

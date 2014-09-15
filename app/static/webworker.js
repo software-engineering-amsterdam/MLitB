@@ -15,6 +15,9 @@ var Worker = function() {
     this.host;
     this.port;
     this.socket;
+
+    this.mlitb = mlitb;
+
 }
 
 Worker.prototype = new Slave();

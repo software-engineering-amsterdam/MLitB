@@ -1964,3 +1964,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 // }
 
 // // }
+
+if(typeof(module) !== 'undefined') {
+    module.exports = mlitb;
+}
