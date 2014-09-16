@@ -17,7 +17,7 @@ var master = function() {
     var redis_lib = require("redis");
     var client = require('./static/client');
 
-    var location, port, network, redis1, redis2;
+    var location, port, network, redis1, redis2, num_workers;
     var slaves = [];
 
     parse_commandline = function() {
@@ -26,6 +26,7 @@ var master = function() {
             .version('2.0.0 beta 1')
             .option('-h, --host [value]', 'Master host to connect to')
             .option('-p, --port <value>', 'Master port to connect to', parseInt)
+            .option('-w, --workers <value>', 'Number of workers to attach', parseInt)
             .option('-n, --network [value]', 'Network ID to connect to')
             .parse(process.argv);
 
@@ -39,6 +40,12 @@ var master = function() {
             port = 8001;
         } else {
             port = program.port;
+        }
+
+        if(!program.workers) {
+            num_workers = require('os').cpus().length;
+        } else {
+            num_workers = program.workers;
         }
 
         if(!program.network) {
@@ -156,11 +163,15 @@ var master = function() {
             client.portMax = d.portMax;
             client.host = d.location;
 
-            var numcpu = 4; //require('os').cpus().length;
+            for(var i = 0; i < num_workers; i++) {
 
-            console.log('starting client');
-            client.start_slave(network);    
+                setTimeout(function() {
+                    console.log('starting client');
+                    client.start_slave(network); 
+                }, 100 * i);
 
+            }
+            
         });
 
     }

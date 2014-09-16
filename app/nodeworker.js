@@ -23,12 +23,16 @@ var Worker = function() {
     this.redis2.subscribe(this.redis_id);
     this.redis2.on("message", function(c,d) { that.message_from_boss({data: JSON.parse(d) }); });
 
-    this.redis1.publish(this.boss_id, JSON.stringify({
-        redis_id: this.redis_id,
-        data: {
-            type: 'redis_ready'
-        }
-    }));
+    setTimeout(function() {
+
+        that.redis1.publish(that.boss_id, JSON.stringify({
+            redis_id: that.redis_id,
+            data: {
+                type: 'redis_ready'
+            }
+        }));
+
+    }, 500);
 
 }
 
