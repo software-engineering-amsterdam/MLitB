@@ -3,22 +3,86 @@ var app = angular.module('mlitb', ['ngRoute', 'ui.sortable']);
 app.config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
-      when('/join', {
+    when('/join', {
         templateUrl: 'partials/join.html',
         controller: 'join'
-      }).
-      when('/new', {
+    }).
+    when('/new', {
         templateUrl: 'partials/new.html',
         controller: 'new'
-      }).
-      when('/stats/:nnId', {
+    }).
+    when('/stats/:nnId', {
         templateUrl: 'partials/stats.html',
         controller: 'stats'
-      }).
-      otherwise({
+    }).
+    when('/public/:nnId', {
+        templateUrl: 'partials/publicclient.html',
+        controller: 'publicclient'
+    }).
+    otherwise({
         redirectTo: '/join'
-      });
-  }]);
+    });
+}]);
+
+
+app.controller('publicclient', function ($scope, $routeParams, $rootScope, $location) {
+
+    handleFileSelect = function(evt) {
+
+        var files = evt.target.files; // FileList object
+
+        // Loop through the FileList and render image files as thumbnails.
+        for (var i = 0, f; f = files[i]; i++) {
+
+            // Only process image files.
+            if (!f.type.match('image.*')) {
+                continue;
+            }
+
+            var reader = new FileReader();
+
+            var image = new Image();
+            image.src = window.URL.createObjectURL(f);
+
+            // Closure to capture the file information.
+            reader.onload = function(theFile) {
+
+                var exif, transform = "none";
+                exif = EXIF.readFromBinaryFile(createBinaryFile(theFile.target.result));
+
+                image.onload = function() {
+                    window.URL.revokeObjectURL(this.src);
+
+                    width = 28; // change this to relevant size
+                    height = 28; // change this to relevant size
+
+                    var canvas = document.getElementById("image"); 
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    var mpImg = new MegaPixImage(image);
+                    mpImg.render(canvas, { width: width, height: height, orientation: exif.Orientation });
+
+                    var imageData = canvas.getContext("2d").getImageData(0, 0, width, height);
+
+                    // image pixel data
+                    // array, set up as [r,g,b,a,r,g,b,a, ...]
+                    // thus each four numbers are 1 pixel
+                    console.log(imageData);
+
+                };
+
+            };
+
+            // Read in the image file as a data URL.
+            reader.readAsArrayBuffer(f);
+        
+        }
+    }
+
+    document.getElementById('picture').addEventListener('change', handleFileSelect, false);
+
+});
 
 app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
@@ -77,8 +141,8 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
         },
         xAxis: {
           minTickInterval: 1
-        },
-        series: [{
+      },
+      series: [{
           data: [],
           name: name,
           color: color,
@@ -88,72 +152,72 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
                     if (this.series.data.length > 1) this.remove();
                 }
             }
-          }
-        }]
-      });
+        }
+    }]
+});
 
       return $(selector).highcharts();
 
+  }
+
+  drawChart = function(chart, point) {
+
+    series = chart.series[0];
+
+    shift = false;
+    if(series.data.length >= 20) {
+        shift = true;
     }
 
-    drawChart = function(chart, point) {
+    chart.series[0].addPoint(point, true, shift);
 
-        series = chart.series[0];
+    return chart;
 
-        shift = false;
-        if(series.data.length >= 20) {
-            shift = true;
-        }
+}
 
-        chart.series[0].addPoint(point, true, shift);
+processTestUpload = function(file) {
 
-        return chart;
-
+    newData = JSON.parse(file.target.result);
+    var msg = "Upload Stats data file not OK.";
+    if(newData) {
+        msg = "Upload Stats data file OK, length: " + newData.length;
     }
 
-    processTestUpload = function(file) {
+    $rootScope.client.logger(msg);
 
-        newData = JSON.parse(file.target.result);
-        var msg = "Upload Stats data file not OK.";
-        if(newData) {
-            msg = "Upload Stats data file OK, length: " + newData.length;
-        }
+    $scope.worker.postMessage({
+        type: 'fileupload',
+        data: newData
+    });
 
-        $rootScope.client.logger(msg);
+}
 
-        $scope.worker.postMessage({
-            type: 'fileupload',
-            data: newData
-        });
+processParameterUpload = function(file) {
 
+    newData = JSON.parse(file.target.result);
+    var msg = "Upload Parameter data file not OK.";
+    if(newData) {
+        msg = "Upload Parameter data file OK";
     }
 
-    processParameterUpload = function(file) {
+    $rootScope.client.logger(msg);
 
-        newData = JSON.parse(file.target.result);
-        var msg = "Upload Parameter data file not OK.";
-        if(newData) {
-            msg = "Upload Parameter data file OK";
-        }
+    $rootScope.client.upload_parameters($scope.nn_id, newData);
 
-        $rootScope.client.logger(msg);
+}
 
-        $rootScope.client.upload_parameters($scope.nn_id, newData);
+clearFileInput = function(selector, handler) { 
 
-    }
+    var oldInput = document.getElementById(selector); 
+    var newInput = document.createElement("input"); 
 
-    clearFileInput = function(selector, handler) { 
-
-        var oldInput = document.getElementById(selector); 
-        var newInput = document.createElement("input"); 
-         
-        newInput.type = "file"; 
-        newInput.id = oldInput.id; 
-        newInput.name = oldInput.name; 
-        newInput.className = oldInput.className; 
-        newInput.style.cssText = oldInput.style.cssText; 
+    newInput.type = "file"; 
+    newInput.id = oldInput.id; 
+    newInput.name = oldInput.name; 
+    newInput.className = oldInput.className; 
+    newInput.style.cssText = oldInput.style.cssText; 
         // copy any other relevant attributes 
-         
+
         oldInput.parentNode.replaceChild(newInput, oldInput);
         newInput.addEventListener('change', handler, false);
 
@@ -240,7 +304,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
         accept: function (sourceItemHandleScope, destSortableScope) { return true; },
         itemMoved: function (event) {  },
         orderChanged: function(event) { $scope.validate_layers(); }
-    
+
     };
 
     $scope.layers = [];
@@ -272,20 +336,20 @@ app.controller('new', function ($scope, $rootScope, $location) {
         if(type == 'simple_mnist') {
 
             $scope.layers = [
-                {type: 'input', conf: {"sx":28,"sy":28,"depth":1}},
-                {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu", "is_train":true}},
-                {type: 'pool', conf: {"sx":3,"stride":3}},
-                {type: 'fc', conf: {"num_neurons":10,"activation":"softmax", "is_train":true}}
+            {type: 'input', conf: {"sx":28,"sy":28,"depth":1}},
+            {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":3}},
+            {type: 'fc', conf: {"num_neurons":10,"activation":"softmax"}}
             ]
         } else if(type == 'elaborate_mnist') {
 
             $scope.layers = [
-                {type: 'input', conf: {"sx":28,"sy":28,"depth":1}},
-                {type: 'conv', conf: {"sx":5,"stride":1,"filters":8,"activation":"relu", "is_train":true}},
-                {type: 'pool', conf: {"sx":2,"stride":2}},
-                {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu", "is_train":true}},
-                {type: 'pool', conf: {"sx":3,"stride":3}},
-                {type: 'fc', conf: {"num_neurons":10,"activation":"softmax", "is_train":true}}
+            {type: 'input', conf: {"sx":28,"sy":28,"depth":1}},
+            {type: 'conv', conf: {"sx":5,"stride":1,"filters":8,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":2}},
+            {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":3}},
+            {type: 'fc', conf: {"num_neurons":10,"activation":"softmax"}}
             ]
         }
 
@@ -321,7 +385,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
     }
 
     $scope.remove_layer = function(layer) { 
-        
+
         var index = $scope.layers.indexOf(layer)
         $scope.layers.splice(index, 1);
 
@@ -413,7 +477,7 @@ app.controller('join', function ($scope, $rootScope) {
 
         $rootScope.client = new Client($rootScope);
         $rootScope.client.start_boss();
-    
+
     } 
     
     $scope.client = $rootScope.client;
@@ -426,17 +490,17 @@ app.controller('join', function ($scope, $rootScope) {
         if ($scope.sort == value){
           $scope.reverse = !$scope.reverse;
           return;
-        }
+      }
 
-        $scope.sort = value;
-        $scope.reverse = false;
-    }
+      $scope.sort = value;
+      $scope.reverse = false;
+  }
 
-    $scope.join = function(nn) {
-        $scope.client.start_slave(nn);
-    }
+  $scope.join = function(nn) {
+    $scope.client.start_slave(nn);
+}
 
-    $scope.join_any = function() {
+$scope.join_any = function() {
         // a
     }
 

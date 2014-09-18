@@ -1,6 +1,6 @@
 var SGDTrainer = require('./sgd');
 
-var NN = function(master, id, name, configuration, iteration_time) {
+var NN = function(master, id, name, configuration, iteration_time, public_client) {
 
     this.master = master; // master server
 
@@ -35,6 +35,8 @@ var NN = function(master, id, name, configuration, iteration_time) {
     this.operation_results = [];
 
     this.stats = []; // bosses connected to obtain stats
+
+    this.public_client = public_client;
 
 }
 

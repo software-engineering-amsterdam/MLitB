@@ -4,7 +4,7 @@
 	list-style-type: none;
 }
 
-.trash {
+.trash, .train-layer {
 	float: right;
 	margin-right: 5px;
 	margin-top: 1px;

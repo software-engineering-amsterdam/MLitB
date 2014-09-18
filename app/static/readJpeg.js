@@ -57,6 +57,7 @@ function downsample(image, final_size, rgb_orientation){
   if (rgb_orientation==='rrrgggbbb'){
     for (var i=0;i<row_idx.length;i++){
       for (var j=0;j<col_idx.length;j++){
+        
         var R_idx = row_idx[i]*ori_width*3+col_idx[j]*3;
         var G_idx = R_idx+1;
         var B_idx = R_idx+2;
@@ -80,6 +81,7 @@ function downsample(image, final_size, rgb_orientation){
         imgB.push(image.pixels[B_idx]);
       }
     }
+
     new_image=imgR.concat(imgG).concat(imgB)
   }
   return new_image; 

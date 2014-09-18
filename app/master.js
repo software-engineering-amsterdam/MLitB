@@ -72,7 +72,8 @@ Master.prototype = {
                 realtime_elapsed: nn.realtime_elapsed,
                 iteration_time: nn.iteration_time,
                 power: nn.total_power(),
-                data_seen: nn.data_seen
+                data_seen: nn.data_seen,
+                public_client: nn.public_client
             });
 
         }
@@ -536,7 +537,7 @@ Master.prototype = {
 
         // called externally to add NN
 
-        var nn = new NN(this, null, data.name, data.conf, data.iteration_time);
+        var nn = new NN(this, null, data.name, data.conf, data.iteration_time, data.public_client);
 
         this.nns.push(nn);
 

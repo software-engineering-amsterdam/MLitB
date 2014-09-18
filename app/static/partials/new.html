@@ -125,15 +125,6 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="row">
-                                            <div class="col-xs-5">
-                                                <div class="checkbox">
-                                                  <label>
-                                                    <input type="checkbox" ng-model="layer.conv.is_train" id="is_train"> Train layer
-                                                  </label>
-                                                </div>
-                                            </div>
-                                        </div>
                                         <button type="submit" ng-click="add_layer(layer.conv, conf_type)" class="btn btn-default">Add</button>
                                     </form>
                                 </div>
@@ -187,22 +178,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row">
-                                            <div class="col-xs-5">
-                                                <div class="checkbox">
-                                                  <label>
-                                                    <input type="checkbox" ng-model="layer.fc.is_train" id="is_train"> Train layer
-                                                  </label>
-                                                </div>
-                                            </div>
-                                        </div>
                                         <button type="submit" ng-click="add_layer(layer.fc, conf_type)" class="btn btn-default">Add layer</button>
                                     </form>
                                 </div>
                                 
                              </div>
-
-                             <button type="submit" ng-click="add_nn(nn)" class="btn btn-default">Add Neural Network</button>
                         </form>
                     </div>
                     <div class="col-xs-6">
@@ -234,7 +214,19 @@
                                 </li>
                             </ul>
                         </div>
+                    </div>
+                    
+                  </div>
+                  <div class="row">
+                    <div class="col-xs-6">
+                        <h4>Public client</h4>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" ng-model="nn.public_client"> Enable picture upload client
+                            </label>
+                        </div>
 
+                        <button type="submit" ng-click="add_nn(nn)" class="btn btn-default">Add Neural Network</button>
                         <div ng-show="errors.length">
                             <ul>
                                 <li ng-repeat="error in errors">
@@ -243,9 +235,23 @@
                             </ul>
                         </div>
                     </div>
-                    
-                  </div>
+                    <div class="col-xs-6" ng-show="nn.public_client">
+                        <label for="config_overview">Public client configuration overview</label>
+                        <p>Enable / disable layer training in public client</p>
 
+                        <div ng-hide="layers.length">
+                            <p>No layers added.</p>
+                        </div>
+
+                        <ul ng-show="layers.length" class="sortable" >
+                           <li data-ng-repeat="item in layers" class="sortable-item">
+                            {{ item.type }}: {{ item.conf }}
+                            <span class="train-layer" ng-show="item.type == 'fc' || item.type == 'conv'"> Train: <input type="checkbox" ng-model="item.train"></span>
+
+                          </li>
+                        </ul>
+                    </div>
+                  </div>
                 </form>
 
 
