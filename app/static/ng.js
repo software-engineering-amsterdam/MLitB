@@ -27,6 +27,63 @@ app.config(['$routeProvider',
 
 app.controller('publicclient', function ($scope, $routeParams, $rootScope, $location) {
 
+    $scope.nn_id = $routeParams.nnId;
+
+    $scope.nn = $scope.client.nn_exists($scope.nn_id);
+
+    if(!$scope.nn) {
+        $location.path('#/join');
+    }
+
+    $rootScope.classifier_results = function(arr) {
+        
+        $scope.classify_results = arr;
+
+        $scope.$apply();
+
+    }
+
+    convert_image = function(image) {
+
+        // rgbargbargba -> rrrgggbbb (drop a)
+        var new_image = [];
+
+        var r = [];
+        var g = [];
+        var b = [];
+
+        // forward loop for readability
+        // could do backwards aswell for speed.
+        for(var i = 0; i < image.length; i++) {
+
+            idx = i + 1;
+
+            pixel = image[i];// / 255.0;
+
+            if(idx % 4 == 0) {
+                // skip alpha channel
+                continue;
+            }
+
+            if(idx % 4 == 1) {
+                // red channel
+                r.push(pixel);
+            } else if(idx % 4 == 2) {
+                // green channel
+                g.push(pixel);
+            } else if(idx % 4 == 3) {
+                // blue channel
+                b.push(pixel);
+            }
+
+        }
+
+        new_image = new_image.concat(r).concat(g).concat(b);
+
+        $scope.client.classify_input($scope.nn_id, new_image);
+
+    }
+
     handleFileSelect = function(evt) {
 
         var files = evt.target.files; // FileList object
@@ -68,7 +125,8 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
                     // image pixel data
                     // array, set up as [r,g,b,a,r,g,b,a, ...]
                     // thus each four numbers are 1 pixel
-                    console.log(imageData);
+                    // console.log(imageData);
+                    convert_image(imageData.data);
 
                 };
 

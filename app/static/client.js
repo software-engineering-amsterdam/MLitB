@@ -22,6 +22,8 @@ var Client = function(scope) {
     this.host;
     this.port;
 
+    this.classify_input_data;
+
 }
 
 Client.prototype = {
@@ -187,6 +189,103 @@ Client.prototype = {
     upload_parameters_complete: function() {
 
         this.logger('Parameter upload complete.');
+
+    },
+
+    request_nn_classifier: function(nn_id) {
+        // retrieves params + conf from master.
+        // this might be a bit of a workaround requesting params + conf every time
+        // a classification is done.
+        // but it works for now.
+        // later, the client can 'subscribe' to parameters + conf at master
+        // so it receives it on push basis.
+
+        var nn = this.nn_exists(nn_id);
+        
+        if(!nn) {
+            return;
+        }
+
+        this.send_message_to_master('request_nn_classifier', {
+            boss: this.id,
+            nn: nn_id
+        });
+
+
+    },
+
+    desaturate_image: function(img) {
+
+        var new_image = [];
+
+        var third = img.length / 3;
+
+        // loop only over 1 channel
+        for(i = 0; i < third; i++) {
+
+            r = img[i];
+            g = img[i + third];
+            b = img[i + third + third];
+
+            gs = r + g + b / 3;
+
+            new_image.push(Math.round(gs));
+
+        }
+
+        return new_image;
+
+    },
+
+    receive_nn_classifier: function(d) {
+
+        configuration = d.configuration;
+        parameters = d.parameters.parameters;
+
+        // squish configuration
+        conf = [];
+        for(var i = 0; i < configuration.length; i++) {
+          layer = configuration[i].conf;
+          layer.type = configuration[i].type;
+          conf.push(layer);
+        }
+
+        vol_input = configuration[0].conf;
+
+        if(vol_input.depth == 1 && this.classify_input_data.length == ((vol_input.sx * vol_input.sy) * 3)) {
+            // desaturate image
+            this.classify_input_data = this.desaturate_image(this.classify_input_data);
+        }
+
+        if(this.classify_input_data.length != (vol_input.sx * vol_input.sy * vol_input.depth)) {
+            this.logger('Cannot classify image: Incorrect format.');
+            return;
+        }
+
+        Net = new mlitb.Net();
+        Net.createLayers(conf);
+        Net.setParams(parameters);
+
+        Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
+        Input.data = this.classify_input_data;
+        Net.forward(Input);
+        var arr = Net.getPrediction().data;
+
+        this.scope.classifier_results(arr);
+
+    },
+
+    classify_input: function(nn_id, input) {
+
+        var nn = this.nn_exists(nn_id);
+        
+        if(!nn) {
+            return;
+        }
+
+        this.classify_input_data = input;
+
+        this.request_nn_classifier(nn_id);
 
     },
 
@@ -441,6 +540,8 @@ Client.prototype = {
             this.download_parameters(data);
         } else if(data.type == 'upload_parameters_complete') {
             this.upload_parameters_complete();
+        } else if(data.type == 'receive_nn_classifier') {
+            this.receive_nn_classifier(data.data);
         }
 
     },

@@ -221,6 +221,18 @@ NN.prototype = {
 
     },
 
+    request_nn_classifier: function(boss, d) {
+
+        this.master.send_message_to_boss(boss, {
+            type: 'receive_nn_classifier',
+            data: {
+                parameters: this.parameters,
+                configuration: this.configuration
+            }
+        });
+
+    },
+
     add_client: function(client) {
 
         this.clients.push(client);

@@ -470,6 +470,29 @@ Master.prototype = {
 
     },
 
+    request_nn_classifier: function(d) {
+
+        nn_id = d.nn;
+        boss_id = d.boss;
+
+        boss = this.boss_by_id(boss_id);
+
+        if(!boss) {
+            console.log("! Cannot request classifier from (boss) to (NN): boss does not exist", boss_id, nn_id);
+            return;
+        }
+
+        nn = this.nn_by_id(nn_id);
+
+        if(!nn) {
+            console.log("! Cannot request classifier from (boss) to (NN): NN does not exist", boss_id, nn_id);
+            return;
+        }
+
+        nn.request_nn_classifier(boss);
+
+    },
+
     master_message: function(data) {
 
         data = JSON.parse(data);
@@ -500,6 +523,8 @@ Master.prototype = {
             this.download_parameters(message.data);
         } else if(message.type == "upload_parameters") {
             this.upload_parameters(message.data);
+        } else if(message.type == "request_nn_classifier") {
+            this.request_nn_classifier(message.data);
         } else {
             console.log("! Received unknown message from client:", socket, message);
         }
