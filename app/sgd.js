@@ -128,10 +128,10 @@ SGDTrainer.prototype = {
           for (var k = 0; k < new_parameters.length; k++) {
             //again ignore grads from new client
             if (new_parameters[k].parameters_type == 'grads'){
-              if (typeof new_parameters[k].parameters == null){
-                console.log(JSON.stringify(new_parameters[k]));
-                console.log(this.iteration);  
-              }
+              // if (typeof new_parameters[k].parameters == null){
+              //   console.log(JSON.stringify(new_parameters[k]));
+              //   console.log(this.iteration);  
+              // }
               total_gi += new_parameters[k].parameters[i][gi];
             }
           }
@@ -145,7 +145,15 @@ SGDTrainer.prototype = {
           this.l1_loss += this.l1_decay*Math.abs(p[j]);
           var l2_grad = this.l2_decay*p[j];
           var l1_grad = this.l1_decay*(p[j]>0 ? 1 : -1);
+          // add new gradient element for new added neuron
+          if (typeof lg[j]==='undefined'){
+            lg.push(0.0);
+          }
           var lgj = lg[j];
+          // add new gradient element for new added neuron
+          if (typeof ssg[j]==='undefined'){
+            ssg.push(0.0);
+          }
           ssg[j] += ((g[j]/totalVector) *(g[j]/totalVector));
           var tess = Math.sqrt(ssg[j]);
           if (tess<=1){
@@ -171,42 +179,42 @@ SGDTrainer.prototype = {
       // this.learning_rate = this.learning_rate*this.lr_decay > 0.001 ? this.learning_rate*this.lr_decay : 0.01;
       // ======================================
 
-      var max,min,l = 0;
-      for( var key in this.proceeded_data ) {
-        if ( this.proceeded_data.hasOwnProperty(key) ) {
-          var val = this.proceeded_data[key];
-          if (l==0){
-            max = val;
-            min = val;
-          }
-          if (val > max){max = val;}
-          if (val < min){min = val;}
-          l++;
-        }
-      }
-      console.log('Data statistics :');
-      console.log('Total : '+l);
-      console.log('Max   : '+max);
-      console.log('Min   : '+min);
+      // var max,min,l = 0;
+      // for( var key in this.proceeded_data ) {
+      //   if ( this.proceeded_data.hasOwnProperty(key) ) {
+      //     var val = this.proceeded_data[key];
+      //     if (l==0){
+      //       max = val;
+      //       min = val;
+      //     }
+      //     if (val > max){max = val;}
+      //     if (val < min){min = val;}
+      //     l++;
+      //   }
+      // }
+      // console.log('Data statistics :');
+      // console.log('Total : '+l);
+      // console.log('Max   : '+max);
+      // console.log('Min   : '+min);
 
-      //
-      var RMS = 0.0;
-      var discrete_RMS = 0.0;
-      var NData = 0;
-      for (key in this.last_pred_loss){
-        if (this.last_pred_loss.hasOwnProperty(key)){
-          diff = 1-this.last_pred_loss[key][0];
-          RMS+= diff;
-          discrete_RMS+=this.last_pred_loss[key][1];
-          NData++;
-        }
-      }
-      // RMS = Math.sqrt(RMS)/NData;
-      RMS = RMS/NData;
-      // discrete_RMS = discrete_RMS/NData;
-      //RMS all training data that has ever been proceeded by clients
-      console.log('RMS all training data '+RMS);
-      console.log('discrete RMS all training data '+discrete_RMS+'/'+NData+' = '+discrete_RMS/NData);
+      // //
+      // var RMS = 0.0;
+      // var discrete_RMS = 0.0;
+      // var NData = 0;
+      // for (key in this.last_pred_loss){
+      //   if (this.last_pred_loss.hasOwnProperty(key)){
+      //     diff = 1-this.last_pred_loss[key][0];
+      //     RMS+= diff;
+      //     discrete_RMS+=this.last_pred_loss[key][1];
+      //     NData++;
+      //   }
+      // }
+      // // RMS = Math.sqrt(RMS)/NData;
+      // RMS = RMS/NData;
+      // // discrete_RMS = discrete_RMS/NData;
+      // //RMS all training data that has ever been proceeded by clients
+      // console.log('RMS all training data '+RMS);
+      // console.log('discrete RMS all training data '+discrete_RMS+'/'+NData+' = '+discrete_RMS/NData);
 
     }
 
