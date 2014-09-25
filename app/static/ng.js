@@ -84,6 +84,23 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
 
     }
 
+    getEXIF = function(f, cb) {
+
+        var reader = new FileReader();
+
+        reader.onload = function(file) {
+
+            var exif, transform = "none";
+            exif = EXIF.readFromBinaryFile(createBinaryFile(file.target.result));
+
+            cb(exif, f);
+
+        }
+
+        reader.readAsArrayBuffer(f);
+
+    }
+
     handleFileSelect = function(evt) {
 
         var files = evt.target.files; // FileList object
@@ -96,44 +113,42 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
                 continue;
             }
 
-            var reader = new FileReader();
+            exif = getEXIF(f, function(exif, f) {
 
-            var image = new Image();
-            image.src = window.URL.createObjectURL(f);
+                var reader = new FileReader();
 
-            // Closure to capture the file information.
-            reader.onload = function(theFile) {
+                // Closure to capture the file information.
+                reader.onload = function(theFile) {
 
-                var exif, transform = "none";
-                exif = EXIF.readFromBinaryFile(createBinaryFile(theFile.target.result));
+                    var image = new Image();
+                    image.src = reader.result;
 
-                image.onload = function() {
-                    window.URL.revokeObjectURL(this.src);
+                    image.onload = function() {
 
-                    width = 28; // change this to relevant size
-                    height = 28; // change this to relevant size
+                        width = 28; // change this to relevant size
+                        height = 28; // change this to relevant size
 
-                    var canvas = document.getElementById("image"); 
-                    canvas.width = width;
-                    canvas.height = height;
+                        var canvas = document.getElementById("image"); 
+                        canvas.width = width;
+                        canvas.height = height;
 
-                    var mpImg = new MegaPixImage(image);
-                    mpImg.render(canvas, { width: width, height: height, orientation: exif.Orientation });
+                        var mpImg = new MegaPixImage(image);
+                        mpImg.render(canvas, { width: width, height: height, orientation: exif.Orientation });
 
-                    var imageData = canvas.getContext("2d").getImageData(0, 0, width, height);
+                        var imageData = canvas.getContext("2d").getImageData(0, 0, width, height);
 
-                    // image pixel data
-                    // array, set up as [r,g,b,a,r,g,b,a, ...]
-                    // thus each four numbers are 1 pixel
-                    // console.log(imageData);
-                    convert_image(imageData.data);
+                        // image pixel data
+                        // array, set up as [r,g,b,a,r,g,b,a, ...]
+                        // thus each four numbers are 1 pixel
+                        convert_image(imageData.data);
+
+                    };
 
                 };
 
-            };
+                reader.readAsDataURL(f);
 
-            // Read in the image file as a data URL.
-            reader.readAsArrayBuffer(f);
+            });
         
         }
     }
@@ -554,11 +569,11 @@ app.controller('join', function ($scope, $rootScope) {
       $scope.reverse = false;
   }
 
-  $scope.join = function(nn) {
-    $scope.client.start_slave(nn);
-}
+    $scope.join = function(nn) {
+        $scope.client.start_slave(nn);
+    }
 
-$scope.join_any = function() {
+    $scope.join_any = function() {
         // a
     }
 

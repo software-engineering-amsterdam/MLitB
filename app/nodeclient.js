@@ -26,7 +26,7 @@ var master = function() {
             .version('2.0.0 beta 1')
             .option('-h, --host [value]', 'Master host to connect to')
             .option('-p, --port <value>', 'Master port to connect to', parseInt)
-            .option('-w, --workers <value>', 'Number of workers to attach', parseInt)
+            .option('-j, --workers <value>', 'Number of workers to attach', parseInt)
             .option('-n, --network [value]', 'Network ID to connect to')
             .parse(process.argv);
 
