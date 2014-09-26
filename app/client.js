@@ -23,6 +23,8 @@ var Client = function(master, server, id, boss) {
 
     this.process = []; // data assigned for processing
 
+    this.labels = []; // current list of known labels
+
 }
 
 Client.prototype = {
@@ -98,6 +100,29 @@ Client.prototype = {
 
     },
 
+    get_new_labels: function(labels) {
+
+        // returns a list of NEW labels for this client
+
+        var new_labels = [];
+
+        var i = labels.length;
+        while(i--) {
+
+            if(this.labels.indexOf(labels[i]) == -1) {
+
+                this.labels.push(labels[i]);
+                
+                new_labels.push(labels[i]);
+
+            }
+
+        }
+
+        return new_labels;
+
+    },
+
     work: function(nn) {
 
         this.master.send_message_to_slave(this, {
@@ -108,7 +133,8 @@ Client.prototype = {
             configuration: nn.configuration,
             parameters: nn.parameters,
             step: nn.step,
-            nn: nn.id
+            nn: nn.id,
+            new_labels: nn.labels//this.get_new_labels(nn.labels)
 
         });
 

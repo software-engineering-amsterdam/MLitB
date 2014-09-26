@@ -229,7 +229,8 @@ SGDTrainer.prototype = {
         'error': totalError/totalVector,
         'step': step,
         'parameters': this.last_params,
-        'configuration': nn.configuration
+        'configuration': nn.configuration,
+        'labels': nn.labels
       }
     });
 

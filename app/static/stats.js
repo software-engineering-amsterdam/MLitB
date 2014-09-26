@@ -7,10 +7,16 @@ var lastParameter;
 var log_list = [];
 var is_initialized = false;
 var nData;
+var configuration;
+var vol_input;
 
-test_data = [];
+var test_data = [];
+
+var labels = [];
 
 var data = function(d) {
+
+  labels = d.labels;
 
   if(!test_data.length) {
     console.log('no test data');
@@ -24,6 +30,7 @@ var data = function(d) {
   if (!is_initialized) { 
 
     configuration = d.configuration;
+    
 
     // squish configuration
     conf = [];
@@ -36,9 +43,13 @@ var data = function(d) {
     Net = new mlitb.Net();  
     Net.createLayers(conf);
 
+    vol_input = configuration[0].conf;
     is_initialized = true;      
 
   }
+
+  // add labels, new or not
+  Net.addLabel(labels);
 
   if (d.parameters !== null) {
     // copy the parameters and gradients
@@ -48,17 +59,27 @@ var data = function(d) {
   var l=test_data.length;
   discrete_loss = 0;
   while (l--){
+
     piece = test_data[l];
-    Input = new mlitb.Vol(28,28,1, 0.0);
+    Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
     Input.data = piece.data;
     Net.forward(Input);
-    var arr = Net.getPrediction().data;
-    var pred_val = arr[piece.label];
-    var pred_label =0;
-    for (var j = 1; j < arr.length; j++) {
-      if (arr[j]>arr[pred_label]){pred_label = j}
-    };
-    discrete_loss += pred_label == piece.label ? 0 : 1;
+
+    var predictions = Net.getPrediction().data;
+    var predicted_index = 0;
+
+    var j = predictions.length;
+
+    while(j--) {
+      if(predictions[j] > predictions[predicted_index]) {
+        predicted_index = j;
+      }
+    }
+
+    var predicted_label = Net.index2label[predicted_index];
+
+    discrete_loss += predicted_label == piece.label ? 0 : 1;
+
   }
   
   //console.log('Misclassify : '+discrete_loss);
@@ -85,7 +106,7 @@ var data = function(d) {
 var fileupload = function(data) {
 
     test_data = data;
-  nData = test_data.length;
+    nData = test_data.length;
 
 }
 

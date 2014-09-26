@@ -121,7 +121,6 @@
                                                   <option value="sigmoid">Sigmoid</option>
                                                   <option value="tanh">TanH</option>
                                                   <option value="maxout">Maxout</option>
-                                                  <option value="dropout">Dropout</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -160,12 +159,6 @@
                                         <div class="row">
                                             <div class="col-xs-5">
                                                 <div class="form-group">
-                                                    <label for="name">Number of neurons:</label>
-                                                    <input type="number" class="form-control" ng-model="layer.fc.num_neurons" id="num_neurons">
-                                                </div>
-                                            </div>
-                                            <div class="col-xs-5">
-                                                <div class="form-group">
                                                     <label for="name">Activation</label>
                                                     <select class="form-control" ng-model="layer.fc.activation">
                                                       <option value="relu" selected>ReLu</option>
@@ -173,8 +166,13 @@
                                                       <option value="sigmoid">Sigmoid</option>
                                                       <option value="tanh">TanH</option>
                                                       <option value="maxout">Maxout</option>
-                                                      <option value="dropout">Dropout</option>
                                                     </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Dropout probability</label>
+                                                    <input type="number" class="form-control" ng-model="layer.fc.drop_prob" id="drop_prob" step="0.1">
                                                 </div>
                                             </div>
                                         </div>

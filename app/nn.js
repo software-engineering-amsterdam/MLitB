@@ -38,6 +38,8 @@ var NN = function(master, id, name, configuration, iteration_time, public_client
 
     this.public_client = public_client;
 
+    this.labels = [];
+
 }
 
 NN.prototype = {
@@ -227,9 +229,23 @@ NN.prototype = {
             type: 'receive_nn_classifier',
             data: {
                 parameters: this.parameters,
-                configuration: this.configuration
+                configuration: this.configuration,
+                labels: this.labels
             }
         });
+
+    },
+
+    add_label: function(label) {
+        // collect labels first
+
+        label = label.toLowerCase();
+
+        if(this.labels.indexOf(label) != -1) {
+            return;
+        }
+
+        this.labels.push(label);
 
     },
 
@@ -657,7 +673,7 @@ NN.prototype = {
 
             }
 
-        }
+        }        
 
     },
 

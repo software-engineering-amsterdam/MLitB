@@ -73,7 +73,8 @@ Master.prototype = {
                 iteration_time: nn.iteration_time,
                 power: nn.total_power(),
                 data_seen: nn.data_seen,
-                public_client: nn.public_client
+                public_client: nn.public_client,
+                labels: nn.labels
             });
 
         }
@@ -493,6 +494,22 @@ Master.prototype = {
 
     },
 
+    add_label: function(d) {
+
+        nn_id = d.nn;
+        label = d.label;
+
+        nn = this.nn_by_id(nn_id);
+
+        if(!nn) {
+            console.log("! Cannot add label to (NN): NN does not exist", nn_id);
+            return;
+        }
+
+        nn.add_label(label);
+
+    },
+
     master_message: function(data) {
 
         data = JSON.parse(data);
@@ -525,6 +542,8 @@ Master.prototype = {
             this.upload_parameters(message.data);
         } else if(message.type == "request_nn_classifier") {
             this.request_nn_classifier(message.data);
+        } else if(message.type == "add_label") {
+            this.add_label(message.data);
         } else {
             console.log("! Received unknown message from client:", socket, message);
         }

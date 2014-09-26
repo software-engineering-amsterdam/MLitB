@@ -43,6 +43,15 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
 
     }
 
+    $scope.add_label = function() {
+
+
+        console.log("NG add label");
+
+        $scope.client.add_label_with_data($scope.nn_id, $scope.new_label);
+
+    }
+
     convert_image = function(image) {
 
         // rgbargbargba -> rrrgggbbb (drop a)
@@ -246,49 +255,68 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     return chart;
 
-}
-
-processTestUpload = function(file) {
-
-    newData = JSON.parse(file.target.result);
-    var msg = "Upload Stats data file not OK.";
-    if(newData) {
-        msg = "Upload Stats data file OK, length: " + newData.length;
     }
 
-    $rootScope.client.logger(msg);
+    processTestUpload = function(file) {
 
-    $scope.worker.postMessage({
-        type: 'fileupload',
-        data: newData
-    });
+        newData = JSON.parse(file.target.result);
 
-}
+        var parsedData = [];
 
-processParameterUpload = function(file) {
+        for(var key in newData) {
 
-    newData = JSON.parse(file.target.result);
-    var msg = "Upload Parameter data file not OK.";
-    if(newData) {
-        msg = "Upload Parameter data file OK";
+            var data = newData[key];
+            var i = data.length;
+            while(i--) {
+
+                parsedData.push({
+                    label: key,
+                    data: data[i]
+                })
+
+            }
+
+        }
+
+        var msg = "Upload Stats data file not OK.";
+        if(parsedData.length) {
+            msg = "Upload Stats data file OK, length: " + parsedData.length;
+        }
+
+        $rootScope.client.logger(msg);
+
+        $scope.worker.postMessage({
+            type: 'fileupload',
+            data: parsedData
+        });
+
     }
 
-    $rootScope.client.logger(msg);
+    processParameterUpload = function(file) {
 
-    $rootScope.client.upload_parameters($scope.nn_id, newData);
+        newData = JSON.parse(file.target.result);
+        var msg = "Upload Parameter data file not OK.";
+        if(newData) {
+            msg = "Upload Parameter data file OK";
+        }
 
-}
+        $rootScope.client.logger(msg);
 
-clearFileInput = function(selector, handler) { 
+        $rootScope.client.upload_parameters($scope.nn_id, newData);
 
-    var oldInput = document.getElementById(selector); 
-    var newInput = document.createElement("input"); 
+    }
 
-    newInput.type = "file"; 
-    newInput.id = oldInput.id; 
-    newInput.name = oldInput.name; 
-    newInput.className = oldInput.className; 
-    newInput.style.cssText = oldInput.style.cssText; 
+    clearFileInput = function(selector, handler) { 
+
+        var oldInput = document.getElementById(selector); 
+        var newInput = document.createElement("input"); 
+
+        newInput.type = "file"; 
+        newInput.id = oldInput.id; 
+        newInput.name = oldInput.name; 
+        newInput.className = oldInput.className; 
+        newInput.style.cssText = oldInput.style.cssText; 
+        
         // copy any other relevant attributes 
 
         oldInput.parentNode.replaceChild(newInput, oldInput);
@@ -412,7 +440,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
             {type: 'input', conf: {"sx":28,"sy":28,"depth":1}},
             {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu"}},
             {type: 'pool', conf: {"sx":3,"stride":3}},
-            {type: 'fc', conf: {"num_neurons":10,"activation":"softmax"}}
+            {type: 'fc', conf: {"activation":"softmax"}}
             ]
         } else if(type == 'elaborate_mnist') {
 
@@ -422,7 +450,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
             {type: 'pool', conf: {"sx":2,"stride":2}},
             {type: 'conv', conf: {"sx":5,"stride":1,"filters":16,"activation":"relu"}},
             {type: 'pool', conf: {"sx":3,"stride":3}},
-            {type: 'fc', conf: {"num_neurons":10,"activation":"softmax"}}
+            {type: 'fc', conf: {"activation":"softmax"}}
             ]
         }
 

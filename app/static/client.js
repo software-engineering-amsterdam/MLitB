@@ -241,6 +241,7 @@ Client.prototype = {
 
         configuration = d.configuration;
         parameters = d.parameters.parameters;
+        labels = d.labels;
 
         // squish configuration
         conf = [];
@@ -266,12 +267,29 @@ Client.prototype = {
         Net.createLayers(conf);
         Net.setParams(parameters);
 
+        Net.addLabel(labels);
+
         Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
         Input.data = this.classify_input_data;
         Net.forward(Input);
         var arr = Net.getPrediction().data;
 
-        this.scope.classifier_results(arr);
+        // add labels to arr
+
+        var labeledResults = []
+
+        var j = arr.length;
+        while(j--) {
+            labeledResults.push([Net.index2label[j], arr[j]]);
+        }
+
+        labeledResults = labeledResults.sort(function(a,b) {
+            return a[1] < b[1];
+        });
+
+        console.log(labeledResults);
+
+        this.scope.classifier_results(labeledResults);
 
     },
 
@@ -286,6 +304,43 @@ Client.prototype = {
         this.classify_input_data = input;
 
         this.request_nn_classifier(nn_id);
+
+    },
+
+    add_label_with_data: function(nn_id, label) {
+
+        r = {};
+        r[label] = [this.classify_input_data];
+
+        data_file = {
+            target: {
+                result: JSON.stringify(r)
+            }
+            
+        }
+
+        this.logger('Add label with data: ' + label);
+
+        // register data at master
+        // this is the public version, other clients may download
+        this.process_uploaded_data(data_file, nn_id);
+
+    },
+
+    add_label: function(nn_id, label) {
+
+        var nn = this.nn_exists(nn_id);
+        
+        if(!nn) {
+            return;
+        }
+
+        this.logger('Add label: ' + label);
+
+        this.send_message_to_master('add_label', {
+            label: label,
+            nn: nn_id
+        });
 
     },
 
@@ -441,14 +496,35 @@ Client.prototype = {
     process_uploaded_data: function(file, nn) {
 
         newData = JSON.parse(file.target.result);
+
+        parsedData = [];
+
+        for(var key in newData) {
+
+            var data = newData[key];
+            var i = data.length;
+            while(i--) {
+
+                parsedData.push({
+                    label: key,
+                    data: data[i]
+                })
+
+            }
+
+            // tell master of (new) labels
+            this.add_label(nn, key);
+
+        }
+
         var msg = "File select not OK.";
-        if(newData) {
-            msg = "File select OK, length: " + newData.length;
+        if(parsedData.length) {
+            msg = "File select OK, length: " + parsedData.length;
         }
 
         this.logger(msg);
 
-        this.new_data = newData;
+        this.new_data = parsedData;
 
         slaves_with_nn = this.slaves_by_nn(nn);
 
@@ -468,7 +544,7 @@ Client.prototype = {
 
         this.send_message_to_master('upload_data', {
             nn: nn,
-            size: newData.length,
+            size: this.new_data.length,
             slave: slave.id
         })
 

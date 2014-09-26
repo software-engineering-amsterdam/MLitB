@@ -600,7 +600,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     var conf = conf || {};
     // assume conf contains information about the number of neurons and also the number connection come to each neuron
     this.in_neurons = conf.in_neurons; //now we use in_neuron first, probably next we will use in_sx, in_sy, in_depth directly
-    this.out_depth = conf.num_neurons;
+    this.out_depth = 0; // default
     this.out_sx = 1;
     this.out_sy = 1;
     this.filters = new global.Vol(1, this.in_neurons, this.out_depth); // we assume y as the number of connection come to this layer
@@ -1334,9 +1334,6 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
             layer_conf.push({type : 'relu'}); //default activation function for conv
           }
         } else if (c.type === 'fc'){
-          if (typeof c.num_neurons === 'undefined'){
-            console.log("ERROR : number of neuron parameter \'num_neurons\' is not defined")
-          }
           if (typeof c.activation !== 'undefined'){
             layer_conf.push({type : c.activation});
           } else {
@@ -1428,11 +1425,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           break;
         }
       }
-      console.log('update pos',updatePos);
       //add new neuron for the last fc and all layers after it
       for (var i = updatePos;i<this.layers.length;i++){
         //update physical layer
-        console.log('layer type',this.layers[i].layer_type);
         this.layers[i].addNeuron(N);
         //update layer_conf
         this.layer_conf[i].num_neurons+=N;

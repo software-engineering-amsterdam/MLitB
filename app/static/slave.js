@@ -116,6 +116,7 @@ Slave.prototype = {
         parameters = d.parameters;
         nn = d.nn;
         step = d.step;
+        new_labels = d.new_labels;
 
         var vol_input;
         var workingset = [];
@@ -160,6 +161,11 @@ Slave.prototype = {
                 that.Net.createLayers(conf);
                 that.is_initialised = true;     
 
+            }
+
+            // add new labels, if there are any
+            if(new_labels.length) {
+                that.Net.addLabel(new_labels);
             }
 
             vol_input = configuration[0].conf;

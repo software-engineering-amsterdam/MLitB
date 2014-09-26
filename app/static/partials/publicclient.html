@@ -6,12 +6,30 @@
             <p><span class="btn btn-default btn-file btn-lg"><input id="picture" name="files" type="file"> <span class="glyphicon glyphicon-camera"></span> Take picture</button></span></p>
             <canvas id="image"></canvas>
             <div ng-show="classify_results">
-            	<h4>Results</h4>
-				<ul>
-                   <li data-ng-repeat="(key, value) in classify_results">
-                   		{{ key }}: {{ value }}
+                <h4>Results</h4>
+                      <ul>
+                   <li data-ng-repeat="item in classify_results">
+                        {{ item[0] }}: {{ item[1] }}
                    </li>
-            	</ul>
+                </ul>
+                <form role="form" name="new_label_form">
+                    <div class="row">
+                        <div class="col-xs-5">
+                            <div class="form-group">
+                                <label for="name">New label:</label>
+                                <input type="text" class="form-control" ng-model="new_label" id="label">
+                            </div>
+                        </div>
+                    </div>
+                    <!--
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" ng-model="new_label_public"> Add image to public training set
+                        </label>
+                    </div>
+                    -->
+                    <button type="submit" ng-click="add_label()" class="btn btn-default">Add label</button>
+                </form>
             </div>
         </div>
     </div>
