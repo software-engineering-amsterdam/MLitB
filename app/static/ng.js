@@ -192,8 +192,10 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
         nData = e.data.data.nData;
         step = e.data.data.step;
 
+        percentage = ((discrete_loss / nData) * 100.0).toFixed(3);
+
         $('span#step.error').html(step.toString());
-        $('span#error').html(discrete_loss.toString()+"/"+nData.toString());
+        $('span#error').html(discrete_loss.toString()+"/"+nData.toString() + ' - ' + percentage.toString() + '%');
         $('span#delta').html(delta.toString());
 
         if(!errorchart) {
