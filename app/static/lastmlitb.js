@@ -1254,10 +1254,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     forward : function (V, is_training) {
       this.V_in = V;
       var Z = V.clone();
-      for (var i = 0; i < Z.data.length; i++) {
-        if (Math.random()<this.drop_prob){Z.data[i]=0; this.drop_index.push(i)}
-      };
 
+      if (is_training){
+        for (var i = 0; i < Z.data.length; i++) {
+          if (Math.random()<this.drop_prob){Z.data[i]=0; this.drop_index.push(i)}
+        };  
+      }
       // for (var i = 0; i < Z.data.length; i++) {
       //   if (Math.random()<this.drop_prob){Z.data[i]=0; this.dropped[i]=true;}
       // };
