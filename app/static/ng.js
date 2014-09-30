@@ -68,7 +68,8 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
             idx = i + 1;
             
             // normalize to -0.5 to 0.5
-            pixel = image[i] / 255.0 - 0.5;
+            // normalize 0-1
+            pixel = image[i] / 255.0; // - 0.5;
 
             if(idx % 4 == 0) {
                 // skip alpha channel
@@ -460,10 +461,10 @@ app.controller('new', function ($scope, $rootScope, $location) {
             $scope.layers = [
             {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
             {type: 'conv', conf: {"sx":5,"stride":1,"filters":12,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":3,"stride":2}},
+            {type: 'pool', conf: {"sx":3,"stride":2,"drop_prob":0.5}},
             {type: 'conv', conf: {"sx":5,"stride":1,"filters":24,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":4,"stride":4}},
-            {type: 'fc', conf: {"activation":"softmax"}}
+            {type: 'pool', conf: {"sx":4,"stride":4,"drop_prob":0.5}},
+            {type: 'fc', conf: {"activation":"softmax","drop_prob":0.5}}
             ]
         }
 

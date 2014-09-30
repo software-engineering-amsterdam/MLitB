@@ -24,8 +24,8 @@ var SGDTrainer = function (net, conf) {
   this.l1_loss = 0.0;
 
   this.learning_rate = typeof conf.learning_rate !== 'undefined' ? conf.learning_rate : 0.01;
-  this.l1_decay = typeof conf.l1_decay !== 'undefined' ? conf.l1_decay : 0.0;
-  this.l2_decay = typeof conf.l2_decay !== 'undefined' ? conf.l2_decay : 0.0;
+  this.l1_decay = typeof conf.l1_decay !== 'undefined' ? conf.l1_decay : 0.0001;
+  this.l2_decay = typeof conf.l2_decay !== 'undefined' ? conf.l2_decay : 0.0001;
   this.batch_size = typeof conf.batch_size !== 'undefined' ? conf.batch_size : 1;
   this.momentum = typeof conf.momentum !== 'undefined' ? conf.momentum : 0.9;
   this.iteration = 0;
@@ -36,8 +36,8 @@ var SGDTrainer = function (net, conf) {
   this.is_initialized = false;
   this.last_pred_loss = {}; // data_id : [loss, discrete_loss]. discrete loss = 0 if y=y', 1 otherwise
   this.proceeded_data = {};
-  this.lr_decay = typeof conf.lr_decay !== 'undefined' ? conf.lr_decay : 0.9;
-  this.lr_threshold= typeof conf.lr_threshold !== 'undefined' ? conf.lr_threshold : 0.001;
+  this.lr_decay = typeof conf.lr_decay !== 'undefined' ? conf.lr_decay : 0.999;
+  this.lr_threshold= typeof conf.lr_threshold !== 'undefined' ? conf.lr_threshold : 0.000001;
   this.lr_decay_interval= typeof conf.lr_decay_interval !== 'undefined' ? conf.lr_decay_interval : 1;
 };
     
@@ -113,6 +113,7 @@ SGDTrainer.prototype = {
         }
       };
       this.total_data_seen+=totalVector;
+      console.log('learning rate : ', this.learning_rate);
       console.log('total data seen : ', this.total_data_seen);
       console.log('error : ',totalError/totalVector);
       // console.log('before ',JSON.stringify(this.last_params[2].params));    
