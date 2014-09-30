@@ -66,8 +66,9 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
         for(var i = 0; i < image.length; i++) {
 
             idx = i + 1;
-
-            pixel = image[i];// / 255.0;
+            
+            // normalize to -0.5 to 0.5
+            pixel = image[i] / 255.0 - 0.5;
 
             if(idx % 4 == 0) {
                 // skip alpha channel
