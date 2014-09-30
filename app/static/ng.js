@@ -455,6 +455,16 @@ app.controller('new', function ($scope, $rootScope, $location) {
             {type: 'pool', conf: {"sx":3,"stride":3}},
             {type: 'fc', conf: {"activation":"softmax"}}
             ]
+        } else if(type == 'cifar10') {
+
+            $scope.layers = [
+            {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
+            {type: 'conv', conf: {"sx":5,"stride":1,"filters":12,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":2}},
+            {type: 'conv', conf: {"sx":5,"stride":1,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":4,"stride":4}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+            ]
         }
 
         $scope.layer_errors = [];
