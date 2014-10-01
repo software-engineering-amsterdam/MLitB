@@ -188,6 +188,14 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="row">
+                                            <div class="col-xs-5">
+                                                <div class="form-group">
+                                                    <label for="name">Number of neurons</label>
+                                                    <input type="number" class="form-control" ng-model="layer.fc.num_neurons" id="num_neurons">
+                                                </div>
+                                            </div>
+                                        </div>
                                         <button type="submit" ng-click="add_layer(layer.fc, conf_type)" class="btn btn-default">Add layer</button>
                                     </form>
                                 </div>
