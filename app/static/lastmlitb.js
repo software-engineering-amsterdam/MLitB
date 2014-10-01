@@ -334,6 +334,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     var conf = conf || {};
 
     // required
+    this.conf_idx = conf.conf_idx;
     this.out_sx = conf.sx;
     this.out_sy = conf.sy;
     this.out_depth = conf.depth;
@@ -369,9 +370,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
     fromJSON: function(json) {
       this.out_sx = json.out_sx;
-        this.out_sy = json.out_sy;
-        this.out_depth = json.out_depth;
-        this.layer_type = json.layer_type;
+      this.out_sy = json.out_sy;
+      this.out_depth = json.out_depth;
+      this.layer_type = json.layer_type;
     }
   }
 
@@ -384,6 +385,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   var ConvLayer = function (conf) {
     var conf = conf || {};
     //required
+    this.conf_idx = conf.conf_idx;
     this.sx = conf.sx;
     this.in_sx = conf.in_sx;
     this.in_sy = conf.in_sy;
@@ -490,10 +492,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
     getParamsAndGrads : function () {
       var out = [];
-      for (var i = 0; i < this.filters.length; i++) {
-        out.push({params : this.filters[i].data, grads : this.filters[i].drv});
-      };
-      out.push({params : this.biases.data, grads : this.biases.drv});
+      if (this.is_train){
+        for (var i = 0; i < this.filters.length; i++) {
+          out.push({params : this.filters[i].data, grads : this.filters[i].drv});
+        };
+        out.push({params : this.biases.data, grads : this.biases.drv});    
+      }
       return out;
     },
 
@@ -599,8 +603,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   var FullConnLayer = function (conf) {
     var conf = conf || {};
     // assume conf contains information about the number of neurons and also the number connection come to each neuron
+    this.conf_idx = conf.conf_idx;
     this.in_neurons = conf.in_neurons; //now we use in_neuron first, probably next we will use in_sx, in_sy, in_depth directly
-    this.out_depth = 0; // default
+    this.out_depth = 0; //default conf.num_neurons;
     this.out_sx = 1;
     this.out_sy = 1;
     this.filters = new global.Vol(1, this.in_neurons, this.out_depth); // we assume y as the number of connection come to this layer
@@ -764,6 +769,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   var SigmoidLayer = function (conf) {
     var conf = conf || {};
     // assume conf contains information about the number of neurons and also the number connection come to each neuron
+    this.conf_idx = conf.conf_idx;
     this.out_sx = conf.in_sx;
     this.out_sy = conf.in_sy;
     this.out_depth = conf.in_depth;
@@ -842,6 +848,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   var ReLuLayer = function (conf) {
     var conf = conf || {};
     //need information about neuron dimension, from the previous layer
+    this.conf_idx = conf.conf_idx;
     this.out_sx = conf.in_sx;
     this.out_sy = conf.in_sy;
     this.out_depth = conf.in_depth;
@@ -907,6 +914,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     var conf = conf || {};
 
     // computed
+    this.conf_idx = conf.conf_idx;
     this.num_inputs = conf.in_sx * conf.in_sy * conf.in_depth;
     this.out_depth = this.num_inputs;
     this.out_sx = 1;
@@ -996,6 +1004,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
   var LinearLayer = function (conf) {
     var conf = conf || {};
+    this.conf_idx = conf.conf_idx;
     this.out_sx = conf.in_sx;
     this.out_sy = conf.in_sy;
     this.out_depth = conf.in_depth;
@@ -1082,6 +1091,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     var conf = conf || {};
 
     // required
+    this.conf_idx = conf.conf_idx;
     this.sx = conf.sx; // filter size
     this.in_depth = conf.in_depth;
     this.in_sx = conf.in_sx;
@@ -1230,6 +1240,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
   var DropoutLayer = function (conf) {
     var conf = conf || {};
+    this.conf_idx = conf.conf_idx;
     this.out_sx = conf.in_sx;
     this.out_sy = conf.in_sy;
     this.out_depth = conf.in_depth;
@@ -1243,10 +1254,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     forward : function (V, is_training) {
       this.V_in = V;
       var Z = V.clone();
-      for (var i = 0; i < Z.data.length; i++) {
-        if (Math.random()<this.drop_prob){Z.data[i]=0; this.drop_index.push(i)}
-      };
 
+      if (is_training){
+        for (var i = 0; i < Z.data.length; i++) {
+          if (Math.random()<this.drop_prob){Z.data[i]=0; this.drop_index.push(i)}
+        };  
+      }
       // for (var i = 0; i < Z.data.length; i++) {
       //   if (Math.random()<this.drop_prob){Z.data[i]=0; this.dropped[i]=true;}
       // };
@@ -1307,14 +1320,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   var Net = function () {
     this.layers = [];
     this.layer_conf = [];
+    this.conf = [];
     this.label2index = {}; //maps string label to index
     this.index2label = {}; //maps index to label
     
   }
   Net.prototype = {
     createLayers : function (conf) {
-      this.layers = [];
       this.layer_conf =this.parseConfs(conf);
+      this.conf = conf; //original conf
+      this.layers = []; //array of layer object
+       //parsed layer config (e.g adding activation layer)
       this.constructNetwork(this.layer_conf,this.layers);
     },
 
@@ -1324,20 +1340,26 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       var layer_conf = [];
       //add input, activation, and output layer
       for (var i = 0; i < conf.length; i++) {
-        var c = conf[i]
+        var c = conf[i];
+        var conf_idx = i+this.conf.length;
+        // var conf_idx =i;
+        c.conf_idx = conf_idx;
         layer_conf.push(c);
 
         if (c.type === 'conv'){
           if (typeof c.activation !== 'undefined'){
-            layer_conf.push({type : c.activation});
+            layer_conf.push({type : c.activation, conf_idx: conf_idx});
           } else {
-            layer_conf.push({type : 'relu'}); //default activation function for conv
+            layer_conf.push({type : 'relu', conf_idx:conf_idx}); //default activation function for conv
           }
         } else if (c.type === 'fc'){
+          // if (typeof c.num_neurons === 'undefined'){
+          //   console.log("ERROR : number of neuron parameter \'num_neurons\' is not defined")
+          // }
           if (typeof c.activation !== 'undefined'){
-            layer_conf.push({type : c.activation});
+            layer_conf.push({type : c.activation, conf_idx:conf_idx});
           } else {
-            layer_conf.push({type : 'linear'}); //default activation function for fc
+            layer_conf.push({type : 'linear', conf_idx:conf_idx}); //default activation function for fc
           }
         } else if (c.type === 'pool'){
           if (typeof c.sx === 'undefined'){console.log('ERROR : pool size parameter \'sx\' is not defined')}
@@ -1348,7 +1370,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
             console.log("WARNING : \'stride\' parameter is not defined. Using default = 1")
           }
           if (typeof drop_prob !== 'undefined'){
-            layer_conf.push({type : 'dropout', drop_prob : drop_prob})
+            layer_conf.push({type : 'dropout', drop_prob : drop_prob, conf_idx:conf_idx})
           }
         }
       };
@@ -1385,21 +1407,57 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return layers;
     },
 
-    remove_layer : function(){
+    removeLayer : function(rm_conf_idx){
+      //can't remove input layer for now
+      //right now only applicable to the last layer
+      //it's a bit tricky to remove the middle layer
+      if (rm_conf_idx==0){console.log('ERROR : Can not remove input layer');}
+      else {
+        //update this.conf
+        this.conf.splice(rm_conf_idx,1);//remove item from config
+        console.log('WARNING : Removing a layer will reset the weights connections between this layer and the next layer');
+        var prev_layer = {};
+        var next_layer = {};
+        var removed_layers_idx = [];
+        for (var i in this.layers){
+          var l = this.layers[i]
+          if (l.conf_idx < rm_conf_idx){prev_layer=l.conf_idx;}
+          else if (l.conf_idx==rm_conf_idx){
+            removed_layers_idx.push(i);
+            console.log('remove layer : ',l.layer_type);
+          }
+          else if (l.conf_idx> rm_conf_idx){next_layer=l.conf_idx; break;}
+        }
+        //remove physical layer, splice from the first removed index, for length of removed index
+        this.layers.splice(removed_layers_idx[0],removed_layers_idx.length);
+        this.layer_conf.splice(removed_layers_idx[0],removed_layers_idx.length);
+      }
       //default remove the last layer only fc and it's activation
-      this.layers = this.layers.slice(0,this.layers.length-2);
-      this.layer_conf = this.layer_conf.slice(0,this.layer_conf.length-2);
+      // this.layers = this.layers.slice(0,this.layers.length-2);
+      // this.layer_conf = this.layer_conf.slice(0,this.layer_conf.length-2);
     },
 
-    add_layer : function(conf){
+    addLayer : function(conf){
       var old_size = this.layers.length;
       var add_layer = this.parseConfs(conf);
+      for (i in conf){
+        this.conf.push(conf[i]);
+      }
       this.constructNetwork(add_layer,this.layers);
     },
 
-    // addLabel is to add new label to the existing label
-    // list_new_labels = ['newlabel1','newlabel2',...]
-    // return {'label1':1,...} -> all labels mapping
+    //update is_train after creating the network
+    //so we could update is_train at anytime not only before creating the network
+    updateLayerTrain : function(idx, value){
+      this.conf[idx].is_train = value;
+      for (i in this.layers){
+        if (this.layers[i].conf_idx==idx){
+          this.layers[i].is_train=value;
+          this.layer_conf[i].is_train=value;
+        }
+      }
+    },
+
     addLabel : function(list_new_labels){
       //now this should work only for the last full con layer.
       var updatePos = 0;
@@ -1435,11 +1493,6 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return this.label2index;
     },
 
-    // use setLabel if the input label to the network is not numeric
-    // set the label before the training start
-    // network will automatically search for the mapped indexes
-    // list_labels = ['label1','label2',...]
-    // return : {'label1': 1, ...} -> all labels mapping
     setLabel : function(list_labels){
       var orderedLabel = [];
       for (var i=0;i<list_labels.length;i++){
@@ -1505,7 +1558,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       is_initialization = typeof is_initialization !== 'undefined' ? is_initialization : false;
       var last_pos = 0;
       for (var i = 0; i < this.layers.length; i++) {
-        if (this.layers[i].layer_type === 'conv' || this.layers[i].layer_type === 'fc'){
+        if (this.layers[i].is_train && (this.layers[i].layer_type === 'conv' || this.layers[i].layer_type === 'fc')){
           total_params = this.layers[i].n_params + this.layers[i].n_biases;
           var newjson = json.slice(last_pos,total_params+last_pos);
           this.layers[i].setParamsAndGrads(newjson,is_initialization);
@@ -1529,7 +1582,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       is_initialization = typeof is_initialization !== 'undefined' ? is_initialization : false;
       var last_pos = 0;
       for (var i = 0; i < this.layers.length; i++) {
-        if (this.layers[i].layer_type === 'conv' || this.layers[i].layer_type === 'fc'){
+        if (this.layers[i].is_train && (this.layers[i].layer_type === 'conv' || this.layers[i].layer_type === 'fc')){
           total_params = this.layers[i].n_params + this.layers[i].n_biases;
           var newjson = json.slice(last_pos,total_params+last_pos);
           this.layers[i].setParams(newjson,is_initialization);
@@ -1548,6 +1601,26 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return out;
     },
 
+    // download parameter and configuration
+    // store it separately
+    // oneshot learning
+    // transform mnist data to {label : []}
+    getConfigsAndParams : function(){
+      var json = {};
+      json.params = this.getParams();
+      json.configs = this.conf;
+      json.label2index = this.label2index;
+      json.index2label = this.index2label;
+      return json;
+    },
+
+    setConfigsAndParams : function(json){
+      this.createLayers(json.configs);
+      this.setParams(json.params,true);
+      this.label2index=json.label2index;
+      this.index2label=json.index2label;
+    }
+    ,
     toJSON: function() {
       var json = {};
       json.layers = [];

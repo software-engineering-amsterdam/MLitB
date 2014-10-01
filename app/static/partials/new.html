@@ -21,6 +21,10 @@
                         <label for="iteration_time">Iteration time in mS</label>
                         <br />
                         <label class="radio-inline">
+                            <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="500"> 500
+                          </label>
+                            <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="1000"> 1000
+                          </label>
                           <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="5000"> 5000
                         </label>
                         <label class="radio-inline">
@@ -42,6 +46,9 @@
                             </li>
                             <li>
                                 <a ng-click="load_template('elaborate_mnist')">Elaborate MNIST digit classifier</a>
+                            </li>
+                            <li>
+                                <a ng-click="load_template('cifar10')">Cifar 10 Model</a>
                             </li>
                         </ul>
                     </div>
