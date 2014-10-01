@@ -251,7 +251,7 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
     series = chart.series[0];
 
     shift = false;
-    if(series.data.length >= 20) {
+    if(series.data.length >= 2000) {
         shift = true;
     }
 
