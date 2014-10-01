@@ -134,8 +134,8 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
 
                     image.onload = function() {
 
-                        width = 28; // change this to relevant size
-                        height = 28; // change this to relevant size
+                        width = 32; // change this to relevant size
+                        height = 32; // change this to relevant size
 
                         var canvas = document.getElementById("image"); 
                         canvas.width = width;
