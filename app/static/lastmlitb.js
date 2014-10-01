@@ -605,7 +605,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     // assume conf contains information about the number of neurons and also the number connection come to each neuron
     this.conf_idx = conf.conf_idx;
     this.in_neurons = conf.in_neurons; //now we use in_neuron first, probably next we will use in_sx, in_sy, in_depth directly
-    this.out_depth = 0; //default conf.num_neurons;
+    this.out_depth = typeof conf.num_neurons !== 'undefined' ? conf.num_neurons : 0;
     this.out_sx = 1;
     this.out_sy = 1;
     this.filters = new global.Vol(1, this.in_neurons, this.out_depth); // we assume y as the number of connection come to this layer
@@ -1353,9 +1353,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
             layer_conf.push({type : 'relu', conf_idx:conf_idx}); //default activation function for conv
           }
         } else if (c.type === 'fc'){
-          // if (typeof c.num_neurons === 'undefined'){
-          //   console.log("ERROR : number of neuron parameter \'num_neurons\' is not defined")
-          // }
+          if (typeof c.num_neurons === 'undefined'){
+            c.num_neurons = 0;
+          }
+          if(c.num_neurons == null) {
+            c.num_neurons = 0; 
+          }
           if (typeof c.activation !== 'undefined'){
             layer_conf.push({type : c.activation, conf_idx:conf_idx});
           } else {
