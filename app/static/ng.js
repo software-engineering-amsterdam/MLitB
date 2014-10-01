@@ -11,6 +11,10 @@ app.config(['$routeProvider',
         templateUrl: 'partials/new.html',
         controller: 'new'
     }).
+    when('/new-file', {
+        templateUrl: 'partials/new-file.html',
+        controller: 'new-file'
+    }).
     when('/stats/:nnId', {
         templateUrl: 'partials/stats.html',
         controller: 'stats'
@@ -44,9 +48,6 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
     }
 
     $scope.add_label = function() {
-
-
-        console.log("NG add label");
 
         $scope.client.add_label_with_data($scope.nn_id, $scope.new_label);
 
@@ -178,6 +179,8 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
         $location.path('#/join');
     }
 
+    $scope.download_parameters_spinner = false;
+
     $scope.client.add_stats($scope.nn_id);
 
     var is_initialized = false;
@@ -187,7 +190,20 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     var errorchart;
 
+    download_parameters = function(c) {
+
+        $scope.download_parameters_spinner = false;
+
+        var blob = new Blob([JSON.stringify(c)], {type: "application/json;charset=utf-8"});
+        saveAs(blob, "parameters.json");
+
+    }
+
     workerMessage = function(e) {
+
+        if(e.data.type == 'download_parameters') {
+            return download_parameters(e.data.data);
+        }
 
         discrete_loss = e.data.data.discrete_loss;
         delta = e.data.data.delta;
@@ -296,20 +312,6 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     }
 
-    processParameterUpload = function(file) {
-
-        newData = JSON.parse(file.target.result);
-        var msg = "Upload Parameter data file not OK.";
-        if(newData) {
-            msg = "Upload Parameter data file OK";
-        }
-
-        $rootScope.client.logger(msg);
-
-        $rootScope.client.upload_parameters($scope.nn_id, newData);
-
-    }
-
     clearFileInput = function(selector, handler) { 
 
         var oldInput = document.getElementById(selector); 
@@ -350,28 +352,6 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
         }
     }
 
-    handleParameterUpload = function(evt) {
-
-        var files = evt.target.files; // FileList object
-
-        // Loop through the FileList and render image files as thumbnails.
-        for (var i = 0, f; f = files[i]; i++) {
-
-            var reader = new FileReader();
-
-            // Closure to capture the file information.
-            reader.onload = (function(theFile) {
-                return function(e) {
-                    processParameterUpload(e);
-                    clearFileInput('upload_parameters', handleParameterUpload);
-                };
-            })(f);
-
-            // Read in the image file as a data URL.
-            reader.readAsText(f);
-        }
-    }
-
     $rootScope.update_stats = function(data) {
 
         $scope.worker.postMessage({
@@ -383,7 +363,11 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     $scope.download_parameters = function() {
 
-        $rootScope.client.request_download_parameters($scope.nn_id);
+        $scope.download_parameters_spinner = true;
+        
+        $scope.worker.postMessage({
+            type: 'download_parameters'
+        });
 
     }
 
@@ -397,7 +381,70 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     document.getElementById('files_stats').addEventListener('change', handleFileSelect, false);
 
-    document.getElementById('upload_parameters').addEventListener('change', handleParameterUpload, false);
+});
+
+app.controller('new-file', function ($scope, $rootScope, $location) {
+
+    $scope.new_nn_added = false;
+
+
+    $scope.add_nn_from_file = function(nn) {
+        
+
+        
+    }
+
+    processNewUpload = function(file) {
+
+        newData = JSON.parse(file.target.result);
+
+        $scope.new_nn_added = true;
+
+        $scope.$apply();
+
+    }
+
+    clearFileInput = function(selector, handler) { 
+
+        var oldInput = document.getElementById(selector); 
+        var newInput = document.createElement("input"); 
+
+        newInput.type = "file"; 
+        newInput.id = oldInput.id; 
+        newInput.name = oldInput.name; 
+        newInput.className = oldInput.className; 
+        newInput.style.cssText = oldInput.style.cssText; 
+        
+        // copy any other relevant attributes 
+
+        oldInput.parentNode.replaceChild(newInput, oldInput);
+        newInput.addEventListener('change', handler, false);
+
+    }
+
+    handleFileSelect = function(evt) {
+
+        var files = evt.target.files; // FileList object
+
+        // Loop through the FileList and render image files as thumbnails.
+        for (var i = 0, f; f = files[i]; i++) {
+
+            var reader = new FileReader();
+
+            // Closure to capture the file information.
+            reader.onload = (function(theFile) {
+                return function(e) {
+                    processNewUpload(e);
+                    clearFileInput('upload_network_file', handleFileSelect);
+                };
+            })(f);
+
+            // Read in the image file as a data URL.
+            reader.readAsText(f);
+        }
+    }
+
+    document.getElementById('upload_network_file').addEventListener('change', handleFileSelect, false);
 
 });
 

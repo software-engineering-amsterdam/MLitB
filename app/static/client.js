@@ -150,29 +150,6 @@ Client.prototype = {
 
     },
 
-    request_download_parameters: function(nn_id) {
-
-        if(!this.nn_exists(nn_id)) {
-            return;
-        }
-
-
-        this.send_message_to_master('download_parameters', {
-            boss: this.id,
-            nn: nn_id
-        });
-
-    },
-
-    download_parameters: function(d) {
-
-        parameters = d.data;
-
-        var blob = new Blob([JSON.stringify(parameters)], {type: "application/json;charset=utf-8"});
-        saveAs(blob, "parameters.json");
-
-    },
-
     upload_parameters: function(nn_id, data) {
 
         if(!this.nn_exists(nn_id)) {

@@ -1622,8 +1622,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       this.setParams(json.params,true);
       this.label2index=json.label2index;
       this.index2label=json.index2label;
-    }
-    ,
+    },
+    
     toJSON: function() {
       var json = {};
       json.layers = [];

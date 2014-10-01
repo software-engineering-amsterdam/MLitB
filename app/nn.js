@@ -192,19 +192,6 @@ NN.prototype = {
 
     },
 
-    download_parameters: function(boss) {
-
-        this.master.send_message_to_boss(boss, {
-            type: 'download_parameters',
-            data: {
-                parameters: this.parameters,
-                step: this.step,
-                sgd: this.SGD
-            }
-        });
-
-    },
-
     upload_parameters: function(boss, d) {
 
         parameters = d.parameters;

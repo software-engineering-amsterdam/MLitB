@@ -1,4 +1,4 @@
-    <div class="container" ng-controller="join" ng-init="update_nns()">
+    <div class="container" ng-controller="stats">
         <div class="row">
             <div class="col-lg-8">
 
@@ -10,9 +10,7 @@
                     </div>
                     <div class="col-xs-4">
                         <span class="btn btn-default btn-file btn-xs"><input name="download_parameters" type="button" ng-click="download_parameters()"><span class="glyphicon glyphicon-download-alt"></span> Download parameters</button></span>
-                    </div>
-                    <div class="col-xs-4">
-                        <span class="btn btn-default btn-file btn-xs"><input id="upload_parameters" name="upload_parameters" type="file"><span class="glyphicon glyphicon-upload"></span> Upload parameters</button></span>
+                        <img ng-show="download_parameters_spinner" src="ajax-loader.gif" />
                     </div>
                 </div>
 
@@ -37,9 +35,6 @@
                 </table>
 
                 <div id="chartcontainer"> </div>
-
-                <h3>Log</h3>
-                <pre class="log">{{ log }}</pre>
 
             </div>
 

@@ -1,0 +1,50 @@
+<div class="container" ng-controller="new-file">
+    <div class="row">
+        <div class="col-xs-12">
+
+            <h3>New network from file</h3>
+
+            <p><span class="btn btn-default btn-file btn-xs"><input id="upload_network_file" name="files" type="file"><span class="glyphicon glyphicon-upload"></span> Upload network configuration &amp; parameters</button></span></p>
+
+            <form role="form" name="nn_form" ng-show="new_nn_added">
+
+              <div class="row">
+                <div class="col-xs-6">
+
+                  <div class="row">
+                    <div class="col-xs-12">
+                      <div class="form-group">
+                        <label for="name">Network name</label>
+                        <input type="text" class="form-control" id="name" ng-model="nn.name" required>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="iteration_time">Iteration time in mS</label>
+                    <br />
+                    <label class="radio-inline">
+                        <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="1000"> 1000
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="2000"> 2000
+                    </label>
+                    <label class="radio-inline">
+                      <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="5000"> 5000
+                    </label>
+                    <label class="radio-inline">
+                      <input type="radio" name="iteration_time" id="inlineRadio2" ng-model="nn.iteration_time" value="10000"> 10000
+                    </label>
+                    <!-- <label class="radio-inline">
+                      <input type="radio" name="iteration_time" id="inlineRadio3" ng-model="nn.iteration_time" value="15000"> 15000
+                    </label>
+                    <label class="radio-inline">
+                      <input type="radio" name="iteration_time" id="inlineRadio4" ng-model="nn.iteration_time" value="30000"> 30000
+                    </label>  -->                  
+                  </div>
+                </div>
+              </div>
+              <button type="submit" ng-click="add_nn_from_file(nn)" class="btn btn-default">Add Neural Network</button>
+            </form>
+        </div>
+    </div>
+</div>

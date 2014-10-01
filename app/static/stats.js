@@ -110,12 +110,25 @@ var fileupload = function(data) {
 
 }
 
+var download_parameters = function() {
+
+    var a = Net.getConfigsAndParams();
+
+    this.postMessage({
+      type: 'download_parameters',
+      data: a
+    });
+
+}
+
 this.onmessage = function(e) {
     
     if(e.data.type == 'data') {
         data(e.data.data);
     } else if(e.data.type == 'fileupload') {
         fileupload(e.data.data);
+    } else if(e.data.type == 'download_parameters') {
+        download_parameters();
     }
 
 }

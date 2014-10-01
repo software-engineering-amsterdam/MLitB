@@ -424,29 +424,6 @@ Master.prototype = {
         nn.remove_stats(boss);
     },
 
-    download_parameters: function(d) {
-
-        nn_id = d.nn;
-        boss_id = d.boss;
-
-        boss = this.boss_by_id(boss_id);
-
-        if(!boss) {
-            console.log("! Cannot download parameters to (boss) of (NN): boss does not exist", boss_id, nn_id);
-            return;
-        }
-
-        nn = this.nn_by_id(nn_id);
-
-        if(!nn) {
-            console.log("! Cannot download parameters to (boss) of (NN): NN does not exist", boss_id, nn_id);
-            return;
-        }
-
-        nn.download_parameters(boss);
-
-    },
-
     upload_parameters: function(d) {
 
         nn_id = d.nn;
@@ -536,8 +513,6 @@ Master.prototype = {
             this.add_stats(message.data);
         } else if(message.type == "remove_stats") {
             this.remove_stats(message.data);
-        } else if(message.type == "download_parameters") {
-            this.download_parameters(message.data);
         } else if(message.type == "upload_parameters") {
             this.upload_parameters(message.data);
         } else if(message.type == "request_nn_classifier") {
@@ -570,14 +545,6 @@ Master.prototype = {
     },
 
     add_nn: function(boss, data) {
-
-        demo_data = function(size) {
-            data = [];
-            while(size--) {
-                data.push(size);
-            }
-            return data;
-        }
 
         // called externally to add NN
 
