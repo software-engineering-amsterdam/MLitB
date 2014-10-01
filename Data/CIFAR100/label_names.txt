@@ -1,0 +1,121 @@
+# aquatic mammals  beaver, dolphin, otter, seal, whale
+# fish  aquarium fish, flatfish, ray, shark, trout
+# flowers  orchids, poppies, roses, sunflowers, tulips
+# food containers  bottles, bowls, cans, cups, plates
+# fruit and vegetables  apples, mushrooms, oranges, pears, sweet peppers
+# household electrical devices  clock, computer keyboard, lamp, telephone, television
+# household furniture  bed, chair, couch, table, wardrobe
+# insects  bee, beetle, butterfly, caterpillar, cockroach
+# large carnivores  bear, leopard, lion, tiger, wolf
+# large man-made outdoor things  bridge, castle, house, road, skyscraper
+# large natural outdoor scenes  cloud, forest, mountain, plain, sea
+# large omnivores and herbivores  camel, cattle, chimpanzee, elephant, kangaroo
+# medium-sized mammals  fox, porcupine, possum, raccoon, skunk
+# non-insect invertebrates  crab, lobster, snail, spider, worm
+# people  baby, boy, girl, man, woman
+# reptiles  crocodile, dinosaur, lizard, snake, turtle
+# small mammals  hamster, mouse, rabbit, shrew, squirrel
+# trees  maple, oak, palm, pine, willow
+# vehicles 1  bicycle, bus, motorcycle, pickup truck, train
+# vehicles 2  lawn-mower, rocket, streetcar, tank, tractor
+#
+0,apple
+1, aquarium-fish
+2, baby
+3, bear
+4, beaver
+5, bed
+6, bee
+7, beetle
+8, bicycle
+9, bottle
+10, bowl
+11, boy
+12, bridge
+13, bus
+14, butterfly
+15, camel
+16, can
+17, castle
+18, caterpillar
+19, cattle
+20, chair
+21, chimpanzee
+22, clock
+23,cloud
+24, cockroach
+25, couch
+26, crab
+27, crocodile
+28, cups
+29, dinosaur
+30, dolphin
+31, elephant
+32, flatfish
+33, forest
+34, fox
+35, girl
+36, hamster
+37, house
+38, kangaroo
+39, keyboard
+40, lamp
+41, lawn-mower
+42, leopard
+43, lion
+44, lizard
+45, lobster
+46, man
+47, maple
+48, motorcycle
+49, mountain
+50, mouse
+51, mushroom
+52, oak
+53, orange
+54, orchid
+55, otter
+56, palm
+57, pear
+58, pickup-truck
+59, pine
+60, plain
+61, plate
+62, poppy
+63, hedgehog
+64, opossum
+65, rabbit
+66, raccoon
+67, ray
+68, road
+69, rocket
+70, roses
+71, sea
+72, seal
+73, shark
+74, shrew
+75, skunk
+76, skyscraper
+77, snail
+78, snake
+79, spider
+80, squirrel
+81, streetcar
+82, sunflowers
+83, sweet-peppers
+84, table
+85, tank
+86, telephone
+87, television
+88, tiger
+89, tractor
+90, train
+91, trout
+92, tulips
+93, turtle
+94, wardrobe
+95, whale
+96, willow
+97, wolf
+98, woman
+99, worm
