@@ -9,8 +9,8 @@
                             <th ng-click="changeSort('name')">Name</th>
                             <th ng-click="changeSort('clients')">Workers</th>
                             <th ng-click="changeSort('power')">Power</th>
-                            <th ng-click="changeSort('runtime_elapsed')">Elapsed</th>
-                            <th ng-click="changeSort('realtime_elapsed')">Real time</th>
+<!--                            <th ng-click="changeSort('runtime_elapsed')">Elapsed</th>
+                            <th ng-click="changeSort('realtime_elapsed')">Real time</th> -->
                             <th>My workers</th>
                             <th>Add worker</th>
                             <th>Add data</th>
@@ -22,8 +22,8 @@
                             <td>{{ total.name }}</td>
                             <td>{{ total.clients }}</td>
                             <td>{{ total.power }} v/S</td>
-                            <td>{{ total.runtime_elapsed }} mS</td>
-                            <td>{{ total.realtime_elapsed }} mS</td>
+                            <!-- <td>{{ total.runtime_elapsed }} mS</td> -->
+                            <!-- <td>{{ total.realtime_elapsed }} mS</td> -->
                             <td>0</td>
                             <td><!-- <button type="button" ng-click="join_any()" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span> Add</button> --></td>
                             <td></td>
@@ -34,8 +34,8 @@
                             <td ng-hide="nn.public_client">{{ nn.name }}</td>
                             <td>{{ nn.clients }}</td>
                             <td>{{ nn.power }} v/S</td>
-                            <td>{{ nn.runtime_elapsed }} mS</td>
-                            <td>{{ nn.realtime_elapsed }} mS</td>   
+                            <!-- <td>{{ nn.runtime_elapsed }} mS</td> -->
+                            <!-- <td>{{ nn.realtime_elapsed }} mS</td>    -->
                             <td>0</td>
                             <td><button type="button" ng-disabled="nn.clients >= nn.max_clients" ng-click="join(nn.id)" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus"></span> Add</button></td>
                             <td><span class="btn btn-default btn-file btn-xs"><input type="file" onchange="angular.element(this).scope().add_data(angular.element(this).scope().nn, this.files)"><span class="glyphicon glyphicon-cloud-upload"></span> Add</button></span></td>
