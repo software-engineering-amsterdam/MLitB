@@ -280,7 +280,7 @@ Client.prototype = {
 
         var j = arr.length;
         while(j--) {
-            labeledResults.push([Net.index2label[j], arr[j]]);
+            labeledResults.push([Net.index2label[j], arr[j].toFixed(4)]);
         }
 
         labeledResults = labeledResults.sort(function(a,b) {

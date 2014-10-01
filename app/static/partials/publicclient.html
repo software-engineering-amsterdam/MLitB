@@ -7,10 +7,20 @@
             <canvas id="image"></canvas>
             <div ng-show="classify_results">
                 <h4>Results</h4>
-                      <ul>
-                   <li data-ng-repeat="item in classify_results">
-                        {{ item[0] }}: {{ item[1] }}
-                   </li>
+                    <table class="table table-condensed">
+                        <thead>
+                            <th>
+                                <td>Label</td>
+                                <td>Probability</td>
+                            </th>
+                        </thead>
+                        <tbody>
+                            <tr data-ng-repeat="item in classify_results">
+                                <td>{{ item[0] }}</td>
+                                <td>{{ item[1] }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </ul>
                 <form role="form" name="new_label_form">
                     <div class="row">
