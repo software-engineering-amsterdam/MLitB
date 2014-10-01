@@ -280,11 +280,11 @@ Client.prototype = {
 
         var j = arr.length;
         while(j--) {
-            labeledResults.push([Net.index2label[j], arr[j].toFixed(4)]);
+            labeledResults.push([Net.index2label[j], arr[j].toFixed(6)]);
         }
 
         labeledResults = labeledResults.sort(function(a,b) {
-            return a[1] < b[1];
+            return a[1] - b[1];
         });
 
         console.log(labeledResults);
