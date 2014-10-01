@@ -727,7 +727,7 @@ NN.prototype = {
 
                 learning_rate : 0.1, //starting value of learning rate
                 lr_decay : 0.999, //multiplication factor
-                lr_decay_interval : 50, //iteration interval of learning rate decay
+                lr_decay_interval : 5, //iteration interval of learning rate decay
                 lr_threshold : 0.0001, //0.001, //lower bound of learning rate
                 momentum : 0.9,
                 batch_size : 16, 
