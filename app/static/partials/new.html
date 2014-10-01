@@ -21,10 +21,10 @@
                         <label for="iteration_time">Iteration time in mS</label>
                         <br />
                         <label class="radio-inline">
-                            <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="500"> 500
+                            <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="1000"> 1000
                         </label>
                         <label class="radio-inline">
-                            <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="1000"> 1000
+                            <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="2000"> 2000
                         </label>
                         <label class="radio-inline">
                           <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="5000"> 5000
@@ -32,12 +32,12 @@
                         <label class="radio-inline">
                           <input type="radio" name="iteration_time" id="inlineRadio2" ng-model="nn.iteration_time" value="10000"> 10000
                         </label>
-                        <label class="radio-inline">
+                        <!-- <label class="radio-inline">
                           <input type="radio" name="iteration_time" id="inlineRadio3" ng-model="nn.iteration_time" value="15000"> 15000
-                        </label>                   
+                        </label>
                         <label class="radio-inline">
                           <input type="radio" name="iteration_time" id="inlineRadio4" ng-model="nn.iteration_time" value="30000"> 30000
-                        </label>                   
+                        </label>  -->                  
                       </div>
                     </div>
                     <div class="col-xs-6">
@@ -51,6 +51,9 @@
                             </li>
                             <li>
                                 <a ng-click="load_template('cifar10')">Cifar 10 Model</a>
+                            </li>
+                            <li>
+                                <a ng-click="load_template('cifar100')">Cifar 100 Model</a>
                             </li>
                         </ul>
                     </div>
