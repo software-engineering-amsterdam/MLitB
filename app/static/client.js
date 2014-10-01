@@ -335,7 +335,7 @@ Client.prototype = {
             return;
         }
 
-        this.logger('Add label: ' + label);
+        this.logger('Add label (msg): ' + label);
 
         this.send_message_to_master('add_label', {
             label: label,

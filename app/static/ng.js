@@ -470,10 +470,10 @@ app.controller('new', function ($scope, $rootScope, $location) {
         else if(type == 'cifar100') {
             $scope.layers = [
             {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
-            {type: 'conv', conf: {"sx":5,"stride":1,"filters":24,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":3,"stride":2,"drop_prob":0.5}},
-            {type: 'conv', conf: {"sx":5,"stride":1,"filters":12,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":4,"stride":4,"drop_prob":0.5}},
+            {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1,"drop_prob":0.5}},
+            {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.5}},
             {type: 'fc', conf: {"activation":"softmax","drop_prob":0.5}}
           ]
         }
