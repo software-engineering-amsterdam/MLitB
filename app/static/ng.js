@@ -192,10 +192,12 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     download_parameters = function(c) {
 
-        $scope.download_parameters_spinner = false;
-
         var blob = new Blob([JSON.stringify(c)], {type: "application/json;charset=utf-8"});
         saveAs(blob, "parameters.json");
+
+        $scope.download_parameters_spinner = false;
+
+        $scope.$apply();
 
     }
 
@@ -387,16 +389,52 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
 
     $scope.new_nn_added = false;
 
+    $scope.nn = {
+        iteration_time: 10000
+    };
+
+    var nn_file;
 
     $scope.add_nn_from_file = function(nn) {
         
+        if(!nn.name) {
+            $scope.errors.push('Please insert a name')
+            return  
+        }
 
+        if(!nn.iteration_time) {
+            $scope.errors.push('Please select an iteration tims')
+            return  
+        }
+
+        
+        var labels = [];
+
+        for (var key in nn_file.index2label) {
+            labels.push(nn_file.index2label[key]);
+        }
+
+        var configuration = [];
+
+        for(var i = 0; i < nn_file.configs.length; i++) {
+            configuration.push({
+                type: nn_file.configs[i].type,
+                conf: nn_file.configs[i]
+            });
+        }
+
+        nn_to_send = angular.copy(nn);
+        nn_to_send.configuration = configuration;
+        nn_to_send.parameters = {parameters: nn_file.params};
+        nn_to_send.labels = labels;
+
+        $rootScope.client.add_nn(nn_to_send);
         
     }
 
     processNewUpload = function(file) {
 
-        newData = JSON.parse(file.target.result);
+        nn_file = JSON.parse(file.target.result);
 
         $scope.new_nn_added = true;
 
@@ -606,7 +644,9 @@ app.controller('new', function ($scope, $rootScope, $location) {
         }
 
         nn_to_send = angular.copy(nn);
-        nn_to_send.conf = $scope.layers;
+        nn_to_send.configuration = $scope.layers;
+        nn_to_send.parameters = null;
+        nn_to_send.labels = [];
 
         $rootScope.client.add_nn(nn_to_send);
 

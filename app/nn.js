@@ -1,6 +1,6 @@
 var SGDTrainer = require('./sgd');
 
-var NN = function(master, id, name, configuration, iteration_time, public_client) {
+var NN = function(master, id, data) {
 
     this.master = master; // master server
 
@@ -10,11 +10,11 @@ var NN = function(master, id, name, configuration, iteration_time, public_client
     this.clients = []; // maps to slave nodes
     this.data = []; // data allocation array
 
-    this.name = name; // verbose name
+    this.name = data.name; // verbose name
 
-    this.configuration = configuration; // NN configuration layers
+    this.configuration = data.configuration; // NN configuration layers
 
-    this.iteration_time = iteration_time; // time per iteration
+    this.iteration_time = data.iteration_time; // time per iteration
 
     this.runtime_elapsed = 0; // time elapsed
 
@@ -25,7 +25,7 @@ var NN = function(master, id, name, configuration, iteration_time, public_client
     this.data_seen = 0; // data points seen
 
     this.SGD; // well, the SGD
-    this.parameters = null; // neural network parameter weights
+    this.parameters = data.parameters; // neural network parameter weights
 
     this.check_constructor(id);
 
@@ -36,9 +36,9 @@ var NN = function(master, id, name, configuration, iteration_time, public_client
 
     this.stats = []; // bosses connected to obtain stats
 
-    this.public_client = public_client;
+    this.public_client = data.public_client;
 
-    this.labels = [];
+    this.labels = data.labels;
 
 }
 
@@ -99,6 +99,7 @@ NN.prototype = {
 
         // FOWARD loop
         for(i = 0; i < data; i++) {
+            
             var new_point = {
                 id: this.first_index,
                 assigned: [],
@@ -135,7 +136,8 @@ NN.prototype = {
 
             while(j--) {
 
-                if(this.data[j].id == data[i].id) {
+                if(this.data[j].id == data[i]) {
+
                     this.data[j].cache.push(slave);
                     this.data[j].cache_wide.push(slave);
                 }
@@ -143,6 +145,7 @@ NN.prototype = {
             }
 
         }
+
 
         this.run();
 
@@ -189,24 +192,6 @@ NN.prototype = {
             });
 
         }
-
-    },
-
-    upload_parameters: function(boss, d) {
-
-        parameters = d.parameters;
-        step = d.step;
-        sgd = d.sgd;
-
-        this.parameters = parameters;
-        this.step = step;
-
-        this.SGD = new SGDTrainer({}, {});
-        this.SGD.load(sgd);
-
-        this.master.send_message_to_boss(boss, {
-            type: 'upload_parameters_complete'
-        });
 
     },
 
@@ -271,7 +256,12 @@ NN.prototype = {
 
         // remove data
         var i = this.data.length;
+
+        var points_lost = 0;
+
         while(i--) {
+
+            var point_alive = true;
 
             var j = this.data[i].assigned.length;
             while(j--) {
@@ -287,6 +277,10 @@ NN.prototype = {
                 }
             }
 
+            if(this.data[i].cache.length == 0) {
+                point_alive = false;
+            }
+
             var j = this.data[i].cache_wide.length;
             while(j--) {
                 if(this.data[i].cache_wide[j].id == client.id) {
@@ -294,9 +288,21 @@ NN.prototype = {
                 }
             }
 
+            if(this.data[i].cache_wide.length == 0) {
+                if(!point_alive) {
+                    // remove point
+                    this.data.splice(i, 1);
+                    points_lost += 1;
+                }
+            }
+
         }
 
         console.log('> Removed (client) from (NN)', client.id, this.id);
+
+        if(points_lost > 0) {
+            console.log('>', points_lost, 'points lost from the network.');
+        }
 
         if(!this.clients.length) {
             // halt operation
@@ -688,8 +694,6 @@ NN.prototype = {
 
         d = new Date().getTime();
 
-        console.log(d);
-
         this.operation_results.push(data);
 
         this.runtime_elapsed += this.iteration_time;
@@ -736,7 +740,7 @@ NN.prototype = {
 
             }
             
-            this.SGD = new SGDTrainer({}, trainer_param);
+            this.SGD = new SGDTrainer(this, {}, trainer_param);
           
         }
 

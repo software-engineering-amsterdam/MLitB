@@ -335,8 +335,6 @@ Master.prototype = {
         destination = d.destination;
         nn_id = d.nn;
 
-        console.log('register data:', destination);
-
         slave = this.slave_by_id(destination);
 
         if(!slave) {
@@ -424,30 +422,6 @@ Master.prototype = {
         nn.remove_stats(boss);
     },
 
-    upload_parameters: function(d) {
-
-        nn_id = d.nn;
-        boss_id = d.boss;
-        data = d.data;
-
-        boss = this.boss_by_id(boss_id);
-
-        if(!boss) {
-            console.log("! Cannot upload parameters from (boss) to (NN): boss does not exist", boss_id, nn_id);
-            return;
-        }
-
-        nn = this.nn_by_id(nn_id);
-
-        if(!nn) {
-            console.log("! Cannot upload parameters from (boss) to (NN): NN does not exist", boss_id, nn_id);
-            return;
-        }
-
-        nn.upload_parameters(boss, data);
-
-    },
-
     request_nn_classifier: function(d) {
 
         nn_id = d.nn;
@@ -513,8 +487,6 @@ Master.prototype = {
             this.add_stats(message.data);
         } else if(message.type == "remove_stats") {
             this.remove_stats(message.data);
-        } else if(message.type == "upload_parameters") {
-            this.upload_parameters(message.data);
         } else if(message.type == "request_nn_classifier") {
             this.request_nn_classifier(message.data);
         } else if(message.type == "add_label") {
@@ -548,7 +520,7 @@ Master.prototype = {
 
         // called externally to add NN
 
-        var nn = new NN(this, null, data.name, data.conf, data.iteration_time, data.public_client);
+        var nn = new NN(this, null, data);
 
         this.nns.push(nn);
 

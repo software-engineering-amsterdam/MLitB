@@ -170,7 +170,6 @@ Slave.prototype = {
 
             vol_input = configuration[0].conf;
 
-
         }
 
         learn = function() {

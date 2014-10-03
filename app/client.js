@@ -125,7 +125,7 @@ Client.prototype = {
 
     work: function(nn) {
 
-        this.master.send_message_to_slave(this, {
+        var work_data = {
 
             type: 'work',
             data: this.process,
@@ -134,9 +134,11 @@ Client.prototype = {
             parameters: nn.parameters,
             step: nn.step,
             nn: nn.id,
-            new_labels: nn.labels//this.get_new_labels(nn.labels)
+            new_labels: nn.labels
 
-        });
+        }
+
+        this.master.send_message_to_slave(this, work_data);
 
         this.process = [];
 

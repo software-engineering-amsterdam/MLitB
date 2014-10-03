@@ -14,6 +14,8 @@ var test_data = [];
 
 var labels = [];
 
+var interrupt = false; // used for extraction of parameters
+
 var data = function(d) {
 
   labels = d.labels;
@@ -58,7 +60,7 @@ var data = function(d) {
 
   var l=test_data.length;
   discrete_loss = 0;
-  while (l--){
+  while (l-- && !interrupt){
 
     piece = test_data[l];
     Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
@@ -112,12 +114,16 @@ var fileupload = function(data) {
 
 var download_parameters = function() {
 
+    interrupt = true;
+
     var a = Net.getConfigsAndParams();
 
     this.postMessage({
       type: 'download_parameters',
       data: a
     });
+
+    interrupt = false;
 
 }
 

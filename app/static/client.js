@@ -24,6 +24,9 @@ var Client = function(scope) {
 
     this.classify_input_data;
 
+    this.multi_upload_counter; // used for multi file upload
+    this.aggregate_data = []; // used for multi file upload
+
 }
 
 Client.prototype = {
@@ -150,25 +153,6 @@ Client.prototype = {
 
     },
 
-    upload_parameters: function(nn_id, data) {
-
-        if(!this.nn_exists(nn_id)) {
-            return;
-        }
-
-        this.send_message_to_master('upload_parameters', {
-            boss: this.id,
-            nn: nn_id,
-            data: data
-        });
-    },
-
-    upload_parameters_complete: function() {
-
-        this.logger('Parameter upload complete.');
-
-    },
-
     request_nn_classifier: function(nn_id) {
         // retrieves params + conf from master.
         // this might be a bit of a workaround requesting params + conf every time
@@ -264,8 +248,6 @@ Client.prototype = {
             return b[1] - a[1];
         });
 
-        console.log(labeledResults);
-
         this.scope.classifier_results(labeledResults);
 
     },
@@ -289,14 +271,9 @@ Client.prototype = {
         r = {};
         r[label] = [this.classify_input_data];
 
-        data_file = {
-            target: {
-                result: JSON.stringify(r)
-            }
-            
-        }
-
-        this.logger('Add label with data: ' + label);
+        data_file = [
+            JSON.stringify(r)
+        ]
 
         // register data at master
         // this is the public version, other clients may download
@@ -312,12 +289,23 @@ Client.prototype = {
             return;
         }
 
-        this.logger('Add label (msg): ' + label);
-
         this.send_message_to_master('add_label', {
             label: label,
             nn: nn_id
         });
+
+    },
+
+    data_to_list_of_ids: function(data) {
+
+        var id_list = [];
+        var i = data.length;
+
+        while(i--) {
+            id_list.push(data[i].id);
+        }
+
+        return id_list;
 
     },
 
@@ -343,7 +331,7 @@ Client.prototype = {
 
             // immediately report to master.
             this.send_message_to_master('register_data', {
-                data: data,
+                data: this.data_to_list_of_ids(data),
                 destination: destination,
                 nn: nn
             });
@@ -429,14 +417,26 @@ Client.prototype = {
             return
         }
 
-        this.message_to_slave(slave, 'download_data', {
-            data: data,
-            nn: nn
-        });
-        
+        // split data in frames, else crash
+
+        var frames = Math.ceil(data.length / 1000);
+
+        var i;
+        for(i = 0; i < frames; i++) {
+
+            start = i * 1000;
+            end = (i+1) * 1000;
+
+            this.message_to_slave(slave, 'download_data', {
+                data: data.slice(start, end),
+                nn: nn
+            });            
+
+        }
+
         // immediately report to master.
         this.send_message_to_master('register_data', {
-            data: data,
+            data: this.data_to_list_of_ids(data),
             destination: destination,
             nn: nn
         });
@@ -470,27 +470,33 @@ Client.prototype = {
 
     },
 
-    process_uploaded_data: function(file, nn) {
+    process_uploaded_data: function(files, nn) {
 
-        newData = JSON.parse(file.target.result);
+        var i = files.length;
 
-        parsedData = [];
+        var parsedData = [];
 
-        for(var key in newData) {
+        while(i--) {
 
-            var data = newData[key];
-            var i = data.length;
-            while(i--) {
+            newData = JSON.parse(files[i]);
 
-                parsedData.push({
-                    label: key,
-                    data: data[i]
-                })
+            for(var key in newData) {
+
+                var data = newData[key];
+                var j = data.length;
+                while(j--) {
+
+                    parsedData.push({
+                        label: key,
+                        data: data[j]
+                    })
+
+                }
+
+                // tell master of (new) labels
+                this.add_label(nn, key);
 
             }
-
-            // tell master of (new) labels
-            this.add_label(nn, key);
 
         }
 
@@ -525,6 +531,21 @@ Client.prototype = {
             slave: slave.id
         })
 
+    },
+
+    aggregate_uploaded_data: function(e, nn) {
+
+        this.aggregate_data.push(e.target.result);
+
+        this.multi_upload_counter -= 1;
+
+        if(this.multi_upload_counter == 0) {
+
+            this.process_uploaded_data(this.aggregate_data, nn.id);
+
+            this.aggregate_data = [];
+
+        }
 
     },
 
@@ -544,6 +565,10 @@ Client.prototype = {
             return
         }
 
+        var number_of_files = files.length;
+
+        this.multi_upload_counter = number_of_files;
+
         // Loop through the FileList and render image files as thumbnails.
         for (var i = 0, f; f = files[i]; i++) {
 
@@ -552,7 +577,7 @@ Client.prototype = {
             // Closure to capture the file information.
             reader.onload = (function(theFile) {
                 return function(e) {
-                    that.process_uploaded_data(e, nn.id);
+                    that.aggregate_uploaded_data(e, nn)
                 };
             })(f);
 
@@ -591,8 +616,6 @@ Client.prototype = {
             this.update_stats(data);
         } else if(data.type == 'download_parameters') {
             this.download_parameters(data);
-        } else if(data.type == 'upload_parameters_complete') {
-            this.upload_parameters_complete();
         } else if(data.type == 'receive_nn_classifier') {
             this.receive_nn_classifier(data.data);
         }

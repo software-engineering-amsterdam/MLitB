@@ -43,6 +43,19 @@
                   </div>
                 </div>
               </div>
+              <div class="checkbox">
+                  <label>
+                      <input type="checkbox" ng-model="nn.public_client"> Enable picture upload client
+                  </label>
+              </div>
+              <div ng-show="layer_errors.length">
+                  <strong>Configuration notes:</strong>
+                  <ul>
+                      <li ng-repeat="error in layer_errors">
+                          {{ error}}
+                      </li>
+                  </ul>
+              </div>
               <button type="submit" ng-click="add_nn_from_file(nn)" class="btn btn-default">Add Neural Network</button>
             </form>
         </div>

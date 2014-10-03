@@ -17,7 +17,7 @@ var zeros = function(n) {
 }
 
 
-var SGDTrainer = function (net, conf) {
+var SGDTrainer = function (nn, net, conf) {
   this.net = net;
   this.loss =0.0;
   this.l2_loss = 0.0;
@@ -39,6 +39,7 @@ var SGDTrainer = function (net, conf) {
   this.lr_decay = typeof conf.lr_decay !== 'undefined' ? conf.lr_decay : 0.999;
   this.lr_threshold= typeof conf.lr_threshold !== 'undefined' ? conf.lr_threshold : 0.000001;
   this.lr_decay_interval= typeof conf.lr_decay_interval !== 'undefined' ? conf.lr_decay_interval : 1;
+  
 };
     
 SGDTrainer.prototype = {
@@ -81,16 +82,30 @@ SGDTrainer.prototype = {
     //for the first time, get parameter from any client
     //assume that in this situation, all client will send both param and grad
     if (!this.is_initialized){
+
       if (new_parameters[0].parameters_type === 'params_and_grads'){
+        
         this.last_params = new_parameters[0].parameters[0];
-        for (var i = 0; i < this.last_params.length; i++) {
-          this.last_grads.push(zeros(this.last_params[i].length));
-          this.sum_square_gads.push(zeros(this.last_params[i].length));
-        }
-        this.is_initialized = true;
-      } else{
+
+      } else if (new_parameters[0].parameters_type === 'grads'){
+
+        // params are set earlier
+        this.last_params = nn.parameters;
+
+      } else {
+
         console.log('THERE IS SOMETHING WRONG');
+        return;
+        
       }
+      
+      for (var i = 0; i < this.last_params.length; i++) {
+        this.last_grads.push(zeros(this.last_params[i].length));
+        this.sum_square_gads.push(zeros(this.last_params[i].length));
+      }
+
+      this.is_initialized = true;
+
     } 
     else {
     // updateParams = function(){
