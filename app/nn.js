@@ -696,6 +696,7 @@ NN.prototype = {
 
         d = new Date().getTime();
 
+        // print all data from client here
         console.log(data);
 
         this.operation_results.push(data);

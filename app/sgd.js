@@ -93,7 +93,6 @@ SGDTrainer.prototype = {
 
       } else if (new_parameters[0].parameters_type === 'grads'){
 
-        // params are set earlier
         this.last_params = new_parameters[0].parameters;
 
       } else {
