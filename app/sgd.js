@@ -11,9 +11,13 @@
 
 // helper function to make array of zeroes
 var zeros = function(n) {
-  var arr = new Array(n);
-    for(var i=0;i<n;i++) { arr[i]= 0; }
-  return arr;
+    var arr = new Array(n);
+  
+    for(var i=0;i<n;i++) { 
+        arr[i] = 0; 
+    }
+
+    return arr;
 }
 
 
@@ -39,7 +43,7 @@ var SGDTrainer = function (nn, net, conf) {
   this.lr_decay = typeof conf.lr_decay !== 'undefined' ? conf.lr_decay : 0.999;
   this.lr_threshold= typeof conf.lr_threshold !== 'undefined' ? conf.lr_threshold : 0.000001;
   this.lr_decay_interval= typeof conf.lr_decay_interval !== 'undefined' ? conf.lr_decay_interval : 1;
-  
+
 };
     
 SGDTrainer.prototype = {
@@ -90,7 +94,7 @@ SGDTrainer.prototype = {
       } else if (new_parameters[0].parameters_type === 'grads'){
 
         // params are set earlier
-        this.last_params = nn.parameters;
+        this.last_params = new_parameters[0].parameters;
 
       } else {
 
@@ -106,10 +110,10 @@ SGDTrainer.prototype = {
 
       this.is_initialized = true;
 
-    } 
-    else {
-    // updateParams = function(){
+    } else {
+
       for (var mr = 0; mr < new_parameters.length; mr++) {
+      
         var markovParam = new_parameters[mr];
         //ignore new client
 
@@ -127,10 +131,12 @@ SGDTrainer.prototype = {
           }
         }
       };
+
       this.total_data_seen+=totalVector;
       console.log('learning rate : ', this.learning_rate);
       console.log('total data seen : ', this.total_data_seen);
       console.log('error : ',totalError/totalVector);
+
       // console.log('before ',JSON.stringify(this.last_params[2].params));    
       //iterate over each param and grad vector
       for (var i = 0; i < this.last_params.length; i++) {

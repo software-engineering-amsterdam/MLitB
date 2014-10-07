@@ -40,6 +40,8 @@ var NN = function(master, id, data) {
 
     this.labels = data.labels;
 
+    this.is_train = data.is_train; // only used in headless configurations
+
 }
 
 NN.prototype = {
@@ -693,6 +695,8 @@ NN.prototype = {
         }
 
         d = new Date().getTime();
+
+        console.log(data);
 
         this.operation_results.push(data);
 

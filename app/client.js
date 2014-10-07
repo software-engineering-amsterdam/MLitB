@@ -134,9 +134,13 @@ Client.prototype = {
             parameters: nn.parameters,
             step: nn.step,
             nn: nn.id,
-            new_labels: nn.labels
+            new_labels: nn.labels,
+            is_train: nn.is_train
 
         }
+
+        console.log(nn.parameters.parameters[0].length);
+        console.log(nn.parameters.parameters[1].length);
 
         this.master.send_message_to_slave(this, work_data);
 

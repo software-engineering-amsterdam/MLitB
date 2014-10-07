@@ -516,10 +516,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
     getGrads : function () {
       var out = [];
-      for (var i = 0; i < this.filters.length; i++) {
-        out.push(this.filters[i].drv);
-      };
-      out.push(this.biases.drv);
+      if (this.is_train){
+        for (var i = 0; i < this.filters.length; i++) {
+          out.push(this.filters[i].drv);
+        };
+        out.push(this.biases.drv);
+      }
       return out;
     },
 
@@ -682,8 +684,10 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
     getGrads : function () {
       var out = []
-      out.push(this.filters.drv);
-      out.push(this.biases.drv);
+      if (this.is_train){
+        out.push(this.filters.drv);
+        out.push(this.biases.drv);
+      }
       return out;
     },
 
@@ -1486,13 +1490,16 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           break;
         }
       }
+
       //add new neuron for the last fc and all layers after it
+
       for (var i = updatePos;i<this.layers.length;i++){
         //update physical layer
         this.layers[i].addNeuron(N);
         //update layer_conf
         this.layer_conf[i].num_neurons+=N;
       }
+
       return this.label2index;
     },
 
@@ -1585,9 +1592,10 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       is_initialization = typeof is_initialization !== 'undefined' ? is_initialization : false;
       var last_pos = 0;
       for (var i = 0; i < this.layers.length; i++) {
-        if (this.layers[i].is_train && (this.layers[i].layer_type === 'conv' || this.layers[i].layer_type === 'fc')){
+        if ((this.layers[i].is_train || is_initialization) && (this.layers[i].layer_type === 'conv' || this.layers[i].layer_type === 'fc')){
           total_params = this.layers[i].n_params + this.layers[i].n_biases;
           var newjson = json.slice(last_pos,total_params+last_pos);
+          console.log(JSON.stringify(this.layers[i].layer_type));
           this.layers[i].setParams(newjson,is_initialization);
           last_pos +=total_params;
         }

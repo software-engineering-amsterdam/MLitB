@@ -407,28 +407,58 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
             return  
         }
 
-        
+        var new_nn = new mlitb.Net();
+
+        new_nn.setConfigsAndParams(nn_file);
+
+        // cut off last layer (it removes from conf AND parameters)
+        new_nn.removeLayer( ( new_nn.conf.length - 1) );
+
+        // add new last layer.
+        new_nn.addLayer([{
+            type: 'fc', 
+            activation: 'softmax',
+            drop_prob: 0.5
+        }]);
+
+        for(var i = 0; i < new_nn.conf.length - 1; i++) {
+            new_nn.updateLayerTrain(i, false);
+        }
+
         var labels = [];
 
+        /*
+        
+        // do not send labels when headless !!
+        
         for (var key in nn_file.index2label) {
             labels.push(nn_file.index2label[key]);
         }
 
+        */
+
         var configuration = [];
 
-        for(var i = 0; i < nn_file.configs.length; i++) {
+        for(var i = 0; i < new_nn.conf.length; i++) {
             configuration.push({
-                type: nn_file.configs[i].type,
-                conf: nn_file.configs[i]
+                type: new_nn.conf[i].type,
+                conf: new_nn.conf[i]
             });
         }
+
+        // set num_neurons to 0. Neurons get added later through addLabel
+        // do not change parameters.
+        configuration[configuration.length-1].conf.num_neurons = 0;
 
         nn_to_send = angular.copy(nn);
         nn_to_send.configuration = configuration;
         nn_to_send.parameters = {parameters: nn_file.params};
         nn_to_send.labels = labels;
+        nn_to_send.is_train = true; // headless only!
 
         $rootScope.client.add_nn(nn_to_send);
+
+        $location.path('#/join');
         
     }
 
@@ -647,6 +677,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
         nn_to_send.configuration = $scope.layers;
         nn_to_send.parameters = null;
         nn_to_send.labels = [];
+        nn_to_send.is_train = false;
 
         $rootScope.client.add_nn(nn_to_send);
 

@@ -20,6 +20,8 @@ var Slave = function() {
     this.Net; // the NN
     this.is_initialised;
 
+    this.is_train = true;
+
 }
 
 Slave.prototype = {
@@ -77,13 +79,25 @@ Slave.prototype = {
 
         result = this.get_data(data, nn);
 
-        this.send_message_to_boss('data_from_slave', {
-            data: result,
-            destination: destination,
-            server: server,
-            boss: boss,
-            nn: nn
-        });
+        // frame data
+
+        var frames = Math.ceil(result.length / 1000);
+
+        var i;
+        for(i = 0; i < frames; i++) {
+
+            start = i * 1000;
+            end = (i+1) * 1000;
+
+            this.send_message_to_boss('data_from_slave', {
+                data: result.slice(start, end),
+                destination: destination,
+                server: server,
+                boss: boss,
+                nn: nn
+            });         
+
+        }
 
     },
 
@@ -117,6 +131,8 @@ Slave.prototype = {
         nn = d.nn;
         step = d.step;
         new_labels = d.new_labels;
+
+        is_train = d.is_train; // only for headless configurations
 
         var vol_input;
         var workingset = [];
@@ -175,8 +191,24 @@ Slave.prototype = {
         learn = function() {
 
             if (parameters != null) {
-                // copy the parameters and gradients
-                that.Net.setParams(parameters.parameters);
+
+                if(is_train && that.is_train) {
+                    console.log('first:');
+                    console.log(parameters.parameters.length);
+                    that.Net.setParams(parameters.parameters, true);
+                    
+                    that.is_train = false;
+
+                } else { 
+
+                    // copy the parameters and gradients
+                    console.log('second:');
+                    console.log(parameters.parameters[0].length);
+                    console.log(parameters.parameters[1].length);
+                    that.Net.setParams(parameters.parameters);
+
+                }
+
             }
 
             while(true) {
@@ -190,7 +222,15 @@ Slave.prototype = {
                 Input = new that.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
                 Input.data = point.data;
                 that.Net.forward(Input,true);
+
+                // console.log(JSON.stringify(point.label));
+                // console.log('->');
+                // console.log(JSON.stringify(that.Net.label2index[point.label]));
+
                 error += that.Net.backward(point.label);
+                //console.log('error');
+                //console.log(error);
+                
                 nVector++;
 
                 current_time = (new Date).getTime();
@@ -220,6 +260,9 @@ Slave.prototype = {
                 nVector : nVector,
                 proceeded_data : proceeded_data
             };
+
+            console.log('size to server:');
+            console.log(param.length);
 
             that.logger(nVector.toString() + ' points processed');
 

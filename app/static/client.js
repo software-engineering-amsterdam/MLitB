@@ -324,10 +324,22 @@ Client.prototype = {
         if(slave) {
             // destination is local slave
 
-            this.message_to_slave(slave, 'download_data', {
-                data: data,
-                nn: nn
-            });
+            // split data in frames, else crash
+
+            var frames = Math.ceil(data.length / 1000);
+
+            var i;
+            for(i = 0; i < frames; i++) {
+
+                start = i * 1000;
+                end = (i+1) * 1000;
+
+                this.message_to_slave(slave, 'download_data', {
+                    data: data.slice(start, end),
+                    nn: nn
+                });            
+
+            }
 
             // immediately report to master.
             this.send_message_to_master('register_data', {
