@@ -968,7 +968,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       this.V_in.drv = V_in_drv;
 
       // loss is the class negative log likelihood
-      return -Math.log(this.V_out.data[y]);
+      // return -Math.log(this.V_out.data[y]);
+      // to avoid infinity
+      return 1-this.V_out.data[y];
     },
     addNeuron : function(N){
       this.num_inputs +=N; 
