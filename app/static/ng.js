@@ -430,6 +430,7 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
         }
 
         var train;
+        var is_ever_train_false;
 
         for(var i = 0; i < layers_length; i++) {
 
@@ -437,6 +438,9 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
                 train = false;
             } else {
                 train = $scope.layers[i].is_train;
+            }
+            if (train==false){
+                is_ever_train_false=true;
             }
 
             new_nn.updateLayerTrain(i, train);
@@ -463,11 +467,22 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
         nn_to_send.configuration = configuration;
         nn_to_send.parameters = {parameters: nn_file.params};
         nn_to_send.labels = labels;
-        
+        //I add this to notify if there is at least one train false
+        nn_to_send.is_ever_train_false = is_ever_train_false;
+        // I think the is_train is to notice if there's is_train = false or not
+        // because if there is is_train false in the layer we need to set 
+        // that.Net.setParams(parameters.parameters, true); in the slave
+        // correct me if i'm wrong
+        // I also need a notification for drop last layer to the slave
+        // if($scope.nn.drop_last_layer == true) {
+        //     nn_to_send.is_train = true; // headless only!
+        // } else {
+        //     nn_to_send.is_train = false;
+        // }
         if($scope.nn.drop_last_layer == true) {
-            nn_to_send.is_train = true; // headless only!
+            nn_to_send.drop_last_layer = true; // headless only!
         } else {
-            nn_to_send.is_train = false;
+            nn_to_send.drop_last_layer = false;
         }
 
         $rootScope.client.add_nn(nn_to_send);

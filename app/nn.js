@@ -41,6 +41,8 @@ var NN = function(master, id, data) {
     this.labels = data.labels;
 
     this.is_train = data.is_train; // only used in headless configurations
+    this. drop_last_layer = data.drop_last_layer;
+    this.is_ever_train_false = data.is_ever_train_false;
 
 }
 

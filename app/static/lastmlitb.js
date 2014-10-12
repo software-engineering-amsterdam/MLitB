@@ -490,9 +490,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         }
       };
     },
-    getParamsAndGrads : function () {
+    getParamsAndGrads : function (ignore_is_train) {
       var out = [];
-      if (this.is_train){
+      if (this.is_train||ignore_is_train){
         for (var i = 0; i < this.filters.length; i++) {
           out.push({params : this.filters[i].data, grads : this.filters[i].drv});
         };
@@ -540,12 +540,14 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       this.biases.drv = global.zeros(json[i].length);
     },
 
-    getParams : function () {
+    getParams : function (ignore_is_train) {
       var out = [];
-      for (var i = 0; i < this.filters.length; i++) {
-        out.push(this.filters[i].data);
-      };
-      out.push(this.biases.data);
+      if (this.is_train||ignore_is_train){
+        for (var i = 0; i < this.filters.length; i++) {
+          out.push(this.filters[i].data);
+        };
+        out.push(this.biases.data);
+      }
       return out;
     },
 
@@ -668,10 +670,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       this.biases.drv = this.biases.drv.concat(addedBias.drv);
     },
 
-    getParamsAndGrads : function () {
+    getParamsAndGrads : function (ignore_is_train) {
       var out = []
-      out.push({params : this.filters.data, grads : this.filters.drv});
-      out.push({params : this.biases.data, grads : this.biases.drv});
+      if (this.is_train||ignore_is_train){
+        out.push({params : this.filters.data, grads : this.filters.drv});
+        out.push({params : this.biases.data, grads : this.biases.drv});
+    }
       return out;
     },
     setParamsAndGrads : function (json, is_initialization) {
@@ -699,10 +703,13 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       this.filters.drv = global.zeros(json[0].length);
       this.biases.drv = global.zeros(json[1].length);
     },
-    getParams : function () {
+    getParams : function (ignore_is_train) {
       var out = []
-      out.push(this.filters.data);
-      out.push(this.biases.data);
+      if (this.is_train||ignore_is_train){
+        out.push(this.filters.data);
+        out.push(this.biases.data);  
+      }
+      
       return out;
     },
     toJSON: function() {
@@ -1556,7 +1563,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return this.layers[this.layers.length-1].V_out;
     },
 
-    getParamsAndGrads : function(){
+    getParamsAndGrads : function(ignore_is_train){
+      ignore_is_train = typeof ignore_is_train !== 'undefined' ? ignore_is_train : false;
       var out = [];
       for (var i = 0; i < this.layers.length; i++) {
         var o = this.layers[i].getParamsAndGrads();
@@ -1606,10 +1614,11 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         }
       };
     },
-    getParams : function () {
+    getParams : function (ignore_is_train) {
+      ignore_is_train = typeof ignore_is_train !== 'undefined' ? ignore_is_train : false;
       var out = [];
       for (var i = 0; i < this.layers.length; i++) {
-        var o = this.layers[i].getParams();
+        var o = this.layers[i].getParams(ignore_is_train);
         for (var j = 0; j < o.length; j++) {
           out.push(o[j]);
         };

@@ -133,7 +133,9 @@ Slave.prototype = {
         new_labels = d.new_labels;
 
         is_train = d.is_train; // only for headless configurations
-
+        
+        is_ever_train_false = d.is_ever_train_false;
+        drop_last_layer = d.drop_last_layer;
         var vol_input;
         var workingset = [];
 
@@ -175,7 +177,44 @@ Slave.prototype = {
 
                 that.Net = new that.mlitb.Net();
                 that.Net.createLayers(conf);
-                that.is_initialised = true;     
+                that.is_initialised = true;   
+
+                //sorry i need to add this i think, because the checking below
+                //need to be done after adding label
+                if(new_labels.length) {
+                    that.Net.addLabel(new_labels);
+                }
+                new_labels=[];
+
+                var pl = parameters.parameters.length;
+                console.log('old param');
+                console.log(pl);
+                console.log('new param')
+                console.log(JSON.stringify(that.Net.conf));
+                var newpar = that.Net.getParams();
+                var nl = newpar.length;
+                console.log(nl);
+                if (drop_last_layer){
+
+                    //need to use parameter from the random one, discard the pretrained param for the last param and bias
+                    parameters.parameters[pl-2]=newpar[nl-2]; //param
+                    parameters.parameters[pl-1]=newpar[nl-1]; //bias
+                } else {
+                    // if there's new added label, then the number of param will not the same with the pretrained
+                    // merge the pretrained+new random param.
+                    if (parameters.parameters[pl-2].length !== newpar[nl-2].length){
+                        //there is new added label
+                        //merge param
+                        for (var i = parameters.parameters[pl-2].length; i<newpar[nl-2].length;i++){
+                            parameters.parameters[pl-2].push(newpar[nl-2][i]);   
+                        }
+                        //merge bias
+                        for (var i = parameters.parameters[pl-1].length; i<newpar[nl-1].length;i++){
+                            parameters.parameters[pl-1].push(newpar[nl-1][i]);   
+                        }
+                        
+                    }
+                }  
 
             }
 
@@ -186,20 +225,25 @@ Slave.prototype = {
 
             vol_input = configuration[0].conf;
 
+            
+
         }
 
         learn = function() {
 
             if (parameters != null) {
 
-                if(is_train && that.is_train) {
-
+                if(is_ever_train_false && that.is_train) {
                     that.Net.setParams(parameters.parameters, true);
                     
                     that.is_train = false;
 
                 } else { 
-
+                    console.log('everything ok? ');
+                    console.log(parameters.parameters.length);
+                    console.log(parameters.parameters[0].length);
+                    console.log(parameters.parameters[1].length);
+                    console.log(JSON.stringify(parameters.parameters[0]));
                     // copy the parameters and gradients
                     that.Net.setParams(parameters.parameters);
 
@@ -220,6 +264,11 @@ Slave.prototype = {
                 that.Net.forward(Input,true);
                 error += that.Net.backward(point.label);
                 
+                if (error<1){
+                    console.log('kurang satu');
+                    console.log(error);    
+                }
+                
                 nVector++;
 
                 current_time = (new Date).getTime();
@@ -237,6 +286,9 @@ Slave.prototype = {
             if (parameters == null){
                 param = [that.Net.getParams(), that.Net.getGrads()];
                 param_type = 'params_and_grads';
+                console.log('send this');
+                console.log(that.Net.getParams().length);
+                console.log(that.Net.getGrads().length);
             } else {
                 param = that.Net.getGrads();
                 param_type = 'grads';
