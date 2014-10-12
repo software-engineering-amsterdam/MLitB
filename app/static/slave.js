@@ -193,8 +193,7 @@ Slave.prototype = {
             if (parameters != null) {
 
                 if(is_train && that.is_train) {
-                    console.log('first:');
-                    console.log(parameters.parameters.length);
+
                     that.Net.setParams(parameters.parameters, true);
                     
                     that.is_train = false;
@@ -202,9 +201,6 @@ Slave.prototype = {
                 } else { 
 
                     // copy the parameters and gradients
-                    console.log('second:');
-                    console.log(parameters.parameters[0].length);
-                    console.log(parameters.parameters[1].length);
                     that.Net.setParams(parameters.parameters);
 
                 }
@@ -222,14 +218,7 @@ Slave.prototype = {
                 Input = new that.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
                 Input.data = point.data;
                 that.Net.forward(Input,true);
-
-                // console.log(JSON.stringify(point.label));
-                // console.log('->');
-                // console.log(JSON.stringify(that.Net.label2index[point.label]));
-
                 error += that.Net.backward(point.label);
-                //console.log('error');
-                //console.log(error);
                 
                 nVector++;
 
@@ -261,8 +250,7 @@ Slave.prototype = {
                 proceeded_data : proceeded_data
             };
 
-            console.log('size to server:');
-            console.log(param.length);
+            console.log(' $ error: ' + error);
 
             that.logger(nVector.toString() + ' points processed');
 

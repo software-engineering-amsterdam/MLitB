@@ -1451,13 +1451,16 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         this.conf.push(conf[i]);
       }
       this.constructNetwork(add_layer,this.layers);
+
     },
 
     //update is_train after creating the network
     //so we could update is_train at anytime not only before creating the network
     updateLayerTrain : function(idx, value){
       this.conf[idx].is_train = value;
-      for (i in this.layers){
+
+      for (var i in this.layers){
+
         if (this.layers[i].conf_idx==idx){
           this.layers[i].is_train=value;
           this.layer_conf[i].is_train=value;
@@ -1592,10 +1595,10 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       is_initialization = typeof is_initialization !== 'undefined' ? is_initialization : false;
       var last_pos = 0;
       for (var i = 0; i < this.layers.length; i++) {
+
         if ((this.layers[i].is_train || is_initialization) && (this.layers[i].layer_type === 'conv' || this.layers[i].layer_type === 'fc')){
           total_params = this.layers[i].n_params + this.layers[i].n_biases;
           var newjson = json.slice(last_pos,total_params+last_pos);
-          console.log(JSON.stringify(this.layers[i].layer_type));
           this.layers[i].setParams(newjson,is_initialization);
           last_pos +=total_params;
         }

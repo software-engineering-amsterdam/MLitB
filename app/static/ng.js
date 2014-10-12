@@ -398,53 +398,62 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
     $scope.add_nn_from_file = function(nn) {
         
         if(!nn.name) {
-            $scope.errors.push('Please insert a name')
+            $scope.errors.push('Please insert a name');
             return  
         }
 
         if(!nn.iteration_time) {
-            $scope.errors.push('Please select an iteration tims')
+            $scope.errors.push('Please select an iteration tims');
             return  
         }
 
         var new_nn = new mlitb.Net();
 
-        new_nn.setConfigsAndParams(nn_file);
-
-        // cut off last layer (it removes from conf AND parameters)
-        new_nn.removeLayer( ( new_nn.conf.length - 1) );
-
-        // add new last layer.
-        new_nn.addLayer([{
-            type: 'fc', 
-            activation: 'softmax',
-            drop_prob: 0.5
-        }]);
-
-        for(var i = 0; i < new_nn.conf.length - 1; i++) {
-            new_nn.updateLayerTrain(i, false);
-        }
-
         var labels = [];
 
-        /*
-        
-        // do not send labels when headless !!
-        
-        for (var key in nn_file.index2label) {
-            labels.push(nn_file.index2label[key]);
+        var layers_length = $scope.layers.length;
+
+        new_nn.setConfigsAndParams(nn_file);
+
+        if($scope.nn.drop_last_layer == true) {
+
+            // cut off last layer (it removes from conf AND parameters)
+            new_nn.removeLayer( ( new_nn.conf.length - 1) );
+
+            // add new last layer.
+            new_nn.addLayer([
+                $scope.layers[$scope.layers.length - 1]
+            ]);
+
+            layers_length -= 1; // do not do updateLayerTrain on last layer, is useless anyway.
+
         }
 
-        */
+        var train;
 
-        var configuration = [];
+        for(var i = 0; i < layers_length; i++) {
 
-        for(var i = 0; i < new_nn.conf.length; i++) {
-            configuration.push({
-                type: new_nn.conf[i].type,
-                conf: new_nn.conf[i]
-            });
+            if($scope.layers[i].is_train == undefined) {
+                train = false;
+            } else {
+                train = $scope.layers[i].is_train;
+            }
+
+            new_nn.updateLayerTrain(i, train);
+
         }
+        
+        if($scope.nn.drop_last_layer == false) {
+
+            // do not send labels when headless !!
+            
+            for (var key in nn_file.index2label) {
+                labels.push(nn_file.index2label[key]);
+            }
+
+        }
+
+        var configuration = $scope.layers;
 
         // set num_neurons to 0. Neurons get added later through addLabel
         // do not change parameters.
@@ -454,7 +463,12 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
         nn_to_send.configuration = configuration;
         nn_to_send.parameters = {parameters: nn_file.params};
         nn_to_send.labels = labels;
-        nn_to_send.is_train = true; // headless only!
+        
+        if($scope.nn.drop_last_layer == true) {
+            nn_to_send.is_train = true; // headless only!
+        } else {
+            nn_to_send.is_train = false;
+        }
 
         $rootScope.client.add_nn(nn_to_send);
 
@@ -462,11 +476,48 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
         
     }
 
+    process_angular_layer = function(conf) {
+
+        var angular_conf = {};
+
+        var allowed_confs = ['sx', 'sy', 'stride', 'depth', 'activation', 'drop_prob', 'num_neurons', 'filters'];
+
+        for(var key in conf) {
+
+            if(allowed_confs.indexOf(key) > -1) {
+
+                angular_conf[key] = conf[key];
+
+            }
+
+        }
+
+        return angular_conf;
+
+    }
+
     processNewUpload = function(file) {
 
         nn_file = JSON.parse(file.target.result);
 
         $scope.new_nn_added = true;
+
+        var layers = [];
+
+        // set up layers according to angular spec
+        for(var i = 0; i < nn_file.configs.length; i++) {
+
+            layers.push({
+                type: nn_file.configs[i].type,
+                conf: process_angular_layer(nn_file.configs[i]),
+                is_train: true
+            });
+
+        }
+
+        $scope.layers = layers;
+
+        $scope.nn.drop_last_layer = false;
 
         $scope.$apply();
 

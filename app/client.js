@@ -139,10 +139,6 @@ Client.prototype = {
 
         }
 
-        // parameters sent to slave
-        console.log(nn.parameters.parameters[0].length);
-        console.log(nn.parameters.parameters[1].length);
-
         this.master.send_message_to_slave(this, work_data);
 
         this.process = [];

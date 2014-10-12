@@ -101,7 +101,7 @@ SGDTrainer.prototype = {
         return;
         
       }
-      
+
       for (var i = 0; i < this.last_params.length; i++) {
         this.last_grads.push(zeros(this.last_params[i].length));
         this.sum_square_gads.push(zeros(this.last_params[i].length));
@@ -117,6 +117,7 @@ SGDTrainer.prototype = {
         //ignore new client
 
         if (markovParam.parameters_type == 'grads'){
+
           totalError+=markovParam.error;
           totalVector+=markovParam.nVector;
 
@@ -243,6 +244,8 @@ SGDTrainer.prototype = {
     nn.parameters = {
         parameters: this.last_params
     }
+
+    console.log(this.last_params[0].length, this.last_params[1].length);
 
     nn.send_stats({
       type: 'parameter',
