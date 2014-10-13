@@ -169,6 +169,7 @@ Slave.prototype = {
 
                 that.Net = new that.mlitb.Net();
                 that.Net.createLayers(configuration);
+                that.is_initialised = true;
 
                 if(new_labels.length) {
                     that.Net.addLabel(new_labels);
