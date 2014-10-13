@@ -421,16 +421,14 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
             new_nn.removeLayer( ( new_nn.conf.length - 1) );
 
             // add new last layer.
-            // console.log('conf of new layer');
-            // console.log(JSON.stringify($scope.layers[$scope.layers.length - 1]));
+
             // restructure the layer into {type: , is_train: , filter, activation,...}
-            var newl=angular.copy($scope.layers[$scope.layers.length - 1].conf);
-            newl.is_train=angular.copy($scope.layers[$scope.layers.length - 1].is_train);
+
+            var newl = angular.copy($scope.layers[$scope.layers.length - 1].conf);
+
+            newl.is_train = angular.copy($scope.layers[$scope.layers.length - 1].is_train);
             newl.type = angular.copy($scope.layers[$scope.layers.length - 1].type);
 
-            // new_nn.addLayer([
-            //     $scope.layers[$scope.layers.length - 1]
-            // ]);
             new_nn.addLayer([
                 newl
             ]);
@@ -441,8 +439,7 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
 
         var train;
         var is_ever_train_false;
-        // console.log('before update train');
-        // console.log(JSON.stringify(new_nn.conf));
+
         for(var i = 0; i < layers_length; i++) {
 
             if($scope.layers[i].is_train == undefined) {
@@ -457,11 +454,10 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
             new_nn.updateLayerTrain(i, train);
 
         }
-        // console.log('after update train');
-        // console.log(JSON.stringify(new_nn.conf));
+
         if($scope.nn.drop_last_layer == false) {
 
-            // do not send labels when headless !!
+            // do not send labels when headless !
             
             for (var key in nn_file.index2label) {
                 labels.push(nn_file.index2label[key]);
@@ -469,34 +465,25 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
 
         }
 
-        // var configuration = $scope.layers;
-        // console.log('old conf');
-        // console.log(JSON.stringify(configuration));
-        // console.log('new conf');
-        // console.log(JSON.stringify(new_nn.conf));
         // use new configuration after update is_train
         var configuration = new_nn.conf;
         // set num_neurons to 0. Neurons get added later through addLabel
         // do not change parameters.
-        // configuration[configuration.length-1].conf.num_neurons = 0;
         configuration[configuration.length-1].num_neurons = 0;
 
         nn_to_send = angular.copy(nn);
         nn_to_send.configuration = configuration;
         nn_to_send.parameters = {parameters: nn_file.params};
         nn_to_send.labels = labels;
-        //I add this to notify if there is at least one train false
+        
+        // I add this to notify if there is at least one train false
         nn_to_send.is_ever_train_false = is_ever_train_false;
         // I think the is_train is to notice if there's is_train = false or not
         // because if there is is_train false in the layer we need to set 
         // that.Net.setParams(parameters.parameters, true); in the slave
         // correct me if i'm wrong
         // I also need a notification for drop last layer to the slave
-        // if($scope.nn.drop_last_layer == true) {
-        //     nn_to_send.is_train = true; // headless only!
-        // } else {
-        //     nn_to_send.is_train = false;
-        // }
+        
         if($scope.nn.drop_last_layer == true) {
             nn_to_send.drop_last_layer = true; // headless only!
         } else {
@@ -757,8 +744,16 @@ app.controller('new', function ($scope, $rootScope, $location) {
             return
         }
 
+        var configuration = [];
+
+        for(var i = 0; i < $scope.layers.length; i++) {
+            layer = $scope.layers[i].conf;
+            layer.type = $scope.layers[i].type;
+            configuration.push(layer);
+        }
+
         nn_to_send = angular.copy(nn);
-        nn_to_send.configuration = $scope.layers;
+        nn_to_send.configuration = configuration;
         nn_to_send.parameters = null;
         nn_to_send.labels = [];
         nn_to_send.is_train = false;

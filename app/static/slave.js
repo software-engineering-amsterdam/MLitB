@@ -167,57 +167,49 @@ Slave.prototype = {
 
             if(!that.is_initialised) {
 
-                // squish configuration
-                conf = configuration; //no need to restructure anymore
-                // conf = [];
-                // for(var i = 0; i < configuration.length; i++) {
-                //     layer = configuration[i].conf;
-                //     layer.type = configuration[i].type;
-                //     conf.push(layer);
-                // }
-
                 that.Net = new that.mlitb.Net();
-                that.Net.createLayers(conf);
-                // that.is_initialised = true;   
+                that.Net.createLayers(configuration);
 
-                //sorry i need to add this i think, because the checking below
-                //need to be done after adding label
                 if(new_labels.length) {
                     that.Net.addLabel(new_labels);
                 }
+
                 new_labels=[];
 
-                var pl = parameters.parameters.length;
-                // console.log('old param');
-                // console.log(pl);
-                // console.log('new param')
-                // console.log(JSON.stringify(that.Net.conf));
-                var newpar = that.Net.getParams(true);
-                var nl = newpar.length;
-                // console.log(nl);
-                if (drop_last_layer){
-                    // console.log('change last param');
-                    // console.log(parameters.parameters[pl-2].length);
-                    // console.log(newpar[nl-2].length);
-                    //need to use parameter from the random one, discard the pretrained param for the last param and bias
-                    parameters.parameters[pl-2]=newpar[nl-2]; //param
-                    parameters.parameters[pl-1]=newpar[nl-1]; //bias
-                } else {
-                    // if there's new added label, then the number of param will not the same with the pretrained
-                    // merge the pretrained+new random param.
-                    if (parameters.parameters[pl-2].length !== newpar[nl-2].length){
-                        //there is new added label
-                        //merge param
-                        for (var i = parameters.parameters[pl-2].length; i<newpar[nl-2].length;i++){
-                            parameters.parameters[pl-2].push(newpar[nl-2][i]);   
-                        }
-                        //merge bias
-                        for (var i = parameters.parameters[pl-1].length; i<newpar[nl-1].length;i++){
-                            parameters.parameters[pl-1].push(newpar[nl-1][i]);   
-                        }
+                if(parameters) {
+
+                    var pl = parameters.parameters.length;
+
+                    var newpar = that.Net.getParams(true);
+                    var nl = newpar.length;
+
+                    if (drop_last_layer){
                         
+                        //need to use parameter from the random one, discard the pretrained param for the last param and bias
+
+                        parameters.parameters[pl-2]=newpar[nl-2]; //param
+                        parameters.parameters[pl-1]=newpar[nl-1]; //bias
+                    } else {
+                        
+                        // if there's new added label, then the number of param will not the same with the pretrained
+                        // merge the pretrained+new random param.
+                        if (parameters.parameters[pl-2].length !== newpar[nl-2].length){
+                            
+                            //there is new added label
+                            //merge param
+                            for (var i = parameters.parameters[pl-2].length; i<newpar[nl-2].length;i++){
+                                parameters.parameters[pl-2].push(newpar[nl-2][i]);   
+                            }
+                            
+                            //merge bias
+                            for (var i = parameters.parameters[pl-1].length; i<newpar[nl-1].length;i++){
+                                parameters.parameters[pl-1].push(newpar[nl-1][i]);   
+                            }
+                            
+                        }
                     }
-                }  
+
+                }
 
             }
 
@@ -226,10 +218,7 @@ Slave.prototype = {
                 that.Net.addLabel(new_labels);
             }
 
-            // vol_input = configuration[0].conf;
             vol_input = configuration[0];
-
-            
 
         }
 
@@ -242,15 +231,9 @@ Slave.prototype = {
                     that.is_train = false;
 
                 } else { 
-                    // console.log('everything ok? ');
-                    // console.log(parameters.parameters.length);
-                    // console.log(parameters.parameters[0].length);
-                    // console.log(parameters.parameters[1].length);
-                    // console.log(JSON.stringify(parameters.parameters[0].slice(1,100)));
+
                     // copy the parameters and gradients
                     that.Net.setParams(parameters.parameters);
-                    // console.log('after set');
-                    // console.log(JSON.stringify(that.Net.getParams()[0].slice(1,100)));
 
                 }
 
@@ -267,11 +250,9 @@ Slave.prototype = {
                 Input = new that.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
                 Input.data = point.data;
                 that.Net.forward(Input,true);
-                // console.log('v out');
-                // console.log(JSON.stringify(that.Net.layers[that.Net.layers.length-2].V_out.data));
-                // console.log(JSON.stringify(that.Net.getPrediction().data));
+
                 newerr = that.Net.backward(point.label);
-                // console.log(newerr);
+
                 error += newerr;
                 
                 nVector++;
@@ -287,19 +268,18 @@ Slave.prototype = {
         }
 
         reduction = function() {
+            
             // PROBLEM parameters never null
             // if (parameters == null){
             //let's use step=0, is that correct ?
-            if (step==0){
+
+            if (step == 0){
                 param = [that.Net.getParams(), that.Net.getGrads()];
                 param_type = 'params_and_grads';
-                // console.log('send this');
-                // console.log(that.Net.getParams()[0].slice(1,100));
-                // console.log(that.Net.getGrads()[0].slice(1,100));
+
             } else {
                 param = that.Net.getGrads();
-                // console.log('send this after first');
-                // console.log(that.Net.getGrads()[0].slice(1,100));
+
                 param_type = 'grads';
             }
 

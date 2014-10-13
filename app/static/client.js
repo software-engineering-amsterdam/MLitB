@@ -204,15 +204,7 @@ Client.prototype = {
         parameters = d.parameters.parameters;
         labels = d.labels;
 
-        // squish configuration
-        conf = [];
-        for(var i = 0; i < configuration.length; i++) {
-          layer = configuration[i].conf;
-          layer.type = configuration[i].type;
-          conf.push(layer);
-        }
-
-        vol_input = configuration[0].conf;
+        vol_input = configuration[0];
 
         if(vol_input.depth == 1 && this.classify_input_data.length == ((vol_input.sx * vol_input.sy) * 3)) {
             // desaturate image
@@ -225,7 +217,7 @@ Client.prototype = {
         }
 
         Net = new mlitb.Net();
-        Net.createLayers(conf);
+        Net.createLayers(configuration);
         Net.setParams(parameters);
 
         Net.addLabel(labels);

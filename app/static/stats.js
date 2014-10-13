@@ -31,9 +31,9 @@ var data = function(d) {
 
   if (!is_initialized) { 
 
-    configuration = d.configuration;
+    conf = d.configuration;
     
-
+    /*
     // squish configuration
     conf = [];
     for(var i = 0; i < configuration.length; i++) {
@@ -41,11 +41,12 @@ var data = function(d) {
       layer.type = configuration[i].type;
       conf.push(layer);
     }
+    */
 
     Net = new mlitb.Net();  
     Net.createLayers(conf);
 
-    vol_input = configuration[0].conf;
+    vol_input = conf[0];
     is_initialized = true;      
 
   }
