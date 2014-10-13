@@ -93,7 +93,7 @@ SGDTrainer.prototype = {
 
       } else if (new_parameters[0].parameters_type === 'grads'){
 
-        this.last_params = new_parameters[0].parameters;
+        // this.last_params = new_parameters[0].parameters;
 
       } else {
 

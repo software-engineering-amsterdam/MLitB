@@ -421,8 +421,18 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
             new_nn.removeLayer( ( new_nn.conf.length - 1) );
 
             // add new last layer.
+            // console.log('conf of new layer');
+            // console.log(JSON.stringify($scope.layers[$scope.layers.length - 1]));
+            // restructure the layer into {type: , is_train: , filter, activation,...}
+            var newl=angular.copy($scope.layers[$scope.layers.length - 1].conf);
+            newl.is_train=angular.copy($scope.layers[$scope.layers.length - 1].is_train);
+            newl.type = angular.copy($scope.layers[$scope.layers.length - 1].type);
+
+            // new_nn.addLayer([
+            //     $scope.layers[$scope.layers.length - 1]
+            // ]);
             new_nn.addLayer([
-                $scope.layers[$scope.layers.length - 1]
+                newl
             ]);
 
             layers_length -= 1; // do not do updateLayerTrain on last layer, is useless anyway.
@@ -431,7 +441,8 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
 
         var train;
         var is_ever_train_false;
-
+        // console.log('before update train');
+        // console.log(JSON.stringify(new_nn.conf));
         for(var i = 0; i < layers_length; i++) {
 
             if($scope.layers[i].is_train == undefined) {
@@ -446,7 +457,8 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
             new_nn.updateLayerTrain(i, train);
 
         }
-        
+        // console.log('after update train');
+        // console.log(JSON.stringify(new_nn.conf));
         if($scope.nn.drop_last_layer == false) {
 
             // do not send labels when headless !!
@@ -457,11 +469,17 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
 
         }
 
-        var configuration = $scope.layers;
-
+        // var configuration = $scope.layers;
+        // console.log('old conf');
+        // console.log(JSON.stringify(configuration));
+        // console.log('new conf');
+        // console.log(JSON.stringify(new_nn.conf));
+        // use new configuration after update is_train
+        var configuration = new_nn.conf;
         // set num_neurons to 0. Neurons get added later through addLabel
         // do not change parameters.
-        configuration[configuration.length-1].conf.num_neurons = 0;
+        // configuration[configuration.length-1].conf.num_neurons = 0;
+        configuration[configuration.length-1].num_neurons = 0;
 
         nn_to_send = angular.copy(nn);
         nn_to_send.configuration = configuration;
