@@ -187,6 +187,7 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
     var discrete_loss, piece;
     var lastParameter;
     var testIteration = 0;
+    var stats_ready = true;
 
     var errorchart;
 
@@ -206,6 +207,8 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
         if(e.data.type == 'download_parameters') {
             return download_parameters(e.data.data);
         }
+
+        stats_ready = true;
 
         discrete_loss = e.data.data.discrete_loss;
         delta = e.data.data.delta;
@@ -251,18 +254,18 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
           name: name,
           color: color,
           point: {
-            events: {
-                'click': function() {
-                    if (this.series.data.length > 1) this.remove();
-                }
-            }
-        }
-    }]
-});
+              events: {
+                  'click': function() {
+                      if (this.series.data.length > 1) this.remove();
+                  }
+              }
+          }
+      }]
+      });
 
       return $(selector).highcharts();
 
-  }
+    }
 
   drawChart = function(chart, point) {
 
@@ -356,10 +359,16 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
 
     $rootScope.update_stats = function(data) {
 
-        $scope.worker.postMessage({
-            type: 'data',
-            data: data.data.data
-        });
+        if(stats_ready) {
+
+            $scope.worker.postMessage({
+                type: 'data',
+                data: data.data.data
+            });
+
+            stats_ready = false;
+
+        }
 
     }
 
