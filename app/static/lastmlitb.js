@@ -255,6 +255,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     global.add = add;
     global.normalize = normalize;
     global.clone = clone;
+    global.clone_obj = clone_obj;
     global.randf = randf;
     global.randi = randi;
     global.randn = randn;
@@ -397,10 +398,13 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     //optional
     this.sy = typeof conf.sy !== 'undefined' ? conf.sy : conf.sx; //default is the same size with x
     this.stride = (typeof conf.stride !== 'undefined' && conf.stride <= Math.min(this.sx,this.sy)) ? conf.stride : 1; //default stride is 1 
-
+    this.pad = typeof conf.pad !== 'undefined' ? conf.pad : 0;
     
-    this.out_sx = Math.ceil(conf.in_sx/this.stride); //could be floor for valid conv
-    this.out_sy = Math.ceil(conf.in_sy/this.stride);
+    this.out_sx = Math.round((this.in_sx + this.pad * 2 - this.sx) / this.stride + 1);
+    this.out_sy = Math.round((this.in_sy + this.pad * 2 - this.sy) / this.stride + 1);
+
+    // this.out_sx = Math.ceil(conf.in_sx/this.stride); //could be floor for valid conv
+    // this.out_sy = Math.ceil(conf.in_sy/this.stride);
 
     this.filters = []; //
     for (var i = 0; i < conf.filters; i++) {
@@ -416,8 +420,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   ConvLayer.prototype = {
     forward : function (V, is_training) {
       this.V_in = V;
-      var hx = Math.floor(this.sx/2.0);
-      var hy = Math.floor(this.sy/2.0);
+      // var hx = Math.floor(this.sx/2.0);
+      // var hy = Math.floor(this.sy/2.0);
+
       var dim = this.out_sx*this.out_sy;
 
       var A = new global.Vol(this.out_sx, this.out_sy, this.out_depth,0.0);
@@ -428,16 +433,23 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         for (var j=0;j<A.sx*A.sy;j++,ij++){A_data[ij]=b}
       };
       for (var od=0;od<A.depth;od++) {
+        
         var f=this.filters[od]; //filter/weight data
         for (var id=0,oi=od*dim;id<f.depth;id++,oi=od*dim){ //reset index of output data. we want to refill from x=0 y=0 again
-          for (var cy=0;cy<V.sy;cy+=this.stride) { //if use floor stride, then add an index here
-            for (var cx=0;cx<V.sx; cx+=this.stride,oi++) {
+          var hx = -this.pad |0;
+          var hy = -this.pad |0;
+          // for (var cy=0;cy<V.sy;cy+=this.stride) { //if use floor stride, then add an index here
+          for (var cy=0,oy=0;oy<this.out_sy;oy++,cy+=this.stride) { //if use floor stride, then add an index here
+            hx = -this.pad |0;
+            // for (var cx=0;cx<V.sx; cx+=this.stride,oi++) {
+            for (var cx=0,ox=0;ox<this.out_sx; ox++,cx+=this.stride,oi++) {
               var a=0.0;
               var fi=id*f.sx*f.sy; //index for filter data
               for (var fy=cy;fy<f.sy+cy;fy++) {
                 for (var fx=cx;fx<f.sx+cx;fx++,fi++) {
-                  var iy=fy-hy;
-                  var ix=fx-hx;
+                  var iy=fy+hy;
+                  var ix=fx+hx;
+                  // console.log('iy, ix, fi : ',iy,ix,fi);
                   if (ix>=0&&iy>=0&&ix<V.sx&&iy<V.sy){
                     // a+=f.data[fi]*V.get(ix,iy,id); //try function call here
                     a+=f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
@@ -445,6 +457,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
                 };
               };
               // if(id==0){a+=this.biases.data[od]} //slower
+              // console.log(a);
               A_data[oi]+=a;
             };
           };  
@@ -455,8 +468,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
     backward : function () {
       var V_in = this.V_in;
-      var hx = Math.floor(this.sx/2.0);
-      var hy = Math.floor(this.sy/2.0);
+      // var hx = Math.floor(this.sx/2.0);
+      // var hy = Math.floor(this.sy/2.0);
       var dim = this.out_sx*this.out_sy;
 
       var V_out = this.V_out;
@@ -467,13 +480,18 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       for (var od=0;od<V_out.depth;od++) {
         var f=this.filters[od]; //filter/weight data
         for (var id=0,oi=od*dim;id<f.depth;id++,oi=od*dim){ //reset index of output data. we want to refill from x=0 y=0 again
-          for (var cy=0;cy<V_in.sy;cy+=this.stride) { //if use floor stride, then add an index here
-            for (var cx=0;cx<V_in.sx; cx+=this.stride,oi++) {
+          var hx = -this.pad |0;
+          var hy = -this.pad |0;
+          // for (var cy=0;cy<V_in.sy;cy+=this.stride) { //if use floor stride, then add an index here
+          for (var cy=0,oy=0;oy<this.out_sy;oy++,cy+=this.stride) { //if use floor stride, then add an index here
+            hx = -this.pad |0;
+            // for (var cx=0;cx<V_in.sx; cx+=this.stride,oi++) {
+            for (var cx=0,ox=0;ox<this.out_sx; ox++,cx+=this.stride,oi++) {
               var fi=id*f.sx*f.sy; //index for filter data
               for (var fy=cy;fy<f.sy+cy;fy++) {
                 for (var fx=cx;fx<f.sx+cx;fx++,fi++) {
-                  var iy=fy-hy;
-                  var ix=fx-hx;
+                  var iy=fy+hy;
+                  var ix=fx+hx;
                   
                   if (ix>=0&&iy>=0&&ix<V_in.sx&&iy<V_in.sy){
                     // a+=f.data[fi]*V.get(ix,iy,id); //try function call here
@@ -1113,14 +1131,17 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.sy = typeof conf.sy !== 'undefined' ? conf.sy : this.sx;
     //non overlap as default, forbid stride > than filter
     this.stride = (typeof conf.stride !== 'undefined' && conf.stride <= this.sx) ? conf.stride : this.sx; 
+    this.pad = typeof conf.pad !== 'undefined' ? conf.pad : 0;
     //ignore border true can leave some area in conv map uncovered
     this.ignore_border = typeof conf.ignore_border !=='undefined' ? conf.ignore_border : false;  
     //later option for average
     this.pool_type = typeof conf.pool_type !=='undefined' ? conf.pool_type : 'max'; 
     // computed
     this.out_depth = this.in_depth;
-    this.out_sx = Math.floor(this.in_sx / this.stride); // compute size of output volume
-    this.out_sy = Math.floor(this.in_sy / this.stride);
+    // this.out_sx = Math.floor(this.in_sx / this.stride); // compute size of output volume
+    // this.out_sy = Math.floor(this.in_sy / this.stride);
+    this.out_sx = Math.round((this.in_sx + this.pad * 2 - this.sx) / this.stride + 1);
+    this.out_sy = Math.round((this.in_sy + this.pad * 2 - this.sy) / this.stride + 1);
     // save position at filter from which max value comes from
     this.max_pos_x = global.zeros(this.out_sx*this.out_sy*this.out_depth);
     this.max_pos_y = global.zeros(this.out_sx*this.out_sy*this.out_depth);
@@ -1136,26 +1157,33 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       var max_pos_y = this.max_pos_y;
       var Z_data = Z.data;
       //half of filter size
-      var hx = Math.floor(this.sx/2.0);
-      var hy = Math.floor(this.sy/2.0);
+      // var hx = Math.floor(this.sx/2.0);
+      // var hy = Math.floor(this.sy/2.0);
       // var in_sx = V.sx; //used when compute index instead of call get function
       // var in_sy = V.sy;
       var n = 0; //index for output data;
       for (var d = 0; d < this.out_depth; d++) {
+        var hx = -this.pad;
+        var hy = -this.pad;
         for (var sty = 0, oy=0; oy < this.out_sy; sty+=this.stride, oy++) {
+          hx = -this.pad;
           for (var stx = 0, ox=0; ox < this.out_sx; stx+=this.stride, ox++,n++){
             var max_v = -99999999.0;
             var max_x = -1;
             var max_y = -1;
+            var total = 0;
+            var count = 0;
             for (var fyy = sty; fyy < this.sy+sty; fyy++) {
               for (var fxx = stx; fxx < this.sx+stx; fxx++) {
                 var v = -999999999.0;
-                var fx = fxx - hx;
-                var fy = fyy - hy;
+                var fx = fxx + hx;
+                var fy = fyy + hy;
                 if (fx < this.in_sx && fy < this.in_sy){
                   // v = V.get(fx,fy,d); // try function call here. compared with non function call later
                   v = V.data[((V.sx * fy)+fx)+V.sx*V.sy*d];
                 }
+                total+= v;
+                count+= 1;
                 if (v> max_v){
                   max_v = v;
                   max_x = fx;
@@ -1165,6 +1193,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
             };
             // we can create 1 function to return index
             // var idx = Z.getIndex(ox,oy,d);
+            if (this.pool_type==='avg'){
+              max_v = total/count;
+            }
             Z.data[n] = max_v;
             // Z_data[idx] = max_v;
             max_pos_x[n] = max_x;
@@ -1251,7 +1282,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   "use strict";
   var Vol = global.Vol;
 
-  var DropoutLayer = function (conf) {
+  var DropOutLayer = function (conf) {
     var conf = conf || {};
     this.conf_idx = conf.conf_idx;
     this.out_sx = conf.in_sx;
@@ -1263,7 +1294,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     // this.dropped = new Vol(this.out_sx, this.out_sy, this.out_depth, false);
   }
 
-  DropoutLayer.prototype = {
+  DropOutLayer.prototype = {
     forward : function (V, is_training) {
       this.V_in = V;
       var Z = V.clone();
@@ -1327,7 +1358,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     }
       
   };
-  global.DropoutLayer = DropoutLayer;
+  global.DropOutLayer = DropOutLayer;
 })(mlitb);
 (function(global){
   var Net = function () {
@@ -1365,6 +1396,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           } else {
             layer_conf.push({type : 'relu', conf_idx:conf_idx}); //default activation function for conv
           }
+          if (typeof c.drop_prob !== 'undefined'){
+            layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx})
+          }
         } else if (c.type === 'fc'){
           if (typeof c.num_neurons === 'undefined'){
             c.num_neurons = 0;
@@ -1377,6 +1411,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           } else {
             layer_conf.push({type : 'linear', conf_idx:conf_idx}); //default activation function for fc
           }
+          if (typeof c.drop_prob !== 'undefined'){
+            layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx})
+          }
         } else if (c.type === 'pool'){
           if (typeof c.sx === 'undefined'){console.log('ERROR : pool size parameter \'sx\' is not defined')}
           if (typeof c.stride === 'number'){
@@ -1385,8 +1422,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           } else {
             console.log("WARNING : \'stride\' parameter is not defined. Using default = 1")
           }
-          if (typeof drop_prob !== 'undefined'){
-            layer_conf.push({type : 'dropout', drop_prob : drop_prob, conf_idx:conf_idx})
+          if (typeof c.drop_prob !== 'undefined'){
+            layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx})
           }
         }
       };
@@ -1408,6 +1445,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           conf.in_sy = pl.out_sy
           conf.in_depth = pl.out_depth;
           conf.in_neurons = pl.out_sx*pl.out_sy*pl.out_depth;
+          // console.log(pl.layer_type);
+          // console.log(pl.out_depth, pl.out_sx, pl.out_sy);
         }
         
         if (conf.type === 'fc'){layers.push(new global.FullConnLayer(conf));}
