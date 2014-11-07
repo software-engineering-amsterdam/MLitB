@@ -34,26 +34,40 @@
         <h3>
 <a id="what-is-mlitb" class="anchor" href="#what-is-mlitb" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is MLitB?</h3>
 
+<p>Machine Learning in the Browser (MLitB) is an ambitious software development project whose aim is to bring ML, in all its facets, to an audience that includes both the general public and the research community.  </p>
+
 <h4>
 <a id="why-machine-learning-in-the-browser" class="anchor" href="#why-machine-learning-in-the-browser" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why Machine Learning in the Browser?</h4>
 
-<h4>
-<a id="sharing-collaborating" class="anchor" href="#sharing-collaborating" aria-hidden="true"><span class="octicon octicon-link"></span></a>Sharing, collaborating</h4>
+<p>The ubiquity of the browser as a computational engine makes it an ideal platform for the development of massively distributed and collaborative machine learning.  </p>
 
-<h4>
-<a id="massively-distributed-computing" class="anchor" href="#massively-distributed-computing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Massively distributed computing</h4>
+<p>To accomplish this, we have written a lightweight software library that runs in native browsers, which is capable of performing massively distributed machine learning on heterogeneous devices (desktops, laptops, smart phones and tablets), embedding ML models into the devices for both prediction and collaborative learning initiatives,  be shared as an encapsulated object (a {\em research closure}) containing configurations, code, and parameters.</p>
+
+<p>Implications of this software paradigm include truly collaborative machine learning, open to the public, real privacy preserving computation, field experiments, green computing, and more.</p>
 
 <h3>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
 
-<p>Requirements: node.js, redis.</p>
+<p>Requirements: <code>node.js</code>, <code>redis-server</code>.</p>
 
 <p>To install, clone the repository.  </p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p>In a terminal, start redis</p>
+
+<pre><code>$ redis-server &amp;
 </code></pre>
+
+<p>In another terminal, start the application:</p>
+
+<pre><code>$ node app.js -h localhost
+</code></pre>
+
+<p>In another terminal, start the master node:</p>
+
+<pre><code>$ node master.js
+</code></pre>
+
+<p>Now open a tab in your browser to <code>local_host:8000</code></p>
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
