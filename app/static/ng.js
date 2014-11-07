@@ -64,8 +64,6 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
 
         // forward loop for readability
         // could do backwards aswell for speed.
-        console.log('length image');
-        console.log(image.length);
         for(var i = 0; i < image.length; i++) {
 
             idx = i + 1;
