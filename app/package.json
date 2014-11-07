@@ -6,7 +6,7 @@
     "amqplib": "^0.2.0",
     "commander": "^2.3.0",
     "connect": "^3.1.1",
-    "express": "^4.1.1",
+    "express": "~4.10.1",
     "express.io": "^1.1.13",
     "fs-ext": "^0.3.2",
     "grunt": "^0.4.5",
@@ -28,6 +28,7 @@
     "static-resource": "^0.1.0",
     "stylus": "^0.47.1",
     "when": "^3.4.2",
+    "body-parser": "~1.9.2"
   },
   "author": "Remco Hendriks",
   "license": "MIT"

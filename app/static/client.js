@@ -1,4 +1,3 @@
-
 var Client = function(scope) {
 
     this.scope = scope;
@@ -594,7 +593,27 @@ Client.prototype = {
 
     add_nn: function(conf) {
 
-        this.send_message_to_master('add_nn', conf);
+        // send through xhr instead of ws because of size.
+
+        // old ws:
+        // this.send_message_to_master('add_nn', conf);
+
+        var pkg = {
+            boss: this.id,
+            conf: conf
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', this.host + ':8000/add-nn/', true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+        xhr.onload = function () {
+
+            console.log(' $$ ' + this.response);
+
+        }
+        
+        xhr.send(JSON.stringify(pkg));
 
     },
 

@@ -1,6 +1,8 @@
 var redis_lib = require("redis");
 var NN = require("./nn");
 var Client = require("./client");
+var express = require('express');
+var bodyParser = require('body-parser');
 
 var Master = function() {
 
@@ -507,10 +509,47 @@ Master.prototype = {
 
     start: function() {
 
-        that = this;
+        var that = this;
         
         this.redis2.on("message", function(c, d) { that.message(c,d); });
         this.redis2.subscribe("master");
+
+        var app = express()
+
+        app.use(bodyParser.json({limit: '500mb'}));
+
+        app.use(function(req, res, next) {
+
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            next();
+
+        });
+
+        app.post('/add-nn', function(req, res) {
+
+            var boss = that.boss_by_id(req.body.boss);
+
+            if(!boss) {
+
+                res.writeHead(200, {'content-type': 'text/plain'});
+                res.write('not ok');
+                res.end();
+                return;
+
+            }
+
+            var conf = req.body.conf;
+
+            that.add_nn(boss, conf);
+
+            res.writeHead(200, {'content-type': 'text/plain'});
+            res.write('ok');
+            res.end();
+
+        });
+
+        app.listen(8000);
 
         console.log("System ready");
 
