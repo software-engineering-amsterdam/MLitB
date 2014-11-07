@@ -64,14 +64,16 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
 
         // forward loop for readability
         // could do backwards aswell for speed.
+        console.log('length image');
+        console.log(image.length);
         for(var i = 0; i < image.length; i++) {
 
             idx = i + 1;
             
             // normalize to -0.5 to 0.5
             // normalize 0-1
-            pixel = image[i] / 255.0; // - 0.5;
-
+            // pixel = image[i] / 255.0; // - 0.5;
+            pixel = image[i];
             if(idx % 4 == 0) {
                 // skip alpha channel
                 continue;
@@ -137,8 +139,8 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
 
                     image.onload = function() {
 
-                        width = 32; // change this to relevant size
-                        height = 32; // change this to relevant size
+                        width = 224; // change this to relevant size
+                        height = 224; // change this to relevant size
 
                         var canvas = document.getElementById("image"); 
                         canvas.width = width;
@@ -360,13 +362,12 @@ app.controller('stats', function ($scope, $routeParams, $rootScope, $location) {
     $rootScope.update_stats = function(data) {
 
         if(stats_ready) {
-
             $scope.worker.postMessage({
                 type: 'data',
                 data: data.data.data
             });
 
-            stats_ready = false;
+            // stats_ready = false;
 
         }
 
@@ -659,7 +660,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
             {type: 'pool', conf: {"sx":3,"stride":2,"drop_prob":0.5}},
             {type: 'conv', conf: {"sx":5,"stride":1,"filters":24,"activation":"relu"}},
             {type: 'pool', conf: {"sx":4,"stride":4,"drop_prob":0.5}},
-            {type: 'fc', conf: {"activation":"softmax","drop_prob":0.5}}
+            {type: 'fc', conf: {"activation":"softmax"}}
             ]
         }
         else if(type == 'cifar100') {
@@ -669,7 +670,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
             {type: 'pool', conf: {"sx":3,"stride":1,"drop_prob":0.5}},
             {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
             {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.5}},
-            {type: 'fc', conf: {"activation":"softmax","drop_prob":0.5}}
+            {type: 'fc', conf: {"activation":"softmax"}}
           ]
         }
 
