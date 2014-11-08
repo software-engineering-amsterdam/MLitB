@@ -549,6 +549,40 @@ Master.prototype = {
 
         });
 
+        app.post('/request-nn', function(req, res) {
+
+            var return_false = function() {
+
+                res.writeHead(200, {'content-type': 'text/plain'});
+                res.write('not ok');
+                res.end();
+                return;
+
+            }
+
+            var boss = that.boss_by_id(req.body.boss);
+
+            if(!boss) {
+                return return_false();
+            }
+
+            var nn_id = req.body.nn_id;
+
+            nn = that.nn_by_id(nn_id);
+
+            if(!nn) {
+                return return_false();
+            }
+
+            var response = nn.request_nn_classifier(boss);
+
+            
+            res.writeHead(200, {'content-type': 'application/json'});
+            res.write(JSON.stringify(response));
+            res.end();
+
+        });
+
         app.listen(8000);
 
         console.log("System ready");

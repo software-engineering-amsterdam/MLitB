@@ -1,45 +1,54 @@
-<div class="container" ng-controller="publicclient">
+<div class="container">
     <div class="row">
         <div class="col-xs-8">
 
             <h3>Public client</h3>
-            <p><span class="btn btn-default btn-file btn-lg"><input id="picture" name="files" type="file"> <span class="glyphicon glyphicon-camera"></span> Take picture</button></span></p>
+            <p><span class="btn btn-default btn-file btn-lg"><input id="picture" name="files" type="file"> <span class="glyphicon glyphicon-camera"></span> Take picture</span></p>
             <canvas id="image"></canvas>
-            <div ng-show="classify_results">
-                <h4>Results</h4>
-                    <table class="table table-condensed">
-                        <thead>
-                            <tr>
-                                <td>Label</td>
-                                <td>Probability</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr data-ng-repeat="item in classify_results">
-                                <td>{{ item[0] }}</td>
-                                <td>{{ item[1] }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </ul>
-                <form role="form" name="new_label_form">
-                    <div class="row">
-                        <div class="col-xs-5">
-                            <div class="form-group">
-                                <label for="name">New label:</label>
-                                <input type="text" class="form-control" ng-model="new_label" id="label">
+
+            <div ng-show="working">
+                <p>Working... <img src="ajax-loader.gif" /></p>
+            </div>
+
+            <div ng-hide="working">
+                <div ng-show="classify_results">
+                    <h4>Results</h4>
+                        <table class="table table-condensed">
+                            <thead>
+                                <tr>
+                                    <td>Index</td>
+                                    <td>Label</td>
+                                    <td>Probability</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr data-ng-repeat="item in classify_results">
+                                    <td>{{ item[0] }}</td>
+                                    <td>{{ item[1] }}</td>
+                                    <td>{{ item[2] }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </ul>
+                    <form role="form" name="new_label_form">
+                        <div class="row">
+                            <div class="col-xs-5">
+                                <div class="form-group">
+                                    <label for="name">New label:</label>
+                                    <input type="text" class="form-control" ng-model="new_label" id="label">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <!--
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" ng-model="new_label_public"> Add image to public training set
-                        </label>
-                    </div>
-                    -->
-                    <button type="submit" ng-click="add_label()" class="btn btn-default">Add label</button>
-                </form>
+                        <!--
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" ng-model="new_label_public"> Add image to public training set
+                            </label>
+                        </div>
+                        -->
+                        <button type="submit" ng-click="add_label()" class="btn btn-default">Add label</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

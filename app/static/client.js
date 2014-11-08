@@ -152,6 +152,8 @@ Client.prototype = {
 
     },
 
+    /*
+
     request_nn_classifier: function(nn_id) {
         // retrieves params + conf from master.
         // this might be a bit of a workaround requesting params + conf every time
@@ -173,6 +175,8 @@ Client.prototype = {
 
 
     },
+
+    */
 
     desaturate_image: function(img) {
 
@@ -199,6 +203,8 @@ Client.prototype = {
 
     receive_nn_classifier: function(d) {
 
+        console.log('received nn classifier');
+
         configuration = d.configuration;
         parameters = d.parameters.parameters;
         labels = d.labels;
@@ -219,6 +225,8 @@ Client.prototype = {
         Net.createLayers(configuration);
         Net.setParams(parameters);
 
+        console.log(labels);
+
         Net.addLabel(labels);
 
         Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
@@ -232,11 +240,11 @@ Client.prototype = {
 
         var j = arr.length;
         while(j--) {
-            labeledResults.push([Net.index2label[j], arr[j].toFixed(6)]);
+            labeledResults.push([j, Net.index2label[j], arr[j].toFixed(6)]);
         }
 
         labeledResults = labeledResults.sort(function(a,b) {
-            return b[1] - a[1];
+            return b[2] - a[2];
         });
 
         this.scope.classifier_results(labeledResults);
@@ -245,6 +253,8 @@ Client.prototype = {
 
     classify_input: function(nn_id, input) {
 
+
+        var that = this;
         var nn = this.nn_exists(nn_id);
         
         if(!nn) {
@@ -253,7 +263,26 @@ Client.prototype = {
 
         this.classify_input_data = input;
 
-        this.request_nn_classifier(nn_id);
+        pkg = {
+            boss: this.id,
+            nn_id: nn_id
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', this.host + ':8000/request-nn/', true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+        xhr.onload = function () {
+
+            that.receive_nn_classifier(JSON.parse(this.response));
+
+        }
+        
+        xhr.send(JSON.stringify(pkg));
+
+        // do request/response classifier by xhr instead of ws (due to size, again)
+
+        //this.request_nn_classifier(nn_id);
 
     },
 

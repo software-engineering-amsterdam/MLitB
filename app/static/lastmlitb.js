@@ -1527,6 +1527,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       for (var i in list_new_labels){
         var lab=list_new_labels[i];
         if (! (lab in this.label2index)){
+          console.log('add label');
           var index=currentLabelSize+N;
           this.label2index[lab]= index;
           this.index2label[index]=lab;
@@ -1536,7 +1537,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
       //find position of the last fc layer
       for (var i = this.layers.length-1; i>=0;i--){
-        if (this.layers[i].layer_type === 'fc'){
+
+        if (this.layers[i].layer_type === 'fc' || this.layers[i].layer_type === 'softmax'){
           updatePos=i;
           break;
         }
@@ -1546,6 +1548,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
       for (var i = updatePos;i<this.layers.length;i++){
         //update physical layer
+
         this.layers[i].addNeuron(N);
         //update layer_conf
         this.layer_conf[i].num_neurons+=N;

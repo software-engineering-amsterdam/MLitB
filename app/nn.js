@@ -201,6 +201,8 @@ NN.prototype = {
 
     request_nn_classifier: function(boss, d) {
 
+        /* old: by ws
+
         this.master.send_message_to_boss(boss, {
             type: 'receive_nn_classifier',
             data: {
@@ -209,6 +211,16 @@ NN.prototype = {
                 labels: this.labels
             }
         });
+
+        */
+
+        // new: return immediately by xhr
+
+        return {
+            parameters: this.parameters,
+            configuration: this.configuration,
+            labels: this.labels
+        }
 
     },
 

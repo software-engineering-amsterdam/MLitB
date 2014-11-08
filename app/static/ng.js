@@ -28,8 +28,9 @@ app.config(['$routeProvider',
     });
 }]);
 
-
 app.controller('publicclient', function ($scope, $routeParams, $rootScope, $location) {
+
+    $scope.working = false;
 
     $scope.nn_id = $routeParams.nnId;
 
@@ -42,6 +43,8 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
     $rootScope.classifier_results = function(arr) {
         
         $scope.classify_results = arr;
+
+        $scope.working = false;
 
         $scope.$apply();
 
@@ -114,6 +117,10 @@ app.controller('publicclient', function ($scope, $routeParams, $rootScope, $loca
     }
 
     handleFileSelect = function(evt) {
+
+        $scope.working = true;
+
+        $scope.$apply();
 
         var files = evt.target.files; // FileList object
 
@@ -824,7 +831,8 @@ app.controller('join', function ($scope, $rootScope) {
 
       $scope.sort = value;
       $scope.reverse = false;
-  }
+    
+    }
 
     $scope.join = function(nn) {
         $scope.client.start_slave(nn);
