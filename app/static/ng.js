@@ -450,6 +450,9 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
 
             layers_length -= 1; // do not do updateLayerTrain on last layer, is useless anyway.
 
+            // I think we do this if we drop the last layer, if we don't then we still have
+            // neurons in the last layer
+            configuration[configuration.length-1].num_neurons = 0;
         }
 
         var train;
@@ -484,7 +487,9 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
         var configuration = new_nn.conf;
         // set num_neurons to 0. Neurons get added later through addLabel
         // do not change parameters.
-        configuration[configuration.length-1].num_neurons = 0;
+
+        // move the following code inside drop true
+        // configuration[configuration.length-1].num_neurons = 0;
 
         nn_to_send = angular.copy(nn);
         nn_to_send.configuration = configuration;

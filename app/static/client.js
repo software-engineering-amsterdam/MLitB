@@ -227,7 +227,11 @@ Client.prototype = {
 
         console.log(labels);
 
-        Net.addLabel(labels);
+        if (configuration[configuration.length-1].num_neurons==0){
+            Net.addLabel(labels);
+        } else {
+            Net.setLabel(labels);    
+        }
 
         Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
         Input.data = this.classify_input_data;
