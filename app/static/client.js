@@ -201,15 +201,11 @@ Client.prototype = {
 
     },
 
-    receive_nn_classifier: function(d) {
+    receive_nn_classifier: function(received_nn) {
 
-        console.log('received nn classifier');
+        var r_nn = JSON.parse(received_nn);
 
-        configuration = d.configuration;
-        parameters = d.parameters.parameters;
-        labels = d.labels;
-
-        vol_input = configuration[0];
+        var vol_input = r_nn.configuration[0];
 
         if(vol_input.depth == 1 && this.classify_input_data.length == ((vol_input.sx * vol_input.sy) * 3)) {
             // desaturate image
@@ -221,13 +217,18 @@ Client.prototype = {
             return;
         }
 
-        Net = new mlitb.Net();
-        Net.createLayers(configuration);
-        Net.setParams(parameters);
+        var Net = new mlitb.Net();
+        Net.createLayers(r_nn.configuration);                
+        Net.setParams(r_nn.parameters.parameters);
 
-        console.log(labels);
+        console.log('softmax layer out depth before addlabel:');
+        console.log(Net.layers[Net.layers.length-1].out_depth);
 
-        Net.addLabel(labels);
+        //Net.addLabel(r_nn.labels);
+
+        console.log('softmax layer out depth after addlabel:');
+        console.log(Net.layers[Net.layers.length-1].out_depth);
+
 
         Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
         Input.data = this.classify_input_data;
@@ -274,7 +275,9 @@ Client.prototype = {
 
         xhr.onload = function () {
 
-            that.receive_nn_classifier(JSON.parse(this.response));
+            console.log('got correct nn');
+
+            that.receive_nn_classifier(this.response);
 
         }
         
@@ -641,7 +644,10 @@ Client.prototype = {
             console.log(' $$ ' + this.response);
 
         }
-        
+            
+        console.log('adding NN:');
+        console.log(pkg);
+
         xhr.send(JSON.stringify(pkg));
 
     },

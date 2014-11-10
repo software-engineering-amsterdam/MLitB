@@ -1527,7 +1527,6 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       for (var i in list_new_labels){
         var lab=list_new_labels[i];
         if (! (lab in this.label2index)){
-          console.log('add label');
           var index=currentLabelSize+N;
           this.label2index[lab]= index;
           this.index2label[index]=lab;
@@ -1602,6 +1601,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
 
     getPrediction : function(){
+
+      console.log(this.layers[this.layers.length-1]);
+
       return this.layers[this.layers.length-1].V_out;
     },
 

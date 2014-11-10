@@ -484,6 +484,10 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
         var configuration = new_nn.conf;
         // set num_neurons to 0. Neurons get added later through addLabel
         // do not change parameters.
+
+        console.log('neurons?');
+        console.log(configuration[configuration.length-1]);
+
         configuration[configuration.length-1].num_neurons = 0;
 
         nn_to_send = angular.copy(nn);
@@ -504,6 +508,12 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
         } else {
             nn_to_send.drop_last_layer = false;
         }
+
+        console.log('added labels:');
+        console.log(labels);
+
+        console.log('nn config:');
+        console.log(configuration);
 
         $rootScope.client.add_nn(nn_to_send);
 

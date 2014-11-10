@@ -575,8 +575,7 @@ Master.prototype = {
             }
 
             var response = nn.request_nn_classifier(boss);
-
-            
+           
             res.writeHead(200, {'content-type': 'application/json'});
             res.write(JSON.stringify(response));
             res.end();
