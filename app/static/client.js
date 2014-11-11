@@ -229,6 +229,11 @@ Client.prototype = {
         console.log('softmax layer out depth after addlabel:');
         console.log(Net.layers[Net.layers.length-1].out_depth);
 
+        if (r_nn.configuration[r_nn.configuration.length-1].num_neurons==0){
+            Net.addLabel(r_nn.labels);
+        } else {
+            Net.setLabel(r_nn.labels);    
+        }
 
         Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
         Input.data = this.classify_input_data;
