@@ -467,6 +467,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return this.V_out;
     },
     backward : function () {
+      if (!this.is_train){return ;}
       var V_in = this.V_in;
       // var hx = Math.floor(this.sx/2.0);
       // var hy = Math.floor(this.sy/2.0);
@@ -507,6 +508,16 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           };  
         }
       };
+    },
+    addNeuron : function(N){
+      this.out_depth+=N;
+      this.n_params+=N;
+      for (var i=0;i<N;i++){
+        this.filters.push(new global.Vol(this.sx, this.sy, N));
+      }
+      var addedBias = new global.Vol(1,1, N, 0.1);
+      this.biases.data = this.biases.data.concat(addedBias.data);
+      this.biases.drv = this.biases.drv.concat(addedBias.drv);
     },
     getParamsAndGrads : function (ignore_is_train) {
       var out = [];
@@ -662,6 +673,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return this.V_out;
     },
     backward : function () {
+      if (!this.is_train){return ;}
       var drv = this.V_in.drv;
       var w = this.filters.data;
       var dw = this.filters.drv
@@ -844,6 +856,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       }
       
     },
+    addNeuron : function(N){
+      this.out_depth += N; 
+    },
     getParamsAndGrads : function () {
       return [];
     },
@@ -908,6 +923,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         else V_in_drv[i] = Z_drv[i];
       }
       this.V_in.drv = V_in_drv;
+    },
+    addNeuron : function(N){
+      this.out_depth += N; 
     },
     getParamsAndGrads : function () {
       return [];
@@ -999,7 +1017,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
     addNeuron : function(N){
       this.num_inputs +=N; 
-      this.out_depth = this.num_inputs; 
+      this.out_depth += N; 
     },
     getParamsAndGrads : function () {
       return [];
@@ -1075,6 +1093,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         return loss;  
       }
     },
+    addNeuron : function(N){
+      this.out_depth += N; 
+    },
     getParamsAndGrads : function () {
       return [];
     },
@@ -1137,7 +1158,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     //later option for average
     this.pool_type = typeof conf.pool_type !=='undefined' ? conf.pool_type : 'max'; 
     // computed
-    this.out_depth = this.in_depth;
+    this.out_depth = conf.in_depth;
     // this.out_sx = Math.floor(this.in_sx / this.stride); // compute size of output volume
     // this.out_sy = Math.floor(this.in_sy / this.stride);
     this.out_sx = Math.round((this.in_sx + this.pad * 2 - this.sx) / this.stride + 1);
@@ -1214,17 +1235,48 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       V_in.drv = global.zeros(V_in.data.length); // zero out gradient wrt data
       var V_in_drv = V_in.drv;
       var Z_drv = this.V_out.drv;
-      var max_pos_x = this.max_pos_x;
-      var max_pos_y = this.max_pos_y;
-      var n = 0;
-      for(var d=0;d<this.out_depth;d++) {
-        for (var fy = 0; fy < this.out_sy; fy++) {
-          for (var fx = 0; fx < this.out_sx; fx++, n++) {
-            var idx = V_in.getIndex(max_pos_x[n], max_pos_y[n],d);
-            V_in_drv[idx] += Z_drv[n];
+      if (this.pool_type==='avg'){
+        var n=0;
+        for (var d = 0; d < this.out_depth; d++) {
+          var hx = -this.pad;
+          var hy = -this.pad;
+          for (var sty = 0, oy=0; oy < this.out_sy; sty+=this.stride, oy++) {
+            hx = -this.pad;
+            for (var stx = 0, ox=0; ox < this.out_sx; stx+=this.stride, ox++,n++){
+              // distribute delta evenly
+              var delta=Z_drv[n]/(this.sx*this.sy);
+              for (var fyy = sty; fyy < this.sy+sty; fyy++) {
+                for (var fxx = stx; fxx < this.sx+stx; fxx++) {
+                  var fx = fxx + hx;
+                  var fy = fyy + hy;
+                  if (fx < V_in.sx && fy < V_in.sy){
+                    // v = V.get(fx,fy,d); // try function call here. compared with non function call later
+                    var idx=((V_in.sx * fy)+fx)+V_in.sx*V_in.sy*d;
+                    V_in_drv[idx]+=delta;
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else { //max pooling
+        var max_pos_x = this.max_pos_x;
+        var max_pos_y = this.max_pos_y;
+        var n = 0;
+        for(var d=0;d<this.out_depth;d++) {
+          for (var fy = 0; fy < this.out_sy; fy++) {
+            for (var fx = 0; fx < this.out_sx; fx++, n++) {
+              var idx = V_in.getIndex(max_pos_x[n], max_pos_y[n],d);
+              V_in_drv[idx] += Z_drv[n];
+            };
           };
-        };
+        }
       }
+    },
+    addNeuron : function(N){
+      this.out_depth+=N;
+      this.max_pos_x = this.max_pos_x.concat(global.zeros(this.out_sx*this.out_sy*N));
+      this.max_pos_y = this.max_pos_y.concat(global.zeros(this.out_sx*this.out_sy*N));
     },
     getParamsAndGrads : function () {
       return [];
@@ -1324,6 +1376,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       // for (var i = 0; i < N; i++) {
       //   if (this.dropped === false){V_in_drv = this.V_in_drv[i]}
       // };
+    },
+    addNeuron : function(N){
+      
     },
     getParamsAndGrads : function () {
       return [];
@@ -1463,6 +1518,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
 
     removeLayer : function(rm_conf_idx){
+      //removeLayer : remove all layers from rm_conf_idx to the end 
+      //layers idx start from 0
       //can't remove input layer for now
       //right now only applicable to the last layer
       //it's a bit tricky to remove the middle layer
@@ -1477,11 +1534,11 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         for (var i in this.layers){
           var l = this.layers[i]
           if (l.conf_idx < rm_conf_idx){prev_layer=l.conf_idx;}
-          else if (l.conf_idx==rm_conf_idx){
+          else if (l.conf_idx>=rm_conf_idx){
             removed_layers_idx.push(i);
             console.log('remove layer : ',l.layer_type);
           }
-          else if (l.conf_idx> rm_conf_idx){next_layer=l.conf_idx; break;}
+          // else if (l.conf_idx> rm_conf_idx){next_layer=l.conf_idx; break;}
         }
         //remove physical layer, splice from the first removed index, for length of removed index
         this.layers.splice(removed_layers_idx[0],removed_layers_idx.length);
@@ -1493,13 +1550,14 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
 
     addLayer : function(conf){
-      var old_size = this.layers.length;
-      var add_layer = this.parseConfs(conf);
+      // var old_size = this.layers.length;
+      var layer_conf = this.parseConfs(conf);
+      this.layer_conf=this.layer_conf.concat(layer_conf);
       for (i in conf){
         this.conf.push(conf[i]);
       }
-      this.constructNetwork(add_layer,this.layers);
-
+      this.constructNetwork(layer_conf,this.layers);
+ 
     },
 
     //update is_train after creating the network
@@ -1537,8 +1595,10 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
       //find position of the last fc layer
       for (var i = this.layers.length-1; i>=0;i--){
-
-        if (this.layers[i].layer_type === 'fc' || this.layers[i].layer_type === 'softmax'){
+ 
+        var lt =this.layers[i].layer_type;
+        console.log(i,lt);
+        if (lt === 'fc' || lt ==='conv'){
           updatePos=i;
           break;
         }
@@ -1547,11 +1607,21 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       //add new neuron for the last fc and all layers after it
 
       for (var i = updatePos;i<this.layers.length;i++){
+        console.log('length',this.layer_conf.length,i);
+        // var f = this.layer_conf[i];
         //update physical layer
-
-        this.layers[i].addNeuron(N);
+ 
+        var layer = this.layers[i];
+        layer.addNeuron(N);
+        if (layer.layer_type=='fc'){
+          this.layer_conf[i].num_neurons+=N;
+          this.conf[layer.conf_idx].num_neurons+=N;  
+        } else if (layer.layer_type=='conv'){
+          this.layer_conf[i].filters+=N;
+          this.conf[layer.conf_idx].filters+=N;  
+        }
         //update layer_conf
-        this.layer_conf[i].num_neurons+=N;
+        
       }
 
       return this.label2index;
@@ -1796,6 +1866,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
             if (typeof ssg[j]==='undefined'){
               ssg.push(0.0);
             }
+            ssg[j]+=Math.pow(g[j],2);
             var tess = Math.sqrt(ssg[j]);
             // console.log('tess',tess);
             if (tess<=1){
