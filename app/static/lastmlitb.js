@@ -1744,7 +1744,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     // transform mnist data to {label : []}
     getConfigsAndParams : function(){
       var json = {};
-      json.params = this.getParams();
+      json.params = this.getParams(true);
       json.configs = this.conf;
       json.label2index = this.label2index;
       json.index2label = this.index2label;
