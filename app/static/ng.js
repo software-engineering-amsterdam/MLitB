@@ -430,6 +430,8 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
 
         new_nn.setConfigsAndParams(nn_file);
 
+        var configuration = new_nn.conf;
+
         if($scope.nn.drop_last_layer == true) {
 
             // cut off last layer (it removes from conf AND parameters)
@@ -484,7 +486,7 @@ app.controller('new-file', function ($scope, $rootScope, $location) {
         }
 
         // use new configuration after update is_train
-        var configuration = new_nn.conf;
+        configuration = new_nn.conf;
         // set num_neurons to 0. Neurons get added later through addLabel
         // do not change parameters.
 

@@ -116,7 +116,7 @@ var fileupload = function(data) {
 }
 
 var download_parameters = function() {
-
+    console.log('download parameter from stats.js');
     interrupt = true;
 
     var a = Net.getConfigsAndParams();
