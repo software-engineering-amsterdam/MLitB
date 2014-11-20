@@ -139,31 +139,35 @@ SGDTrainer.prototype = {
       console.log('totalVector : ',totalVector);
       console.log('error : ',totalError/totalVector);
 
-      // console.log('before ',JSON.stringify(this.last_params[2].params));    
       //iterate over each param and grad vector
+      //this.last_params is a list containing the current state of parameters/weights of all layers
+      //e.g there are two conv layers, each has 2 and 3 filters, 
+      //then last_params will store [conv1_filter1,conv1_filter2,conv1_bias,conv2_filter1,...] total 7 parameter vectors.
+      //thus, i is index to the parameter/bias vector.
       for (var i = 0; i < this.last_params.length; i++) {
-        // var pg = this.last_params[i];
         var p = this.last_params[i];
         var g = [];
 
-        //add up all gradient vectors. grad length = param length
+        //for example here we want to update conv1_filter1
+        //add up all gradient vectors corresponds to conv1_filter1 from clients. grad length = param length
         for (var gi = 0; gi < p.length; gi++) {
           total_gi = 0.0;
           for (var k = 0; k < new_parameters.length; k++) {
             //again ignore grads from new client
             if (new_parameters[k].parameters_type == 'grads'){
-              // if (typeof new_parameters[k].parameters == null){
-              //   console.log(JSON.stringify(new_parameters[k]));
-              //   console.log(this.iteration);  
-              // }
               total_gi += new_parameters[k].parameters[i][gi];
             }
           }
           g.push(total_gi);
         };
-        var plen = p.length;
+
+        var plen = p.length; 
         var lg = this.last_grads[i];
+        //ssg is used for adagrad
         var ssg = this.sum_square_gads[i];
+        //plen = parameter length, e.g length of conv1_filter1 (kernel_size^2*depth of previous output layer)
+        //thus j, is index for parameter/weight value. 
+        //e.g conv1_filter1=[0.123, 0.345, 0.567], then plen=3, and i is index to those values
         for (var j = 0; j < plen; j++) {
           this.l2_loss += this.l2_decay*p[j]*p[j];
           this.l1_loss += this.l1_decay*Math.abs(p[j]);
@@ -185,8 +189,8 @@ SGDTrainer.prototype = {
           }
           // tess=1;
           var dw = (1.0-this.momentum)*(this.learning_rate/tess)*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lgj;
-          p[j] -= dw;
-          lgj = dw;
+          p[j] -= dw; //x = x - gradient
+          lgj = dw; //save the last gradient values
           g[j] = 0.0;
         }
       }
