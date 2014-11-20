@@ -745,13 +745,13 @@ NN.prototype = {
             //Create object SGD Trainer
             trainer_param = {
 
-                learning_rate : 0.01, //starting value of learning rate
+                learning_rate : 0.1, //starting value of learning rate
                 lr_decay : 0.999, //multiplication factor
-                lr_decay_interval : 2, //iteration interval of learning rate decay
+                lr_decay_interval : 20, //iteration interval of learning rate decay
                 lr_threshold : 0.00001, //0.001, //lower bound of learning rate
                 momentum : 0.9,
                 batch_size : 16, 
-                l2_decay : 0.000, 
+                l2_decay : 0.0005, 
                 l1_decay : 0.000
 
             }
