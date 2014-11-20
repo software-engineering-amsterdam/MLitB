@@ -1354,7 +1354,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       V_in_drv = global.zeros(V_in_drv.length); // zero out gradient wrt data
       var N = this.V_in.data.length;
       for (var i = 0; i < this.drop_index.length; i++) {
-        idx = this.drop_index[i];
+        var idx = this.drop_index[i];
         V_in_drv[idx]= this.V_out.drv[idx];
       };
       // for (var i = 0; i < N; i++) {
