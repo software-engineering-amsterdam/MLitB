@@ -1613,6 +1613,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
     setLabel : function(list_labels){
       var orderedLabel = [];
+      this.label2index = {};
+      this.index2label = {};
       for (var i=0;i<list_labels.length;i++){
         var lab = list_labels[i];
         if (! this.label2index.hasOwnProperty(lab)){
@@ -1635,8 +1637,6 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     backward : function (Y) {
       //get label if input not number. 
       //label2index must be set trough setLabel function
-      this.label2index = {};
-      this.index2label = {};
       Y = typeof Y === 'number' ? Y : this.label2index[Y]
       if (Y==='undefined'){console.log('Error : Label not found...')}
       var loss = this.layers[this.layers.length-1].backward(Y);
