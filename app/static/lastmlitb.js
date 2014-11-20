@@ -421,7 +421,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     forward : function (V, is_training) {
       this.V_in = V;
       var weightMult;
-      if (is_training){
+      if (!is_training){
         weightMult = this.prev_drop_prob*this.weightMult;  
       } else{
         weightMult =1*this.weightMult;
@@ -654,7 +654,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   FullConnLayer.prototype = {
     forward : function (V, is_training) {
       var weightMult;
-      if (is_training){
+      if (!is_training){
         weightMult = this.prev_drop_prob*this.weightMult;  
       } else{
         weightMult =1*this.weightMult;
@@ -1626,10 +1626,11 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return this.label2index;
     },
 
-    forward : function (X) {
+    forward : function (X,is_training) {
+      is_training = typeof is_training !== "undefined" ? is_training : false;
       var Prev_out = X;
       for (var i = 0; i < this.layers.length; i++) {
-        var V_out = this.layers[i].forward(Prev_out);
+        var V_out = this.layers[i].forward(Prev_out,is_training);
         Prev_out = V_out;
       };
     },
