@@ -135,6 +135,8 @@ SGDTrainer.prototype = {
       this.total_data_seen+=totalVector;
       console.log('learning rate : ', this.learning_rate);
       console.log('total data seen : ', this.total_data_seen);
+      console.log('totalError : ',totalError);
+      console.log('totalVector : ',totalVector);
       console.log('error : ',totalError/totalVector);
 
       // console.log('before ',JSON.stringify(this.last_params[2].params));    
