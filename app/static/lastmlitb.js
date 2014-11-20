@@ -426,6 +426,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       } else{
         weightMult =1*this.weightMult;
       }
+      //override for testing
+      // weightMult = 1;
+
       // var hx = Math.floor(this.sx/2.0);
       // var hy = Math.floor(this.sy/2.0);
 
@@ -659,6 +662,10 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       } else{
         weightMult =1*this.weightMult;
       }
+
+      //override to test
+      // weightMult = 1;
+
       this.V_in = V;
       var in_data = V.data; //since full conn, dimension is not important, can traverse and calculate directly without get method
       var Out = new global.Vol(1, 1, this.out_depth);
@@ -1325,7 +1332,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.out_depth = conf.in_depth;
     this.drop_prob = typeof conf.drop_prob === "number" ? conf.drop_prob : 0.5;
     this.layer_type = 'dropout';
-    this.drop_index = [];
+    this.not_drop_indexes = [];
     this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
     // this.dropped = new Vol(this.out_sx, this.out_sy, this.out_depth, false);
   }
@@ -1337,7 +1344,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
       if (is_training){
         for (var i = 0; i < Z.data.length; i++) {
-          if (Math.random()<this.drop_prob){Z.data[i]=0; this.drop_index.push(i)}
+          if (Math.random()<this.drop_prob){Z.data[i]=0; }
+          else {this.not_drop_indexes.push(i);}
         };  
       }
       // for (var i = 0; i < Z.data.length; i++) {
@@ -1349,12 +1357,12 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
     backward : function () {
       // console.log('Y : '+Y);
-      var Z_data = this.V_out.data;
+      // var Z_data = this.V_out.data;
       var V_in_drv = this.V_in.drv; 
       V_in_drv = global.zeros(V_in_drv.length); // zero out gradient wrt data
       var N = this.V_in.data.length;
-      for (var i = 0; i < this.drop_index.length; i++) {
-        var idx = this.drop_index[i];
+      for (var i = 0; i < this.not_drop_indexes.length; i++) {
+        var idx = this.not_drop_indexes[i];
         V_in_drv[idx]= this.V_out.drv[idx];
       };
       // for (var i = 0; i < N; i++) {
