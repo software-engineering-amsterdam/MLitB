@@ -412,18 +412,26 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     };
     this.biases = new global.Vol(1,1, this.out_depth, 0.1);
 
-    this.conv_type = typeof conf.conv_type !=='undefined' ? conf.conv_type : 'same'; //probably for the future we want to try 'valid' and 'full' option. 
-    
+    this.prev_drop_prob = typeof conf.prev_drop_prob !== 'undefined' ? conf.prev_drop_prob : 1; //default : train every layer
+    this.weightMult = typeof conf.weightMult !== 'undefined' ? conf.weightMult : 1; //default : train every layer
     this.layer_type = 'conv';
   }
 
   ConvLayer.prototype = {
     forward : function (V, is_training) {
       this.V_in = V;
+      var weightMult;
+      if (is_training){
+        weightMult = this.prev_drop_prob*this.weightMult;  
+      } else{
+        weightMult =1*this.weightMult;
+      }
       // var hx = Math.floor(this.sx/2.0);
       // var hy = Math.floor(this.sy/2.0);
 
       var dim = this.out_sx*this.out_sy;
+      var in_dim = V.sx*V.sy;
+      var fil_dim = this.sx*this.sy;
 
       var A = new global.Vol(this.out_sx, this.out_sy, this.out_depth,0.0);
       var A_data = A.data;
@@ -432,46 +440,38 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         var b=this.biases.data[i];
         for (var j=0;j<A.sx*A.sy;j++,ij++){A_data[ij]=b}
       };
-      for (var od=0;od<A.depth;od++) {
-        
+      var io=0;
+      for (var od=0;od<this.out_depth;od++) {
         var f=this.filters[od]; //filter/weight data
-        for (var id=0,oi=od*dim;id<f.depth;id++,oi=od*dim){ //reset index of output data. we want to refill from x=0 y=0 again
-          var hx = -this.pad |0;
-          var hy = -this.pad |0;
-          // for (var cy=0;cy<V.sy;cy+=this.stride) { //if use floor stride, then add an index here
-          for (var cy=0,oy=0;oy<this.out_sy;oy++,cy+=this.stride) { //if use floor stride, then add an index here
-            hx = -this.pad |0;
-            // for (var cx=0;cx<V.sx; cx+=this.stride,oi++) {
-            for (var cx=0,ox=0;ox<this.out_sx; ox++,cx+=this.stride,oi++) {
-              var a=0.0;
-              var fi=id*f.sx*f.sy; //index for filter data
-              for (var fy=cy;fy<f.sy+cy;fy++) {
-                for (var fx=cx;fx<f.sx+cx;fx++,fi++) {
-                  var iy=fy+hy;
-                  var ix=fx+hx;
-                  // console.log('iy, ix, fi : ',iy,ix,fi);
+        for (var oy=0,by=-this.pad;oy<this.out_sy;oy++,by+=this.stride){
+          for (var ox=0,bx=-this.pad;ox<this.out_sx;ox++,bx+=this.stride,io++){
+            var a=0.0;
+            for (var fd=0;fd<this.in_depth;fd++){
+              for (var fy=0;fy<this.sy;fy++){
+                for (var fx=0;fx<this.sx;fx++){
+                  var ix=bx+fx;
+                  var iy=by+fy;
                   if (ix>=0&&iy>=0&&ix<V.sx&&iy<V.sy){
                     // a+=f.data[fi]*V.get(ix,iy,id); //try function call here
-                    a+=f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
+                    a+=f.data[((f.sx * fy)+fx)+fil_dim*fd]*V.data[((V.sx * iy)+ix)+in_dim*fd]; //faster
                   }
-                };
-              };
-              // if(id==0){a+=this.biases.data[od]} //slower
-              // console.log(a);
-              A_data[oi]+=a;
-            };
-          };  
+                }
+              }
+            }
+            A_data[io]+=a*weightMult;
+          }
         }
       };
       this.V_out = A;
       return this.V_out;
     },
     backward : function () {
-      if (!this.is_train){return ;}
+      // if (!this.is_train){return ;}
       var V_in = this.V_in;
       // var hx = Math.floor(this.sx/2.0);
       // var hy = Math.floor(this.sy/2.0);
       var dim = this.out_sx*this.out_sy;
+      var in_dim = V_in.sx*V_in.sy;
 
       var V_out = this.V_out;
       //this one is faster
@@ -499,7 +499,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
                     // a+=f.data[fi]*V.data[((V.sx * iy)+ix)+V.sx*V.sy*id]; //faster
                     // console.log(ix,iy,id);
                     V_in.drv[((V_in.sx * iy)+ix)+V_in.sx*V_in.sy*id] += f.data[fi]*V_out.drv[oi];
-                    f.drv[fi]+= V_in.data[((V_in.sx * iy)+ix)+V_in.sx*V_in.sy*id]*V_out.drv[oi];
+                    f.drv[fi]+= V_in.data[((V_in.sx * iy)+ix)+in_dim*id]*V_out.drv[oi];
                   }
                 };
               };
@@ -647,10 +647,18 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.n_biases = 1;
     this.layer_type = 'fc';
     this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
+    this.prev_drop_prob = typeof conf.prev_drop_prob !== 'undefined' ? conf.prev_drop_prob : 1; //default : train every layer
+    this.weightMult = typeof conf.weightMult !== 'undefined' ? conf.weightMult : 1; //default : train every layer
   }
 
   FullConnLayer.prototype = {
     forward : function (V, is_training) {
+      var weightMult;
+      if (is_training){
+        weightMult = this.prev_drop_prob*this.weightMult;  
+      } else{
+        weightMult =1*this.weightMult;
+      }
       this.V_in = V;
       var in_data = V.data; //since full conn, dimension is not important, can traverse and calculate directly without get method
       var Out = new global.Vol(1, 1, this.out_depth);
@@ -666,7 +674,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           a += in_data[j]*w[idx]
         };
         // bias will be added later here
-        a += biases.data[i];
+        a = a*weightMult+biases.data[i];
         out_data[i] = a;
       };
       this.V_out = Out;
@@ -779,34 +787,6 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
   var Vol = global.Vol;
 
-  var fw_fn =  {
-    sigmoid : function (a) {
-      return 1/(1+Math.exp(-a));
-    },
-
-    sigmoid_bipolar : function (a) {
-      return -1 + 2/(1 + Math.exp(-a));
-    },
-
-    linear : function (a) {
-      return a
-    }
-  }
-
-  var bw_fn = {
-    sigmoid : function (a) {
-      return (1/(1+Math.exp(-a)))*(1-1/(1+Math.exp(-a)));
-    },
-
-    sigmoid_bipolar : function (a) {
-      return 0.5 * (1 + (-1 + 2/(1 + Math.exp(-a)))) * (1 - (-1 + 2/(1 + Math.exp(-a))) );
-    },
-
-    linear : function (a) {
-      return 1
-    }
-  }
-
   var SigmoidLayer = function (conf) {
     var conf = conf || {};
     // assume conf contains information about the number of neurons and also the number connection come to each neuron
@@ -815,6 +795,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.out_sy = conf.in_sy;
     this.out_depth = conf.in_depth;
     this.layer_type = 'sigmoid';
+    this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
   }
 
   SigmoidLayer.prototype = {
@@ -897,6 +878,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.out_sy = conf.in_sy;
     this.out_depth = conf.in_depth;
     this.layer_type = 'relu';
+    this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
   }
 
   ReLuLayer.prototype = {
@@ -1057,6 +1039,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.out_sx = conf.in_sx;
     this.out_sy = conf.in_sy;
     this.out_depth = conf.in_depth;
+    this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
     this.layer_type = 'linear';
   }
 
@@ -1131,8 +1114,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   global.SoftmaxLayer = SoftmaxLayer;
   global.ReLuLayer = ReLuLayer;
   global.SigmoidLayer = SigmoidLayer;
-  global.fw_fn = fw_fn;
-  global.bw_fn = bw_fn;
+;
 })(mlitb);
 (function(global) {
   "use strict";
@@ -1167,6 +1149,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.max_pos_x = global.zeros(this.out_sx*this.out_sy*this.out_depth);
     this.max_pos_y = global.zeros(this.out_sx*this.out_sy*this.out_depth);
     this.layer_type = 'pool';
+    this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
   }
 
   PoolLayer.prototype = {
@@ -1343,6 +1326,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.drop_prob = typeof conf.drop_prob === "number" ? conf.drop_prob : 0.5;
     this.layer_type = 'dropout';
     this.drop_index = [];
+    this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
     // this.dropped = new Vol(this.out_sx, this.out_sy, this.out_depth, false);
   }
 
@@ -1399,6 +1383,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       json.out_depth = this.out_depth;
       json.out_sx = this.out_sx;
       json.out_sy = this.out_sy;
+      json.conf_idx=this.conf_idx;
       json.layer_type = this.layer_type;
       json.drop_prob = this.drop_prob;
       return json;
@@ -1407,6 +1392,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       this.out_sx = json.out_sx;
       this.out_sy = json.out_sy;
       this.out_depth = json.out_depth;
+      this.conf_idx = json.conf_idx;
       this.drop_prob = json.drop_prob;
       this.layer_type = json.layer_type;
       this.drop_index = [];
@@ -1443,17 +1429,18 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         var conf_idx = i+this.conf.length;
         // var conf_idx =i;
         c.conf_idx = conf_idx;
+        c.prev_drop_prob = this.last_drop_prob;
         layer_conf.push(c);
 
         if (c.type === 'conv'){
           if (typeof c.activation !== 'undefined'){
-            layer_conf.push({type : c.activation, conf_idx: conf_idx});
+            layer_conf.push({type : c.activation, conf_idx: conf_idx, is_train:c.is_train});
           } else {
-            layer_conf.push({type : 'relu', conf_idx:conf_idx}); //default activation function for conv
+            layer_conf.push({type : 'relu', conf_idx:conf_idx, is_train:c.is_train}); //default activation function for conv
           }
-          if (typeof c.drop_prob !== 'undefined'){
-            layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx})
-          }
+          // if (typeof c.drop_prob !== 'undefined'){
+          //   layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx, is_train:c.is_train})
+          // }
         } else if (c.type === 'fc'){
           if (typeof c.num_neurons === 'undefined'){
             c.num_neurons = 0;
@@ -1462,25 +1449,22 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
             c.num_neurons = 0; 
           }
           if (typeof c.activation !== 'undefined'){
-            layer_conf.push({type : c.activation, conf_idx:conf_idx});
+            layer_conf.push({type : c.activation, conf_idx:conf_idx, is_train:c.is_train});
           } else {
-            layer_conf.push({type : 'linear', conf_idx:conf_idx}); //default activation function for fc
+            layer_conf.push({type : 'linear', conf_idx:conf_idx, is_train:c.is_train}); //default activation function for fc
           }
-          if (typeof c.drop_prob !== 'undefined'){
-            layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx})
-          }
+          // if (typeof c.drop_prob !== 'undefined'){
+          //   layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx, is_train:c.is_train})
+          // }
         } else if (c.type === 'pool'){
-          if (typeof c.sx === 'undefined'){console.log('ERROR : pool size parameter \'sx\' is not defined')}
-          if (typeof c.stride === 'number'){
-            var sz = typeof c.sy === 'number' ? Math.min(c.sx,c.sy) : c.sx;
-            if (c.stride > sz){console.log('BAD PARAMETER : stride should <= pooling size')}
-          } else {
-            console.log("WARNING : \'stride\' parameter is not defined. Using default = 1")
-          }
-          if (typeof c.drop_prob !== 'undefined'){
-            layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx})
-          }
+          // if (typeof c.drop_prob !== 'undefined'){
+          //   layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx, is_train:c.is_train})
+          // }
         }
+        if (typeof c.drop_prob !== 'undefined'){
+          layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx, is_train:c.is_train})
+        }
+        this.last_drop_prob = c.drop_prob;
       };
       return layer_conf; //this structure can be saved and loaded in the future
     },
@@ -1651,24 +1635,19 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     backward : function (Y) {
       //get label if input not number. 
       //label2index must be set trough setLabel function
+      this.label2index = {};
+      this.index2label = {};
       Y = typeof Y === 'number' ? Y : this.label2index[Y]
       if (Y==='undefined'){console.log('Error : Label not found...')}
       var loss = this.layers[this.layers.length-1].backward(Y);
       for (var i = this.layers.length - 2; i >= 0; i--) {
-        this.layers[i].backward();
+        if (this.layers[i].is_train){
+          this.layers[i].backward();  
+        } else {
+          break;
+        }
       };
       return loss;
-    },
-
-    saveNetwork : function (){
-      var json = {}
-      json.layer_conf = this.layer_conf;
-      return json;
-    },
-
-    loadNetwork : function(json){
-      this.layer_conf = json.layer_conf;
-      this.constructNetwork();
     },
 
     getPrediction : function(){
