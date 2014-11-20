@@ -412,7 +412,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     };
     this.biases = new global.Vol(1,1, this.out_depth, 0.1);
 
-    this.prev_drop_prob = typeof conf.prev_drop_prob !== 'undefined' ? conf.prev_drop_prob : 1; //default : train every layer
+    // this.prev_drop_prob = typeof conf.prev_drop_prob !== 'undefined' ? conf.prev_drop_prob : 1; //default : train every layer
     this.weightMult = typeof conf.weightMult !== 'undefined' ? conf.weightMult : 1; //default : train every layer
     this.layer_type = 'conv';
   }
@@ -421,11 +421,14 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     forward : function (V, is_training) {
       this.V_in = V;
       var weightMult;
-      if (is_training){
-        weightMult = this.prev_drop_prob*this.weightMult;  
+      if (!is_training){
+        weightMult = this.weightMult;  
       } else{
-        weightMult =1*this.weightMult;
+        weightMult =1;
       }
+      //override for testing
+      // weightMult = 1;
+
       // var hx = Math.floor(this.sx/2.0);
       // var hy = Math.floor(this.sy/2.0);
 
@@ -647,18 +650,22 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.n_biases = 1;
     this.layer_type = 'fc';
     this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
-    this.prev_drop_prob = typeof conf.prev_drop_prob !== 'undefined' ? conf.prev_drop_prob : 1; //default : train every layer
+    // this.prev_drop_prob = typeof conf.prev_drop_prob !== 'undefined' ? conf.prev_drop_prob : 1; //default : train every layer
     this.weightMult = typeof conf.weightMult !== 'undefined' ? conf.weightMult : 1; //default : train every layer
   }
 
   FullConnLayer.prototype = {
     forward : function (V, is_training) {
       var weightMult;
-      if (is_training){
-        weightMult = this.prev_drop_prob*this.weightMult;  
+      if (!is_training){
+        weightMult = this.weightMult;  
       } else{
-        weightMult =1*this.weightMult;
+        weightMult =1;
       }
+
+      //override to test
+      // weightMult = 1;
+
       this.V_in = V;
       var in_data = V.data; //since full conn, dimension is not important, can traverse and calculate directly without get method
       var Out = new global.Vol(1, 1, this.out_depth);
@@ -1325,20 +1332,26 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.out_depth = conf.in_depth;
     this.drop_prob = typeof conf.drop_prob === "number" ? conf.drop_prob : 0.5;
     this.layer_type = 'dropout';
-    this.drop_index = [];
+    // this.undropped_index = [];
     this.is_train = typeof conf.is_train !== 'undefined' ? conf.is_train : true; //default : train every layer
-    // this.dropped = new Vol(this.out_sx, this.out_sy, this.out_depth, false);
+    this.dropped = global.zeros(this.out_sx*this.out_sy*this.out_depth);
   }
 
   DropOutLayer.prototype = {
     forward : function (V, is_training) {
       this.V_in = V;
       var Z = V.clone();
-
+      var N = Z.data.length;
       if (is_training){
-        for (var i = 0; i < Z.data.length; i++) {
-          if (Math.random()<this.drop_prob){Z.data[i]=0; this.drop_index.push(i)}
+        for (var i = 0; i < N; i++) {
+          if (Math.random()<this.drop_prob){Z.data[i]=0; this.dropped[i]=true;}
+          else {
+            this.dropped[i]=false;
+            // this.undropped_index.push(i);
+          }
         };  
+      } else {
+        for(var i=0;i<N;i++) { Z.data[i]*=this.drop_prob; }
       }
       // for (var i = 0; i < Z.data.length; i++) {
       //   if (Math.random()<this.drop_prob){Z.data[i]=0; this.dropped[i]=true;}
@@ -1349,17 +1362,15 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
 
     backward : function () {
       // console.log('Y : '+Y);
-      var Z_data = this.V_out.data;
+      var V_out = this.V_out;
       var V_in_drv = this.V_in.drv; 
       V_in_drv = global.zeros(V_in_drv.length); // zero out gradient wrt data
-      var N = this.V_in.data.length;
-      for (var i = 0; i < this.drop_index.length; i++) {
-        idx = this.drop_index[i];
-        V_in_drv[idx]= this.V_out.drv[idx];
+      var N = V_in_drv.length;
+      for (var i = 0; i < N; i++) {
+        if(!(this.dropped[i])){
+          V_in_drv[i]= V_out.drv[i];
+        }
       };
-      // for (var i = 0; i < N; i++) {
-      //   if (this.dropped === false){V_in_drv = this.V_in_drv[i]}
-      // };
     },
     addNeuron : function(N){
       
@@ -1429,7 +1440,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         var conf_idx = i+this.conf.length;
         // var conf_idx =i;
         c.conf_idx = conf_idx;
-        c.prev_drop_prob = this.last_drop_prob;
+        // c.prev_drop_prob = this.last_drop_prob;
         layer_conf.push(c);
 
         if (c.type === 'conv'){
@@ -1464,7 +1475,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         if (typeof c.drop_prob !== 'undefined'){
           layer_conf.push({type : 'dropout', drop_prob : c.drop_prob, conf_idx:conf_idx, is_train:c.is_train})
         }
-        this.last_drop_prob = c.drop_prob;
+        // this.last_drop_prob = c.drop_prob;
       };
       return layer_conf; //this structure can be saved and loaded in the future
     },
@@ -1626,10 +1637,11 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return this.label2index;
     },
 
-    forward : function (X) {
+    forward : function (X,is_training) {
+      is_training = typeof is_training !== "undefined" ? is_training : false;
       var Prev_out = X;
       for (var i = 0; i < this.layers.length; i++) {
-        var V_out = this.layers[i].forward(Prev_out);
+        var V_out = this.layers[i].forward(Prev_out,is_training);
         Prev_out = V_out;
       };
     },
