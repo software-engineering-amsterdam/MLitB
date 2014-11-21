@@ -720,7 +720,7 @@ app.controller('new', function ($scope, $rootScope, $location) {
           {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
           {type: 'pool', conf: {"sx":2,"stride":1}},
           {type: 'conv', conf: {"sx":2,"stride":1,"filters":128,"activation":"relu"}},
-          {type: 'pool', conf: {"sx":2,"stride":1},"drop_prob":0.1},
+          {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.1},
           {type: 'fc', conf: {"activation":"softmax"}}
         ]
         }
