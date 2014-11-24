@@ -67,6 +67,20 @@ Slave.prototype.process_cache = function(nn) {
 
 Slave.prototype.work = function(nn) {
 
+    var new_labels = [];
+
+    // find intersection of labels.
+    var i = nn.labels.length;
+    while(i--) {
+        var label = nn.labels[i];
+        if(this.labels.indexOf(label) == -1) {
+            new_labels.push(label);
+            this.labels.push(label);
+        }
+
+    }
+
+
     var work_data = {
 
         type: 'work',
@@ -74,7 +88,7 @@ Slave.prototype.work = function(nn) {
         iteration_time: nn.iteration_time, // fix for lag etc.
         parameters: nn.configuration.params,
         step: nn.step,
-        new_labels: [], // need to figure out exact difference.
+        new_labels: new_labels,
         is_train: nn.is_train,
         is_ever_train_false: nn.is_ever_train_false,
         drop_last_layer : nn.drop_last_layer

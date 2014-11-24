@@ -388,6 +388,7 @@ Master.prototype = {
         nn_id = d.nn_id;
         slave_id = d.slave;
         parameters = d.parameters;
+        new_labels = d.new_labels;
 
         slave = this.slave_by_id(slave_id);
 
@@ -403,7 +404,7 @@ Master.prototype = {
             return;
         }
 
-        nn.reduction(slave, parameters);
+        nn.reduction(slave, parameters, new_labels);
 
     },
 

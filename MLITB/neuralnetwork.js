@@ -61,6 +61,8 @@ var NeuralNetwork = function(data, master) {
     this.drop_last_layer = data.drop_last_layer;
     this.is_ever_train_false = data.is_ever_train_false;
 
+    this.labels = []; // full collection of labels
+
 }
 
 NeuralNetwork.prototype = {
@@ -141,6 +143,19 @@ NeuralNetwork.prototype = {
             }
 
         }
+
+    },
+
+    add_label: function(label) {
+
+        var label = label.toLowerCase();
+
+        if(this.labels.indexOf(label) > -1) {
+            // already exists.
+            return;
+        }
+
+        this.labels.push(label);
 
     },
 
@@ -605,11 +620,11 @@ NeuralNetwork.prototype = {
 
             }
 
-        }        
+        }
 
     },
 
-    reduction: function(slave, parameters) {
+    reduction: function(slave, parameters, new_labels) {
 
         if(!this.running) {
             console.log("! Cannot reduce (slave) to (NN): NN not running", slave.socket.id, this.id);
@@ -637,6 +652,11 @@ NeuralNetwork.prototype = {
 
         this.runtime_elapsed += parseInt(this.iteration_time);
         this.data_seen += parameters.nVector;
+
+        var i = new_labels.length;
+        while(i--) {
+            this.add_label(new_labels[i]);
+        }
 
         if(!this.slaves_operating.length && this.running == false) {
 

@@ -514,7 +514,7 @@ Boss.prototype = {
                 var tranferobject = {
                     id: id,
                     data: convert_image(data),
-                    label: file.comment
+                    label: file.comment.toLowerCase()
                 }
 
                 that.message_to_slave(slave, 'download_data', tranferobject, [tranferobject.data.buffer]);

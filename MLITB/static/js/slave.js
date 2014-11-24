@@ -40,73 +40,6 @@ Slave.prototype = {
         this.send_message_to_boss('status', text);
     },
 
-    /*
-
-    get_data: function(ids, nn) {
-
-        // speed improvements are welcome.
-        // if ids are sorted it may be faster with large data stores.
-
-        // for now: run over local data once, check every point in request id array.
-        // reverse may work as well, might be faster or not, i do not know.
-        // intersections are bad for blood pressure.
-
-        result = [];
-
-        i = this.data[nn].length;
-
-        while(i--) {
-
-            j = data.length;
-
-            while(j--) {
-
-                if(ids[j] == this.data[nn][i].id) {
-                    result.push(this.data[nn][i]);
-                }
-
-            }
-
-        }
-
-        return result;
-
-    },
-
-    send_data_to_boss: function(d) {
-
-        nn = d.nn;
-        data = d.data;
-        destination = d.destination;
-        server = d.server;
-        boss = d.boss;
-
-        result = this.get_data(data, nn);
-
-        // frame data
-
-        var frames = Math.ceil(result.length / 1000);
-
-        var i;
-        for(i = 0; i < frames; i++) {
-
-            start = i * 1000;
-            end = (i+1) * 1000;
-
-            this.send_message_to_boss('data_from_slave', {
-                data: result.slice(start, end),
-                destination: destination,
-                server: server,
-                boss: boss,
-                nn: nn
-            });         
-
-        }
-
-    },
-
-    */
-
     download_data: function(data) {
         // from boss to this slave
 
@@ -180,18 +113,17 @@ Slave.prototype = {
                     var label = new_labels[i];
                     // new label does not exist in new_labels or existing labels.
                     if(that.labels.indexOf(label) == -1 && that.new_labels.indexOf(label) == -1) {
-                        that.labels.push(data.label);
-                        that.new_labels.push(data.label);
+                        that.labels.push(label);
+                        that.new_labels.push(label);
                     }
                 }
 
             }
 
             if(that.new_labels.length) {
+
                 that.Net.addLabel(that.new_labels);
             }
-
-            that.new_labels = [];
 
             if(parameters) {
 
@@ -309,8 +241,11 @@ Slave.prototype = {
             that.send_message_to_master('reduction', {
                 slave: that.id,
                 nn_id: that.nn_id,
-                parameters: parameters
+                parameters: parameters,
+                new_labels: that.new_labels
             }); 
+
+            that.new_labels = [];
 
         }
 
