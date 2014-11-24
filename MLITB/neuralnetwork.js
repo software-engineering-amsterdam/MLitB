@@ -500,8 +500,6 @@ NeuralNetwork.prototype = {
 
         var j = unfilled_slaves.length;
 
-        console.log('unfilled slaves:', j);
-
         var k = this.data.length;
 
         // assign remaining uncached data points
@@ -696,10 +694,10 @@ NeuralNetwork.prototype = {
 
         if(this.step == 0) {
             // Create object SGD Trainer            
-            this.SGD = new SGDTrainer(this, {}, this.hyperparameters);
-          
+            this.SGD = new SGDTrainer(this, {});
         }
 
+        this.SGD.set_parameters(this.hyperparameters);
         this.SGD.reduce(this);
 
         this.step++;
