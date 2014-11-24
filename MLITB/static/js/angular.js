@@ -54,7 +54,7 @@ app.config(['$routeProvider',
         controller: 'new_project'
     }).
     when('/new-project-from-file', {
-        templateUrl: 'static/views/new-file.html',
+        templateUrl: 'static/views/new-project-from-file.html',
         controller: 'new_project_from_file'
     }).
     /*
@@ -370,6 +370,160 @@ app.controller('new_project', function ($scope, $rootScope, $location) {
 
 });
 
-app.controller('new_project_from_file', function ($scope, $rootScope) {
+app.controller('new_project_from_file', function ($scope, $rootScope, $location) {
+
+    $scope.loadfilespinner = false;
+    $scope.new_nn_added = false;
+
+    $scope.nn = {
+        iteration_time: 10000
+    };
+
+    $scope.add_nn_from_file = function(nn) {
+        
+        if(!nn.name) {
+            $scope.errors.push('Please insert a name');
+            return  
+        }
+
+        if(!nn.iteration_time) {
+            $scope.errors.push('Please select an iteration tims');
+            return  
+        }
+
+        var new_nn = new mlitb.Net();
+        var labels = [];
+        var layers_length = $scope.layers.length;
+
+        new_nn.setConfigsAndParams(nn_file);
+
+        if($scope.nn.drop_last_layer == true) {
+
+            // cut off last layer (it removes from conf AND parameters)
+            new_nn.removeLayer( ( new_nn.conf.length - 1) );
+
+            // add new last layer.
+            // restructure the layer into {type: , is_train: , filter, activation,...}
+
+            var newl = angular.copy($scope.layers[$scope.layers.length - 1].conf);
+
+            newl.is_train = angular.copy($scope.layers[$scope.layers.length - 1].is_train);
+            newl.type = angular.copy($scope.layers[$scope.layers.length - 1].type);
+
+            new_nn.addLayer([
+                newl
+            ]);
+
+            layers_length -= 1; // do not do updateLayerTrain on last layer, is useless anyway.
+
+            // I think we do this if we drop the last layer, if we don't then we still have
+            // neurons in the last layer
+            new_nn.conf[new_nn.conf.length-1].num_neurons = 0;
+        }
+
+        var train;
+        var is_ever_train_false = false;
+
+        for(var i = 0; i < layers_length; i++) {
+
+            if($scope.layers[i].is_train == undefined) {
+                train = false;
+            } else {
+                train = $scope.layers[i].is_train;
+            }
+
+            if (train == false){
+                is_ever_train_false = true;
+            }
+
+            new_nn.updateLayerTrain(i, train);
+
+        }
+
+        if($scope.nn.drop_last_layer == true) {
+
+            // remove labels
+            new_nn.label2index = {};
+            new_nn.index2label = {};
+
+        }
+
+        new_nn.is_ever_train_false = is_ever_train_false;
+        
+        if($scope.nn.drop_last_layer == true) {
+            new_nn.drop_last_layer = true; // headless only!
+        } else {
+            new_nn.drop_last_layer = false;
+        }
+
+        var nn_to_send = angular.copy(nn);
+
+        $rootScope.boss.add_nn(nn_to_send, new_nn);
+
+        $location.path('/project-index');
+        
+    }
+
+    $scope.uploadfile = function(e) {
+
+        process_angular_layer = function(conf) {
+
+            var angular_conf = {};
+
+            var allowed_confs = ['sx', 'sy', 'stride', 'depth', 'activation', 'drop_prob', 'num_neurons', 'filters'];
+
+            for(var key in conf) {
+                if(allowed_confs.indexOf(key) > -1) {
+                    angular_conf[key] = conf[key];
+                }
+            }
+
+            return angular_conf;
+
+        }
+        
+        process_file_upload = function(file) {
+
+            nn_file = JSON.parse(file.target.result);
+
+            var layers = [];
+
+            // set up layers according to angular spec
+            for(var i = 0; i < nn_file.configs.length; i++) {
+
+                layers.push({
+                    type: nn_file.configs[i].type,
+                    conf: process_angular_layer(nn_file.configs[i]),
+                    is_train: true
+                });
+
+            }
+
+            $scope.layers = layers;
+            $scope.nn.drop_last_layer = false;
+            $scope.loadfilespinner = false;
+            $scope.new_nn_added = true;
+
+            $('#uploadfile').modal('hide');
+
+            $scope.$apply();
+
+        }
+
+        e.preventDefault();
+
+        $scope.loadfilespinner = true;
+
+        var formElement = document.getElementById('uploadfilefield').files[0];
+        var reader = new FileReader();
+
+        reader.onload = (function(theFile) {
+            return process_file_upload; //function(e) {
+            //};
+        })(formElement);
+
+        reader.readAsText(formElement);
+
+    }
 
 });

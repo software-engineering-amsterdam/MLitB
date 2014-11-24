@@ -334,12 +334,20 @@ Boss.prototype = {
 
     },
 
-    add_nn: function(nn, location) {
+    add_nn: function(nn, full_net) {
 
         var that = this;
 
-        var new_nn = new mlitb.Net();
-        new_nn.addLayer(nn.configuration);
+        var full_net = (typeof full_net === "undefined") ? false : full_net;
+
+        var new_nn;
+
+        if(full_net) {
+            new_nn = full_net;
+        } else {
+            new_nn = new mlitb.Net();
+            new_nn.addLayer(nn.configuration);
+        }
 
         var pkg = nn;
         pkg.nn = new_nn.getConfigsAndParams();

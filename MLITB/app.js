@@ -20,7 +20,7 @@ app.use(function(req, res, next) {
 app.set('views', './views')
 app.set('view engine', 'ejs')
 
-app.use(bodyParser.json({limit: '50mb'}))
+app.use(bodyParser.json({limit: '500mb'}))
 app.use('/static', express.static(__dirname + '/static'));
 
 app.get('/', function (req, res) {

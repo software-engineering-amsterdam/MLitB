@@ -1,0 +1,98 @@
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            
+            <button type="button" class="btn btn-primary btn-md" data-toggle="modal" data-target="#uploadfile" ng-hide="new_nn_added">
+              Upload file
+            </button>
+
+            <form role="form" name="nn_form" ng-show="new_nn_added">
+
+                <div class="row">
+                    <div class="col-xs-6">
+
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="form-group">
+                                    <label for="name">Network name</label>
+                                    <input type="text" class="form-control" id="name" ng-model="nn.name" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="iteration_time">Iteration time in mS</label>
+                            <br />
+                            <label class="radio-inline">
+                                <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="1000"> 1000
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="2000"> 2000
+                            </label>
+                            <label class="radio-inline">
+                              <input type="radio" name="iteration_time" id="inlineRadio1" ng-model="nn.iteration_time" value="5000"> 5000
+                            </label>
+                            <label class="radio-inline">
+                              <input type="radio" name="iteration_time" id="inlineRadio2" ng-model="nn.iteration_time" value="10000"> 10000
+                            </label>
+                            <label class="radio-inline">
+                              <input type="radio" name="iteration_time" id="inlineRadio3" ng-model="nn.iteration_time" value="15000"> 15000
+                            </label>
+                            <label class="radio-inline">
+                              <input type="radio" name="iteration_time" id="inlineRadio4" ng-model="nn.iteration_time" value="30000"> 30000
+                            </label>                  
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="config_overview">Configuration overview</label>
+                        <p>Enable / disable layer training</p>
+
+                        <div ng-hide="layers.length">
+                            <p>No layers added.</p>
+                        </div>
+
+                        <ul ng-show="layers.length" class="sortable" >
+                            <li data-ng-repeat="item in layers" class="sortable-item">
+                                {{ item.type }}: {{ item.conf }}
+                                <span class="train-layer" ng-show="(item.type == 'fc' || item.type == 'conv') && $last == false"> Train: <input type="checkbox" ng-model="item.is_train"></span>
+                                <span class="train-layer" ng-show="item.type == 'fc' || $last"> Drop: <input type="checkbox" ng-model="nn.drop_last_layer"></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div ng-show="layer_errors.length">
+                    <strong>Configuration notes:</strong>
+                    <ul>
+                        <li ng-repeat="error in layer_errors">
+                            {{ error }}
+                        </li>
+                    </ul>
+                </div>
+                <button type="submit" ng-click="add_nn_from_file(nn)" class="btn btn-default">Add Neural Network</button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="uploadfile" tabindex="-1" role="dialog" aria-labelledby="uploadfileLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="uploadfileform" class="form-horizontal" role="form" enctype="multipart/form-data" method="post">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="myModalLabel">Upload file</h4>
+        </div>
+        <div class="modal-body">
+            <input id="uploadfilefield" type="file" name="upload">
+        </div>
+        <div class="modal-footer">
+          <img ng-show="loadfilespinner" src="/static/images/spinner.gif" />
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="submit" ng-click="uploadfile($event)" class="btn btn-primary">Upload</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

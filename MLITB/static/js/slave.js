@@ -73,10 +73,6 @@ Slave.prototype = {
         step = d.step;
         new_labels = d.new_labels;
 
-        is_train = d.is_train; // only for headless configurations
-        
-        is_ever_train_false = d.is_ever_train_false;
-        drop_last_layer = d.drop_last_layer;
         var vol_input;
         var workingset = [];
 
@@ -275,8 +271,23 @@ Slave.prototype = {
             // is only once.
             that.Net.setConfigsAndParams(response);
 
+            is_train = response.is_train; // only for headless configurations
+            is_ever_train_false = response.is_ever_train_false;
+            drop_last_layer = response.drop_last_layer;
+
+            console.log('extra params');
+            console.log('is train:');
+            console.log(is_train);
+            console.log('is ever train false:');
+            console.log(is_ever_train_false);
+            console.log('drop last layer:');
+            console.log(drop_last_layer);
+            
+
             that.logger('Downloading NN configuration done.');
             that.status('waiting for task');
+
+            console.log(that.Net);
 
         }
 

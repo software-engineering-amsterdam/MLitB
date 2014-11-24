@@ -88,10 +88,7 @@ Slave.prototype.work = function(nn) {
         iteration_time: nn.iteration_time, // fix for lag etc.
         parameters: nn.configuration.params,
         step: nn.step,
-        new_labels: new_labels,
-        is_train: nn.is_train,
-        is_ever_train_false: nn.is_ever_train_false,
-        drop_last_layer : nn.drop_last_layer
+        new_labels: new_labels
 
     }
 

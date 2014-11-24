@@ -1748,6 +1748,11 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       json.configs = this.conf;
       json.label2index = this.label2index;
       json.index2label = this.index2label;
+
+      json.is_train = this.is_train;
+      json.is_ever_train_false = this.is_ever_train_false;
+      json.drop_last_layer = this.drop_last_layer;
+
       return json;
     },
 

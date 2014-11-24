@@ -13,37 +13,32 @@ var NeuralNetwork = function(data, master) {
 
     id += 1;
 
+    this.running = false;
+
     this.id = id; // unique identifiable
     this.slaves = []; // maps to slave nodes
     this.data = []; // data allocation array
-
-    this.slaves_connected = [];
+    this.labels = []; // full collection of labels
 
     this.name = data.name; // verbose name
 
-    this.configuration = data.nn; // NN configuration layers
+    this.slaves_connected = [];
+    this.slaves_operating = []; // clients currently at work
+    this.operation_results = [];
+
+    this.stats = []; // bosses connected to obtain stats TODO
+
+    this.configuration = data.nn; // NN configuration
 
     this.iteration_time = data.iteration_time; // time per iteration
-
     this.runtime_elapsed = 0; // time elapsed
-
     this.realtime_elapsed = 0; // real time elapsed
-
     this.step = 0; // nn step
-
     this.data_seen = 0; // data points seen
 
     this.SGD; // well, the SGD
 
-    this.slaves_operating = []; // clients currently at work
-    this.operation_results = [];
-
-    this.stats = []; // bosses connected to obtain stats
-
-    this.public_client = data.public_client;
-
     this.hyperparameters_changed = false; // needed for signaling, else continous overwrite.
-
     this.hyperparameters = {
 
         learning_rate : 0.01, //starting value of learning rate
@@ -56,14 +51,6 @@ var NeuralNetwork = function(data, master) {
         l1_decay : 0.000
 
     }
-
-    this.running = false;
-
-    this.is_train = data.is_train; // only used in headless configurations
-    this.drop_last_layer = data.drop_last_layer;
-    this.is_ever_train_false = data.is_ever_train_false;
-
-    this.labels = []; // full collection of labels
 
 }
 
