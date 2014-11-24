@@ -1,0 +1,42 @@
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+        	<div ng-hide="nns.length">
+        		There are no neural networks in the hive yet. Add one through 'New project' or 'New project from file'
+        	</div>
+          <div ng-show="nns.length">
+            <table class="table table-condensed table-hover">
+                <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th></th>
+                      <th>Name</th>
+                      <th>Workers</th>
+                      <th>My workers</th>
+                      <th>Workers connected</th>
+                      <th>Iteration</th>
+                      <th>Time elapsed</th>
+                      <th>Data size</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-repeat="nn in nns" ng-click="nn_detail(nn.id);">
+                      <td>{{ nn.id }}</td>
+                      <td>
+                        <span ng-show="nn.running" class="glyphicon glyphicon-play" aria-hidden="true"></span>
+                        <span ng-show="!nn.running" class="glyphicon glyphicon-pause" aria-hidden="true"></span>
+                      </td>
+                      <td>{{ nn.name }}</td>
+                      <td>{{ nn.slaves }}</td>
+                      <td>{{ number_of_nn_my_slaves_by_id(nn.id) }}</td>
+                      <td>{{ nn.slaves_connected }}</td>
+                      <td>{{ nn.step }}</td>
+                      <td>{{ nn.runtime_elapsed }}</td>
+                      <td>{{ nn.data }}</td>
+                    </tr>
+                  </tbody>
+            </table>
+          </div>
+        </div>
+    </div>
+</div>

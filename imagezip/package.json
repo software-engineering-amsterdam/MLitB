@@ -1,0 +1,25 @@
+{
+  "name": "imagezip",
+  "version": "0.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "BSD",
+  "dependencies": {
+    "express": "~4.10.1",
+    "formidable": "~1.0.15",
+    "jszip": "~2.4.0",
+    "redis": "~0.12.1",
+    "jade": "~1.7.0",
+    "body-parser": "~1.9.2"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-contrib-less": "~0.12.0",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-bower-concat": "~0.4.0"
+  }
+}

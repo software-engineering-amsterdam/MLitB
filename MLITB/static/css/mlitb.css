@@ -1,0 +1,19 @@
+body {
+  font-family: 'Open Sans', sans-serif;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+body .navbar {
+  margin-bottom: 20px;
+}
+body .sortable-icons {
+  float: right;
+}
+body .sortable li {
+  padding: 3px;
+  border: black solid 1px;
+  list-style-type: none;
+}
+body .train-layer {
+  float: right;
+}

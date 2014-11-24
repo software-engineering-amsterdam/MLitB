@@ -1,0 +1,30 @@
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+        	<div ng-hide="slaves.length">
+        		You currently have nothing working. Select something from the project window to get started.
+        	</div>
+
+            <div ng-show="slaves.length">
+
+              <h3>My workers</h3>
+                <table class="table table-condensed table-hover">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Network</th>
+                      <th width="30%">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-repeat="slave in slaves" ng-click="nn_detail(slave.nn);">
+                      <td>{{ slave.id }}</td>
+                      <td>{{ nn_name_by_id(slave.nn) }}</td>
+                      <td>{{ slave.state }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

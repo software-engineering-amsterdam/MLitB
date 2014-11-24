@@ -1,0 +1,23 @@
+html
+  head
+    title Imagezip
+    link(rel="stylesheet" href='/static/css/_bower.css')
+    link(rel="stylesheet" href='/static/css/imagezip.css')
+  body
+    form(enctype="multipart/form-data" method="post")
+        input(type="file" name="upload" multiple="multiple")
+        br
+        input(type="submit" value="upload")
+
+    p
+        Download images
+    form
+        input#id(type="text" name="id")
+        br
+        input#download(type="submit", value="Download")
+
+    div#images
+
+    script(src='/static/js/_bower.js')
+    script(src='/static/js/jpg.js')
+    script(src='/static/js/imagezip.js')

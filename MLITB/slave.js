@@ -1,0 +1,89 @@
+var Client = require('./client');
+
+Slave.prototype = new Client();
+Slave.prototype.constructor = Slave;
+
+function Slave(socket, boss) {
+    
+    this.socket = socket;
+
+    this.boss = boss;
+
+    this.nn = null;
+
+    this.power = 100;
+    this.latency = 10;
+    this.linkspeed = 10;
+
+    this.max_power = 500;
+
+    this.assigned_power;
+
+    this.cache = []; // real data
+    this.uncached = []; // data to obtain
+
+    this.assigned_cache = []; // real data + data to obtain
+
+    this.process = []; // data assigned for processing
+
+    this.labels = []; // current list of known labels
+
+};
+
+Slave.prototype.saturated = function() {
+    return (this.assigned_power - this.assigned_cache.length) == 0
+},
+
+Slave.prototype.cache_left = function() {
+    return this.max_power - this.assigned_cache.length;
+}
+
+Slave.prototype.process_cache = function(nn) {
+    // manages uncached to cache
+
+    data = {};
+
+    var i = this.uncached.length;
+
+    if(!this.uncached.length) {
+        return;
+    }
+
+    var ids = [];
+
+    while(i--) {
+        ids.push(this.uncached[i].id);
+    }
+    
+    this.uncached = [];
+
+    this.boss.send('data_assignment', {
+        slave_id: this.socket.id,
+        data: ids
+    });
+
+    return;
+}
+
+Slave.prototype.work = function(nn) {
+
+    var work_data = {
+
+        type: 'work',
+        data: this.process,
+        iteration_time: nn.iteration_time, // fix for lag etc.
+        parameters: nn.configuration.params,
+        step: nn.step,
+        new_labels: [], // need to figure out exact difference.
+        is_train: nn.is_train,
+        is_ever_train_false: nn.is_ever_train_false,
+        drop_last_layer : nn.drop_last_layer
+
+    }
+
+    this.send('work', work_data);
+
+    this.process = [];
+}
+
+module.exports = Slave;
