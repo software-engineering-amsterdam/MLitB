@@ -421,6 +421,47 @@ Boss.prototype = {
           } 
         }
 
+        convert_image = function(image) {
+
+            // rgbargbargba -> rrrgggbbb (drop a)
+            var new_image = [];
+
+            var r = [];
+            var g = [];
+            var b = [];
+
+            // forward loop for readability
+            // could do backwards aswell for speed.
+            for(var i = 0; i < image.length; i++) {
+
+                idx = i + 1;
+                
+                // normalize to -0.5 to 0.5
+                // normalize 0-1
+                // pixel = image[i] / 255.0; // - 0.5;
+                pixel = image[i];
+                if(idx % 4 == 0) {
+                    // skip alpha channel
+                    continue;
+                }
+
+                if(idx % 4 == 1) {
+                    // red channel
+                    r.push(pixel);
+                } else if(idx % 4 == 2) {
+                    // green channel
+                    g.push(pixel);
+                } else if(idx % 4 == 3) {
+                    // blue channel
+                    b.push(pixel);
+                }
+
+            }
+
+            return new Uint8ClampedArray(new_image.concat(r).concat(g).concat(b));
+
+        }
+
         process = function(a) {
 
             var file = opop(a);
@@ -469,17 +510,10 @@ Boss.prototype = {
                 var context = canvas.getContext('2d');
 
                 var data = context.getImageData(0, 0, width, height).data;
-
-                // may remove alpha channel here later.
-                // this is awful now, we just slice off the last 4th part.
-                // fix this.
-                // please never do this.
-
-                data = data.subarray(0, (data.length / 4) * 3 );
-
+                
                 var tranferobject = {
                     id: id,
-                    data: data,
+                    data: convert_image(data),
                     label: file.comment
                 }
 

@@ -185,7 +185,7 @@ app.controller('detail', function ($scope, $rootScope, $routeParams, $location) 
     }
 
     $scope.reboot = function(nn_id) {
-        var r = confirm('Are you sure to reboot the network?\nThe current iteration will be stopped and restarted.\nYou will not lose data.');
+        var r = confirm('Are you sure to reboot the network?\nThe current iteration will be stopped and restarted.\nYou will lose only data of the current iteration.');
         if(r == true) {
             $scope.boss.reboot_nn(nn_id);
         }

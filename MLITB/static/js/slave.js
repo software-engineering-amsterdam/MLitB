@@ -23,6 +23,10 @@ var Slave = function() {
 
     this.is_train = true;
 
+    this.labels = [];
+
+    this.new_labels = [];
+
 }
 
 Slave.prototype = {
@@ -35,6 +39,8 @@ Slave.prototype = {
     status: function(text) {
         this.send_message_to_boss('status', text);
     },
+
+    /*
 
     get_data: function(ids, nn) {
 
@@ -99,12 +105,20 @@ Slave.prototype = {
 
     },
 
+    */
+
     download_data: function(data) {
         // from boss to this slave
 
         this.data[data.id] = {
             data: data.data,
             label: data.label
+        }
+
+        // check if this label is new. Should not exist in known label list, and newly added label list.
+        if(this.labels.indexOf(data.label) == -1 && this.new_labels.indexOf(data.label) == -1) {
+            this.labels.push(data.label);
+            this.new_labels.push(data.label);
         }
 
     },
@@ -160,10 +174,24 @@ Slave.prototype = {
         initialise = function() {
 
             if(new_labels.length) {
-                that.Net.addLabel(new_labels);
+
+                var i = new_labels.length;
+                while(i--) {
+                    var label = new_labels[i];
+                    // new label does not exist in new_labels or existing labels.
+                    if(that.labels.indexOf(label) == -1 && that.new_labels.indexOf(label) == -1) {
+                        that.labels.push(data.label);
+                        that.new_labels.push(data.label);
+                    }
+                }
+
             }
 
-            new_labels = [];
+            if(that.new_labels.length) {
+                that.Net.addLabel(that.new_labels);
+            }
+
+            that.new_labels = [];
 
             if(parameters) {
 
