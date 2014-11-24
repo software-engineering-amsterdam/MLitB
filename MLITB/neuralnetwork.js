@@ -42,6 +42,8 @@ var NeuralNetwork = function(data, master) {
 
     this.public_client = data.public_client;
 
+    this.hyperparameters_changed = false; // needed for signaling, else continous overwrite.
+
     this.hyperparameters = {
 
         learning_rate : 0.01, //starting value of learning rate
@@ -695,9 +697,15 @@ NeuralNetwork.prototype = {
         if(this.step == 0) {
             // Create object SGD Trainer            
             this.SGD = new SGDTrainer(this, {});
+            this.SGD.set_parameters(this.hyperparameters);
         }
 
-        this.SGD.set_parameters(this.hyperparameters);
+        if(this.hyperparameters_changed) {
+            console.log('Updated (NN) with new hyperparameters.', this.id);
+            this.SGD.set_parameters(this.hyperparameters);
+            this.hyperparameters_changed = false;
+        }
+
         this.SGD.reduce(this);
 
         this.step++;

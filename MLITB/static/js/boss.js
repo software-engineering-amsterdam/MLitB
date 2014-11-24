@@ -107,6 +107,9 @@ Boss.prototype = {
             this.download_done();
         } else if(type == 'status') {
             this.change_status(that, data);            
+        } else if(type == 'workingset') {
+            // change status does angular.apply
+            that.workingset = data;
         }
 
     },
@@ -510,7 +513,7 @@ Boss.prototype = {
                 var context = canvas.getContext('2d');
 
                 var data = context.getImageData(0, 0, width, height).data;
-                
+
                 var tranferobject = {
                     id: id,
                     data: convert_image(data),

@@ -79,6 +79,7 @@
                       <th>ID</th>
                       <th>Data allocated</th>
                       <th>Data cached</th>
+                      <th>Working set</th>
                       <th width="30%">Status</th>
                       <th>Actions</th>
                       <th>Remove</th>
@@ -89,6 +90,7 @@
                       <td>{{ slave.id }}</td>
                       <td>{{ slave.data_allocated }}</td>
                       <td>{{ slave.data_cached }}</td>
+                      <td>{{ slave.workingset }}</td>
                       <td>{{ slave.state }}</td>
                       <td><a ng-click="work(nn.id, slave.id)">work</a></td>
                       <td><a ng-click="remove(slave.id)">remove</a></td>

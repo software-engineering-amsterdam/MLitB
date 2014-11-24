@@ -60,6 +60,7 @@ Slave.prototype = {
 
         var that = this;
         
+        this.send_message_to_boss('workingset', d.data.length);
         that.status('working');
 
         // start time immediately

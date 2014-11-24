@@ -132,6 +132,8 @@ Master.prototype = {
             return
         }
 
+        nn.hyperparameters_changed = true;
+
         nn.hyperparameters = hyperparameters;
 
         this.broadcast_nns();
