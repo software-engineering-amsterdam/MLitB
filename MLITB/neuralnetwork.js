@@ -23,12 +23,13 @@ var NeuralNetwork = function(data, master) {
     this.name = data.name; // verbose name
 
     this.slaves_connected = [];
-    this.slaves_operating = []; // clients currently at work
+    this.slaves_operating = []; // slaves currently at work
+    this.slaves_tracking = []; // slaves tracking parameters
     this.operation_results = [];
-
-    this.stats = []; // bosses connected to obtain stats TODO
-
+    
     this.configuration = data.nn; // NN configuration
+
+    this.parameters;
 
     this.iteration_time = data.iteration_time; // time per iteration
     this.runtime_elapsed = 0; // time elapsed
@@ -69,7 +70,6 @@ NeuralNetwork.prototype = {
             step: this.step,
             data_seen: this.data_seen,
             slaves_operating: this.slaves_operating.length,
-            stats: this.stats.length,
             hyperparameters: this.hyperparameters,
             running: this.running,
             configuration: this.configuration.configs
@@ -204,6 +204,39 @@ NeuralNetwork.prototype = {
 
     },
 
+    slave_track: function(slave) {
+
+        var found = false;
+        var i = this.slaves_connected.length;
+        while(i--) {
+            if(this.slaves_connected[i].socket.id == slave.socket.id) {
+                found = this.slaves_connected[i];
+                break;
+            }
+        }
+
+        if(!found) {
+            console.log('! Cannot set slave to track at (NN): slave not found', slave.socket.id, this.id);
+            return;
+        }
+
+        var i = this.slaves_tracking.length;
+        while(i--) {
+            if(this.slaves_tracking[i].socket.id == slave.socket.id) {
+                console.log('! Cannot set slave to track (NN): slave already slaves_tracking', slave.socket.id, this.id);
+                return;
+            }
+        }
+
+        this.slaves_tracking.push(slave);
+
+        slave.boss.send('slave_status', {
+            slave_id: found.socket.id,
+            status: 'tracking'
+        });
+
+    },
+
     remove_client: function(client) {
 
         var found = false;
@@ -225,6 +258,14 @@ NeuralNetwork.prototype = {
         while(i--) {
             if(this.slaves[i].socket.id == client.socket.id) {
                 this.slaves.splice(i, 1);
+                break;
+            }
+        }
+
+        var i = this.slaves_tracking.length;
+        while(i--) {
+            if(this.slaves_tracking[i].socket.id == client.socket.id) {
+                this.slaves_tracking.splice(i, 1);
                 break;
             }
         }
@@ -696,6 +737,11 @@ NeuralNetwork.prototype = {
         this.SGD.reduce(this);
 
         this.step++;
+
+        var i = this.slaves_tracking.length;
+        while(i--) {
+            this.slaves_tracking[i].track(this);
+        }
 
         this.master.broadcast_nns();
 

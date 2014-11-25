@@ -37,7 +37,7 @@
               </tbody>
             </table>
 
-            <button type="button" class="btn btn-primary btn-md" data-toggle="modal" data-target="#hyperparameters">
+            <button type="button" class="btn btn-primary btn-md" ng-click="open_hyperparameters(nn)">
               Hyperparameters
             </button>
 
@@ -76,23 +76,34 @@
                 <table class="table table-condensed table-hover">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Data allocated</th>
-                      <th>Data cached</th>
-                      <th>Working set</th>
+                      <th width="7%">ID</th>
+                      <th width="15%">Data allocated / cached / working</th>
                       <th width="30%">Status</th>
-                      <th>Actions</th>
-                      <th>Remove</th>
+                      <th>Tasks</th>
+                      <th width="25%">Actions</th>
+                      <th width="7%">Remove</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr ng-repeat="slave in nn_slaves" ng-click="nn_detail(nn.id);">
-                      <td>{{ slave.id }}</td>
-                      <td>{{ slave.data_allocated }}</td>
-                      <td>{{ slave.data_cached }}</td>
-                      <td>{{ slave.workingset }}</td>
+                      <td>{{ slave.id | limitTo:-4 }}</td>
+                      <td>{{ slave.data_allocated }} / {{ slave.data_cached }} / {{ slave.workingset }}</td>
                       <td>{{ slave.state }}</td>
-                      <td><a ng-click="work(nn.id, slave.id)">work</a></td>
+                      <td>
+                        <div ng-hide="slave.type">
+                          <a ng-click="work(nn.id, slave.id)">train</a> |
+                          <a ng-click="track(nn.id, slave.id)">track</a>
+                        </div>
+                        <div ng-show="slave.type">
+                          {{ slave.type }}
+                        </div>
+                      </td>
+                      <td>
+                        <div ng-show="slave.type == 'track'">
+                          download | camera
+                        </div>
+                      </td>
+
                       <td><a ng-click="remove(slave.id)">remove</a></td>
                     </tr>
                   </tbody>
@@ -126,49 +137,49 @@
           <div class="form-group">
             <label for="learningrate" class="col-sm-5 control-label">Learning rate</label>
             <div class="col-sm-7">
-              <input type="number" ng-model="nn.hyperparameters.learning_rate" class="form-control" id="learningrate" placeholder="Learning rate" step="0.0001">
+              <input type="number" ng-model="hyperparameters.learning_rate" class="form-control" id="learningrate" placeholder="Learning rate" step="0.0001">
             </div>
           </div>
           <div class="form-group">
             <label for="learningratedecay" class="col-sm-5 control-label">Learning rate decay</label>
             <div class="col-sm-7">
-              <input type="number" ng-model="nn.hyperparameters.lr_decay" class="form-control" id="learningratedecay" placeholder="Learning rate decay" step="0.0001">
+              <input type="number" ng-model="hyperparameters.lr_decay" class="form-control" id="learningratedecay" placeholder="Learning rate decay" step="0.0001">
             </div>
           </div>
           <div class="form-group">
             <label for="learningratedecayinterval" class="col-sm-5 control-label">Learning rate decay interval</label>
             <div class="col-sm-7">
-              <input type="number" ng-model="nn.hyperparameters.lr_decay_interval" class="form-control" id="learningratedecayinterval" placeholder="Learning rate decay interval" step="1">
+              <input type="number" ng-model="hyperparameters.lr_decay_interval" class="form-control" id="learningratedecayinterval" placeholder="Learning rate decay interval" step="1">
             </div>
           </div>
           <div class="form-group">
             <label for="learningratethreshold" class="col-sm-5 control-label">Learning rate threshold</label>
             <div class="col-sm-7">
-              <input type="number" ng-model="nn.hyperparameters.lr_threshold" class="form-control" id="learningratethreshold" placeholder="Learning rate threshold" step="0.000001">
+              <input type="number" ng-model="hyperparameters.lr_threshold" class="form-control" id="learningratethreshold" placeholder="Learning rate threshold" step="0.000001">
             </div>
           </div>
           <div class="form-group">
             <label for="momentum" class="col-sm-5 control-label">Momentum</label>
             <div class="col-sm-7">
-              <input type="number" ng-model="nn.hyperparameters.momentum" class="form-control" id="momentum" placeholder="Momentum" step="0.01">
+              <input type="number" ng-model="hyperparameters.momentum" class="form-control" id="momentum" placeholder="Momentum" step="0.01">
             </div>
           </div>
           <div class="form-group">
             <label for="batchsize" class="col-sm-5 control-label">Batch size</label>
             <div class="col-sm-7">
-              <input type="number" ng-model="nn.hyperparameters.batch_size" class="form-control" id="batchsize" placeholder="Batch size" step="1">
+              <input type="number" ng-model="hyperparameters.batch_size" class="form-control" id="batchsize" placeholder="Batch size" step="1">
             </div>
           </div>
           <div class="form-group">
             <label for="l2decay" class="col-sm-5 control-label">L2 decay</label>
             <div class="col-sm-7">
-              <input type="number" ng-model="nn.hyperparameters.l2_decay" class="form-control" id="l2decay" placeholder="L2 decay" step="0.0001">
+              <input type="number" ng-model="hyperparameters.l2_decay" class="form-control" id="l2decay" placeholder="L2 decay" step="0.0001">
             </div>
           </div>
           <div class="form-group">
             <label for="l1decay" class="col-sm-5 control-label">L1 decay</label>
             <div class="col-sm-7">
-              <input type="number" ng-model="nn.hyperparameters.l1_decay" class="form-control" id="l1decay" placeholder="L1 decay"step="0.0001">
+              <input type="number" ng-model="hyperparameters.l1_decay" class="form-control" id="l1decay" placeholder="L1 decay"step="0.0001">
             </div>
           </div>
         </div>

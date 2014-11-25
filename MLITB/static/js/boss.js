@@ -159,9 +159,12 @@ Boss.prototype = {
 
             slave.nn = nn_id;
 
+
+            slave.type = null;
             slave.state = 'idle';
             slave.data_cached = 0;
             slave.data_allocated = 0;
+            slave.workingset = 0;
 
             that.slaves.push(slave);
 
@@ -208,7 +211,7 @@ Boss.prototype = {
 
     },
 
-    save_hyperparameters: function(nn_id) {
+    save_hyperparameters: function(nn_id, hyperparameters) {
 
         var nn = this.nn_by_id(nn_id);
 
@@ -219,7 +222,7 @@ Boss.prototype = {
 
         this.message_to_master('save_hyperparameters', {
             nn_id: nn_id,
-            hyperparameters: nn.hyperparameters
+            hyperparameters: hyperparameters
         });
 
     },
@@ -376,12 +379,41 @@ Boss.prototype = {
             return;   
         }
 
-        if(!this.slave_by_id(slave_id)) {
+        slave = this.slave_by_id(slave_id);
+
+        if(!slave) {
             this.logger('! Cannot set slave to work: Slave does not exist: ' + slave_id);
             return;   
         }
 
+        slave.type = 'train';
+
         this.message_to_master('slave_work', {
+            nn_id: nn_id,
+            slave_id: slave_id
+        });
+
+    },
+
+    slave_track: function(nn_id, slave_id) {
+
+        var slave;
+
+        if(!this.nn_by_id(nn_id)) {
+            this.logger('! Cannot set slave to track: NN does not exist: ' + nn_id);
+            return;   
+        }
+
+        slave = this.slave_by_id(slave_id);
+
+        if(!slave) {
+            this.logger('! Cannot set slave to track: Slave does not exist: ' + slave_id);
+            return;   
+        }
+
+        slave.type = 'track';
+
+        this.message_to_master('slave_track', {
             nn_id: nn_id,
             slave_id: slave_id
         });

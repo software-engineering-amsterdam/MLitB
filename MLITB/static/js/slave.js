@@ -56,6 +56,44 @@ Slave.prototype = {
 
     },
 
+    add_new_labels: function(new_labels) {
+
+        if(new_labels.length) {
+
+            var i = new_labels.length;
+            while(i--) {
+                var label = new_labels[i];
+                // new label does not exist in new_labels or existing labels.
+                if(this.labels.indexOf(label) == -1 && this.new_labels.indexOf(label) == -1) {
+                    this.labels.push(label);
+                    this.new_labels.push(label);
+                }
+            }
+
+        }
+
+        if(this.new_labels.length) {
+
+            this.Net.addLabel(this.new_labels);
+
+        }
+
+    },
+
+    track: function(d) {
+
+        var parameters = d.parameters;
+        var step = d.step;
+        var new_labels = d.new_labels; 
+
+        this.Net.setParams(parameters);
+
+        this.add_new_labels(new_labels);
+
+        this.status('tracking: ' + step);
+
+    },
+
     work: function(d) {
 
         var that = this;
@@ -66,13 +104,11 @@ Slave.prototype = {
         // start time immediately
         var start_time = (new Date).getTime();
 
-        data = d.data;
-        iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
-
-        parameters = d.parameters;
-        step = d.step;
-        
-        new_labels = d.new_labels; 
+        var data = d.data;
+        var iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
+        var parameters = d.parameters;
+        var step = d.step;
+        var new_labels = d.new_labels; 
 
         var vol_input;
         var workingset = [];
@@ -103,96 +139,23 @@ Slave.prototype = {
         }
 
         initialise = function() {
+            
             console.log('step '+step);
             console.log('before nn'+that.Net.layers[that.Net.layers.length-2].filters.data.length)
             console.log('before par'+parameters[parameters.length-2].length);
-            if (parameters != null) {
-
-                // if(is_ever_train_false && that.is_train) {
-                //     that.Net.setParams(parameters, true);
-                //     that.is_train = false;
-
-                // } else { 
-
-                    // copy the parameters and gradients
-                    that.Net.setParams(parameters);
-
-
-                // }
-
-            }
+            
+            that.Net.setParams(parameters);
 
             console.log('new labels '+new_labels.length);
             console.log(JSON.stringify(new_labels));
-            // new_labels=['0','1'];
-            if(new_labels.length) {
 
-                var i = new_labels.length;
-                while(i--) {
-                    var label = new_labels[i];
-                    // new label does not exist in new_labels or existing labels.
-                    if(that.labels.indexOf(label) == -1 && that.new_labels.indexOf(label) == -1) {
-                        that.labels.push(label);
-                        that.new_labels.push(label);
-                    }
-                }
-
-            }
-            //if there's new added labels, in the middle of training, then we need to tell server
-            //so server can accomodate these new parameters
-            //we also need to send initial value for this parameters to server
-            //how ?
-            if(that.new_labels.length) {
-
-                that.Net.addLabel(that.new_labels);
-
-            }
-
-            // if(parameters) {
-
-                // var pl = parameters.length;
-
-                // var newpar = that.Net.getParams(true);
-                // var nl = newpar.length;
-
-                // //we don't need this since we get the latest config
-                // //from server
-                // if (drop_last_layer){
-                    
-                //     //need to use parameter from the random one, discard the pretrained param for the last param and bias
-
-                //     parameters[pl-2]=newpar[nl-2]; //param
-                //     parameters[pl-1]=newpar[nl-1]; //bias
-
-                // } else {
-                    
-                //     // if there's new added label, then the number of param will not the same with the pretrained
-                //     // merge the pretrained+new random param.
-                //     if (parameters[pl-2].length !== newpar[nl-2].length){
-                        
-                //         //there is new added label
-                //         //merge param
-                //         for (var i = parameters[pl-2].length; i<newpar[nl-2].length;i++){
-                //             parameters[pl-2].push(newpar[nl-2][i]);   
-                //         }
-                        
-                //         //merge bias
-                //         for (var i = parameters[pl-1].length; i<newpar[nl-1].length;i++){
-                //             parameters[pl-1].push(newpar[nl-1][i]);   
-                //         }
-                        
-                //     }
-                // }
-
-            // } 
+            that.add_new_labels(new_labels);
 
             vol_input = that.Net.conf[0];
 
         }
 
         learn = function() {
-
-            
 
             while(true) {
 
@@ -223,19 +186,18 @@ Slave.prototype = {
 
         reduction = function() {
             
-            // PROBLEM parameters never null
-            // if (parameters == null){
-            // let's use step=0, is that correct ?
-
             if (step == 0){
+
                 param = [that.Net.getParams(), that.Net.getGrads()];
                 param_type = 'params_and_grads';
 
             } else if (that.new_labels.length){
+               
                 //meaning that we just added some labels in the middle of trainig (not in step 0)
                 //we need to tell param server and send the initial value for newly added params
+
                 param = [that.Net.getParams(), that.Net.getGrads()];
-                param_type ='new_labels';
+                param_type = 'new_labels';
             } else {
                 param = that.Net.getGrads();
                 param_type = 'grads';
@@ -288,20 +250,7 @@ Slave.prototype = {
             // apply configuration
             // i.e. layer conf, params, labels, etc. etc.
             // is only once.
-            that.Net.setConfigsAndParams(response);
-
-            // is_train = response.is_train; // only for headless configurations
-            // is_ever_train_false = response.is_ever_train_false;
-            // drop_last_layer = response.drop_last_layer;
-
-            // console.log('extra params');
-            // console.log('is train:');
-            // console.log(is_train);
-            // console.log('is ever train false:');
-            // console.log(is_ever_train_false);
-            // console.log('drop last layer:');
-            // console.log(drop_last_layer);
-            
+            that.Net.setConfigsAndParams(response);            
 
             that.logger('Downloading NN configuration done.');
             that.status('waiting for task');
@@ -349,6 +298,8 @@ Slave.prototype = {
             this.set_slave_id(data.data);
         } else if(data.type == 'work') {
             this.work(data.data);
+        } else if(data.type == 'track') {
+            this.track(data.data);
         }
 
     },

@@ -303,6 +303,30 @@ Master.prototype = {
 
     },
 
+    slave_track: function(data) {
+
+        var nn_id = data.nn_id;
+        var slave_id = data.slave_id;
+
+        var nn = this.nn_by_id(nn_id);
+        var slave = this.slave_by_id(slave_id);
+
+        if(!nn) {
+            console.log("! Could not set slave to track: NN not found (NN id): ", slave_id, nn_id);
+            return
+        }
+
+        if(!slave) {
+            console.log("! Could not set slave to track: Slave not found (NN id): ", slave_id, nn_id);
+            return
+        }
+
+        nn.slave_track(slave);
+
+        this.broadcast_nns();
+
+    },
+
     add_data: function(socket, data) {
 
         var nn_id = data.nn_id;

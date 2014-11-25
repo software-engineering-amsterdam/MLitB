@@ -88,6 +88,8 @@ io.on('connection', function (socket) {
             master.new_slave(data, socket);
         } else if(type == 'slave_work') {
             master.slave_work(data);
+        } else if(type == 'slave_track') {
+            master.slave_track(data);
         } else if(type == 'save_hyperparameters') {
             master.save_hyperparameters(data);
         } else if(type == 'add_data') {

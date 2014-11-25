@@ -145,6 +145,12 @@ app.controller('detail', function ($scope, $rootScope, $routeParams, $location) 
 
     }
 
+    $scope.track = function(nn_id, slave_id) {
+
+        $scope.boss.slave_track(nn_id, slave_id);
+
+    }
+
     $scope.remove = function(slave_id) {
 
         $scope.boss.remove_slave(slave_id);
@@ -172,8 +178,14 @@ app.controller('detail', function ($scope, $rootScope, $routeParams, $location) 
         request.send(new FormData(formElement));
     }
 
+    $scope.open_hyperparameters = function(nn) {
+        $scope.hyperparameters = angular.copy(nn.hyperparameters);
+
+        $('#hyperparameters').modal('show');
+    }
+
     $scope.save_hyperparameters = function(nn_id) {
-        $scope.boss.save_hyperparameters(nn_id);
+        $scope.boss.save_hyperparameters(nn_id, $scope.hyperparameters);
     }
 
     $scope.start = function(nn_id) {

@@ -80,13 +80,17 @@ Slave.prototype.work = function(nn) {
 
     }
 
+    var parameters = nn.parameters;
+    if(!parameters) {
+        parameters = nn.configuration.params;
+    }
 
     var work_data = {
 
         type: 'work',
         data: this.process,
         iteration_time: nn.iteration_time, // fix for lag etc.
-        parameters: nn.configuration.params,
+        parameters: parameters,
         step: nn.step,
         new_labels: new_labels
 
@@ -95,6 +99,44 @@ Slave.prototype.work = function(nn) {
     this.send('work', work_data);
 
     this.process = [];
+
+}
+
+Slave.prototype.track = function(nn) {
+
+    var new_labels = [];
+
+    // find intersection of labels.
+    var i = nn.labels.length;
+    while(i--) {
+        var label = nn.labels[i];
+        if(this.labels.indexOf(label) == -1) {
+            new_labels.push(label);
+            this.labels.push(label);
+        }
+
+    }
+
+    var parameters = nn.parameters;
+    if(!parameters) {
+        parameters = nn.configuration.params;
+    }
+
+    var tracking_data = {
+
+        type: 'track',
+        parameters: parameters,
+        step: nn.step,
+        new_labels: new_labels
+
+    }
+
+    console.log(' $$ Send track');
+
+    this.send('track', tracking_data);
+
+    this.process = [];
+
 }
 
 module.exports = Slave;

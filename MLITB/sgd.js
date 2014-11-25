@@ -252,7 +252,7 @@ SGDTrainer.prototype = {
 
     // set 'new' parameters.
 
-    nn.configuration.params = this.last_params
+    nn.parameters = this.last_params;
 
     console.log(this.last_params[0].length, this.last_params[1].length);
 
