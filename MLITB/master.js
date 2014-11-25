@@ -1,6 +1,6 @@
 var neuralnetwork = require('./neuralnetwork'),
-	Slave         = require('./Slave'),
-	Boss          = require('./Boss'),
+	Slave         = require('./slave'),
+	Boss          = require('./boss'),
     sgd           = require('./sgd');
 
 var Master = function() {

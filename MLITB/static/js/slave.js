@@ -71,7 +71,8 @@ Slave.prototype = {
 
         parameters = d.parameters;
         step = d.step;
-        new_labels = d.new_labels;
+        
+        new_labels = d.new_labels; 
 
         var vol_input;
         var workingset = [];
@@ -102,7 +103,28 @@ Slave.prototype = {
         }
 
         initialise = function() {
+            console.log('step '+step);
+            console.log('before nn'+that.Net.layers[that.Net.layers.length-2].filters.data.length)
+            console.log('before par'+parameters[parameters.length-2].length);
+            if (parameters != null) {
 
+                // if(is_ever_train_false && that.is_train) {
+                //     that.Net.setParams(parameters, true);
+                //     that.is_train = false;
+
+                // } else { 
+
+                    // copy the parameters and gradients
+                    that.Net.setParams(parameters);
+
+
+                // }
+
+            }
+
+            console.log('new labels '+new_labels.length);
+            console.log(JSON.stringify(new_labels));
+            // new_labels=['0','1'];
             if(new_labels.length) {
 
                 var i = new_labels.length;
@@ -116,47 +138,53 @@ Slave.prototype = {
                 }
 
             }
-
+            //if there's new added labels, in the middle of training, then we need to tell server
+            //so server can accomodate these new parameters
+            //we also need to send initial value for this parameters to server
+            //how ?
             if(that.new_labels.length) {
 
                 that.Net.addLabel(that.new_labels);
-            }
-
-            if(parameters) {
-
-                var pl = parameters.length;
-
-                var newpar = that.Net.getParams(true);
-                var nl = newpar.length;
-
-                if (drop_last_layer){
-                    
-                    //need to use parameter from the random one, discard the pretrained param for the last param and bias
-
-                    parameters[pl-2]=newpar[nl-2]; //param
-                    parameters[pl-1]=newpar[nl-1]; //bias
-
-                } else {
-                    
-                    // if there's new added label, then the number of param will not the same with the pretrained
-                    // merge the pretrained+new random param.
-                    if (parameters[pl-2].length !== newpar[nl-2].length){
-                        
-                        //there is new added label
-                        //merge param
-                        for (var i = parameters[pl-2].length; i<newpar[nl-2].length;i++){
-                            parameters[pl-2].push(newpar[nl-2][i]);   
-                        }
-                        
-                        //merge bias
-                        for (var i = parameters[pl-1].length; i<newpar[nl-1].length;i++){
-                            parameters[pl-1].push(newpar[nl-1][i]);   
-                        }
-                        
-                    }
-                }
 
             }
+
+            // if(parameters) {
+
+                // var pl = parameters.length;
+
+                // var newpar = that.Net.getParams(true);
+                // var nl = newpar.length;
+
+                // //we don't need this since we get the latest config
+                // //from server
+                // if (drop_last_layer){
+                    
+                //     //need to use parameter from the random one, discard the pretrained param for the last param and bias
+
+                //     parameters[pl-2]=newpar[nl-2]; //param
+                //     parameters[pl-1]=newpar[nl-1]; //bias
+
+                // } else {
+                    
+                //     // if there's new added label, then the number of param will not the same with the pretrained
+                //     // merge the pretrained+new random param.
+                //     if (parameters[pl-2].length !== newpar[nl-2].length){
+                        
+                //         //there is new added label
+                //         //merge param
+                //         for (var i = parameters[pl-2].length; i<newpar[nl-2].length;i++){
+                //             parameters[pl-2].push(newpar[nl-2][i]);   
+                //         }
+                        
+                //         //merge bias
+                //         for (var i = parameters[pl-1].length; i<newpar[nl-1].length;i++){
+                //             parameters[pl-1].push(newpar[nl-1][i]);   
+                //         }
+                        
+                //     }
+                // }
+
+            // } 
 
             vol_input = that.Net.conf[0];
 
@@ -164,21 +192,7 @@ Slave.prototype = {
 
         learn = function() {
 
-            if (parameters != null) {
-
-                if(is_ever_train_false && that.is_train) {
-                    that.Net.setParams(parameters, true);
-                    that.is_train = false;
-
-                } else { 
-
-                    // copy the parameters and gradients
-                    that.Net.setParams(parameters);
-
-
-                }
-
-            }
+            
 
             while(true) {
 
@@ -191,7 +205,6 @@ Slave.prototype = {
                 Input = new that.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
                 Input.data = point.data;
                 that.Net.forward(Input,true);
-
                 newerr = that.Net.backward(point.label);
 
                 error += newerr;
@@ -255,7 +268,7 @@ Slave.prototype = {
     },
 
     download_configuration: function() {
-
+        console.log('slave/download_configuration')
         var that = this;
 
         var xhr = new XMLHttpRequest();
@@ -265,23 +278,24 @@ Slave.prototype = {
         xhr.onload = function () {
 
             var response = JSON.parse(this.response);
-
+            console.log(JSON.stringify(response.configs));
+            console.log(JSON.stringify(response.params.length));
             // apply configuration
             // i.e. layer conf, params, labels, etc. etc.
             // is only once.
             that.Net.setConfigsAndParams(response);
 
-            is_train = response.is_train; // only for headless configurations
-            is_ever_train_false = response.is_ever_train_false;
-            drop_last_layer = response.drop_last_layer;
+            // is_train = response.is_train; // only for headless configurations
+            // is_ever_train_false = response.is_ever_train_false;
+            // drop_last_layer = response.drop_last_layer;
 
-            console.log('extra params');
-            console.log('is train:');
-            console.log(is_train);
-            console.log('is ever train false:');
-            console.log(is_ever_train_false);
-            console.log('drop last layer:');
-            console.log(drop_last_layer);
+            // console.log('extra params');
+            // console.log('is train:');
+            // console.log(is_train);
+            // console.log('is ever train false:');
+            // console.log(is_ever_train_false);
+            // console.log('drop last layer:');
+            // console.log(drop_last_layer);
             
 
             that.logger('Downloading NN configuration done.');

@@ -394,8 +394,9 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
         var new_nn = new mlitb.Net();
         var labels = [];
         var layers_length = $scope.layers.length;
-
+        console.log('set config and params');
         new_nn.setConfigsAndParams(nn_file);
+        console.log('finish set config');
 
         if($scope.nn.drop_last_layer == true) {
 
@@ -448,13 +449,14 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
 
         }
 
-        new_nn.is_ever_train_false = is_ever_train_false;
+        //I think we won't need these anymore
+        // new_nn.is_ever_train_false = is_ever_train_false;
         
-        if($scope.nn.drop_last_layer == true) {
-            new_nn.drop_last_layer = true; // headless only!
-        } else {
-            new_nn.drop_last_layer = false;
-        }
+        // if($scope.nn.drop_last_layer == true) {
+        //     new_nn.drop_last_layer = true; // headless only!
+        // } else {
+        //     new_nn.drop_last_layer = false;
+        // }
 
         var nn_to_send = angular.copy(nn);
 

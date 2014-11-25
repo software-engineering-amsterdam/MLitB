@@ -1644,16 +1644,20 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       var Prev_out = X;
       for (var i = 0; i < this.layers.length; i++) {
         var V_out = this.layers[i].forward(Prev_out);
+        // console.log(this.layers[i].layer_type+' '+V_out.data[0]);
         Prev_out = V_out;
       };
+      // console.log(JSON.stringify(V_out));
     },
 
     backward : function (Y) {
       //get label if input not number. 
       //label2index must be set trough setLabel function
       Y = typeof Y === 'number' ? Y : this.label2index[Y]
+      // console.log(Y);
       if (Y==='undefined'){console.log('Error : Label not found...')}
       var loss = this.layers[this.layers.length-1].backward(Y);
+      // console.log(loss);
       for (var i = this.layers.length - 2; i >= 0; i--) {
         this.layers[i].backward();
       };
@@ -1744,7 +1748,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     // transform mnist data to {label : []}
     getConfigsAndParams : function(){
       var json = {};
-      json.params = this.getParams();
+      json.params = this.getParams(true);
       json.configs = this.conf;
       json.label2index = this.label2index;
       json.index2label = this.index2label;

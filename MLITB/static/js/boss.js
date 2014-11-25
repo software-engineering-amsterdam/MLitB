@@ -346,7 +346,7 @@ Boss.prototype = {
             new_nn = full_net;
         } else {
             new_nn = new mlitb.Net();
-            new_nn.addLayer(nn.configuration);
+            new_nn.createLayers(nn.configuration);
         }
 
         var pkg = nn;
@@ -356,7 +356,7 @@ Boss.prototype = {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', this.host + ':' + this.port + '/add-nn/', true);
         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-
+        console.log('boss/add_nn');
         xhr.onload = function () {
 
             that.logger('New neural added done.');
