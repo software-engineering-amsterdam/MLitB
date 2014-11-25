@@ -231,6 +231,11 @@ Slave.prototype = {
                 param = [that.Net.getParams(), that.Net.getGrads()];
                 param_type = 'params_and_grads';
 
+            } else if (that.new_labels.length){
+                //meaning that we just added some labels in the middle of trainig (not in step 0)
+                //we need to tell param server and send the initial value for newly added params
+                param = [that.Net.getParams(), that.Net.getGrads()];
+                param_type ='new_labels';
             } else {
                 param = that.Net.getGrads();
                 param_type = 'grads';

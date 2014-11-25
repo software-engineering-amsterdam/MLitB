@@ -115,6 +115,11 @@ SGDTrainer.prototype = {
 
     } else {
 
+      //there's possibility to have new labels, so we need to extend
+      //this.last_params, this.last_grads, this.sum_square_grads
+      //there may be 2 kinds of extension :
+      //filter extension, or element extension
+
       for (var mr = 0; mr < new_parameters.length; mr++) {
       
         var markovParam = new_parameters[mr];
