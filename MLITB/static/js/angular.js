@@ -45,9 +45,9 @@ app.config(['$routeProvider',
         templateUrl: 'static/views/detail.html',
         controller: 'detail'
     }).
-    when('/project-index/:nn_id/slaves', {
-        templateUrl: 'static/views/slave.html',
-        controller: 'slave'
+    when('/project-index/:nn_id/slave/:slave_id/camera', {
+        templateUrl: 'static/views/camera.html',
+        controller: 'camera'
     }).
     when('/new-project', {
         templateUrl: 'static/views/new-project.html',
@@ -102,17 +102,34 @@ app.controller('project_index', function ($scope, $rootScope, $location) {
 
 });
 
-app.controller('slave', function ($scope, $rootScope, $routeParams, $location) {
+app.controller('camera', function ($scope, $rootScope, $routeParams, $location) {
 
     $scope.nn = $scope.boss.nn_by_id($routeParams.nn_id);
+    $scope.slave = $scope.boss.slave_by_id($routeParams.slave_id);
 
-    if(!$scope.nn) {
+    if(!$scope.nn || !$scope.slave ) {
         $location.path('/project-index/');
     }
 
-    console.log('nn:', $scope.nn);
+    $scope.working = false;
 
-    $scope.nn_slaves = $scope.boss.slaves_by_nn_id($routeParams.nn_id);
+    $rootScope.camera_done = function(results) {
+
+        $scope.classify_results = results;
+        $scope.working = false;
+        $scope.$apply();
+
+    }
+
+    handleFileSelect = function(evt) {
+
+        $scope.working = true;
+        $scope.$apply();
+        $scope.boss.handle_camera(evt, $routeParams.slave_id);
+
+    }
+
+    document.getElementById('picture').addEventListener('change', handleFileSelect, false);
 
 });
 
@@ -513,7 +530,7 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
                 layers.push({
                     type: nn_file.configs[i].type,
                     conf: process_angular_layer(nn_file.configs[i]),
-                    is_train: false
+                    is_train: true
                 });
 
             }

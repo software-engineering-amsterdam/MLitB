@@ -109,6 +109,8 @@ Boss.prototype = {
             this.change_status(that, data);            
         } else if(type == 'download_parameters') {
             this.download_parameters(data);            
+        } else if(type == 'classify_results') {
+            this.classify_results(data);            
         } else if(type == 'workingset') {
             // change status does angular.apply
             that.workingset = data;
@@ -442,6 +444,94 @@ Boss.prototype = {
 
     },
 
+    handle_camera: function(evt, slave_id) {
+
+        getEXIF = function(f, cb) {
+
+            var reader = new FileReader();
+
+            reader.onload = function(file) {
+
+                var exif, transform = "none";
+                exif = EXIF.readFromBinaryFile(createBinaryFile(file.target.result));
+
+                cb(exif, f);
+
+            }
+
+            reader.readAsArrayBuffer(f);
+
+        }
+
+        var that = this;
+        var slave = this.slave_by_id(slave_id);
+
+        if(!slave) {
+            this.logger('! Cannot process camera image: Slave does not exist: ' + slave_id);
+            return;   
+        }
+
+        var nn = this.nn_by_id(slave.nn);
+
+        var files = evt.target.files; // FileList object
+
+        // Loop through the FileList and render image files as thumbnails.
+        for (var i = 0, f; f = files[i]; i++) {
+
+            // Only process image files.
+            if (!f.type.match('image.*')) {
+                continue;
+            }
+
+            exif = getEXIF(f, function(exif, f) {
+
+                var reader = new FileReader();
+
+                // Closure to capture the file information.
+                reader.onload = function(theFile) {
+
+                    var image = new Image();
+                    image.src = reader.result;
+
+                    image.onload = function() {
+
+                        var width = nn.configuration[0].sx;
+                        var height = nn.configuration[0].sy;
+
+                        var canvas = document.getElementById("image"); 
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        var mpImg = new MegaPixImage(image);
+                        mpImg.render(canvas, { width: width, height: height, orientation: exif.Orientation });
+
+                        var imageData = canvas.getContext("2d").getImageData(0, 0, width, height);
+
+                        // image pixel data
+                        // array, set up as [r,g,b,a,r,g,b,a, ...]
+                        // thus each four numbers are 1 pixel
+                        var converted_image = that.convert_image(imageData.data);
+
+                        that.message_to_slave(slave, 'classify', converted_image, [converted_image.buffer]);
+
+                    };
+
+                };
+
+                reader.readAsDataURL(f);
+
+            });
+        
+        }
+
+    },
+
+    classify_results: function(results) {
+
+        this.angular.camera_done(results);
+
+    },
+
     remove_slave: function(slave_id) {
 
         var slave;
@@ -467,6 +557,47 @@ Boss.prototype = {
 
     },
 
+    convert_image: function(image) {
+
+        // rgbargbargba -> rrrgggbbb (drop a)
+        var new_image = [];
+
+        var r = [];
+        var g = [];
+        var b = [];
+
+        // forward loop for readability
+        // could do backwards aswell for speed.
+        for(var i = 0; i < image.length; i++) {
+
+            idx = i + 1;
+            
+            // normalize to -0.5 to 0.5
+            // normalize 0-1
+            // pixel = image[i] / 255.0; // - 0.5;
+            pixel = image[i];
+            if(idx % 4 == 0) {
+                // skip alpha channel
+                continue;
+            }
+
+            if(idx % 4 == 1) {
+                // red channel
+                r.push(pixel);
+            } else if(idx % 4 == 2) {
+                // green channel
+                g.push(pixel);
+            } else if(idx % 4 == 3) {
+                // blue channel
+                b.push(pixel);
+            }
+
+        }
+
+        return new Uint8ClampedArray(new_image.concat(r).concat(g).concat(b));
+
+    },
+
     process_data: function(a, slave) {
 
         var that = this;
@@ -484,47 +615,6 @@ Boss.prototype = {
             if (!delete obj[key]) { throw new Error(); }
             return result;
           } 
-        }
-
-        convert_image = function(image) {
-
-            // rgbargbargba -> rrrgggbbb (drop a)
-            var new_image = [];
-
-            var r = [];
-            var g = [];
-            var b = [];
-
-            // forward loop for readability
-            // could do backwards aswell for speed.
-            for(var i = 0; i < image.length; i++) {
-
-                idx = i + 1;
-                
-                // normalize to -0.5 to 0.5
-                // normalize 0-1
-                // pixel = image[i] / 255.0; // - 0.5;
-                pixel = image[i];
-                if(idx % 4 == 0) {
-                    // skip alpha channel
-                    continue;
-                }
-
-                if(idx % 4 == 1) {
-                    // red channel
-                    r.push(pixel);
-                } else if(idx % 4 == 2) {
-                    // green channel
-                    g.push(pixel);
-                } else if(idx % 4 == 3) {
-                    // blue channel
-                    b.push(pixel);
-                }
-
-            }
-
-            return new Uint8ClampedArray(new_image.concat(r).concat(g).concat(b));
-
         }
 
         process = function(a) {
@@ -578,7 +668,7 @@ Boss.prototype = {
 
                 var tranferobject = {
                     id: id,
-                    data: convert_image(data),
+                    data: that.convert_image(data),
                     label: file.comment.toLowerCase()
                 }
 

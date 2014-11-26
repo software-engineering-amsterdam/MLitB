@@ -89,11 +89,40 @@ Slave.prototype = {
 
     },
 
+    classify: function(data) {
+
+        var vol_input = this.Net.conf[0];
+
+        console.log(this.Net);
+
+        var Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
+        Input.data = data;
+        this.Net.forward(Input);
+        var results = this.Net.getPrediction().data;
+
+        var labeledResults = [];
+
+        var j = results.length;
+        while(j--) {
+            labeledResults.push([j, this.Net.index2label[j], results[j].toFixed(6)]);
+        }
+
+        labeledResults = labeledResults.sort(function(a,b) {
+            return b[2] - a[2];
+        });
+
+        this.send_message_to_boss('classify_results', labeledResults);
+
+    },
+
     track: function(d) {
 
         var parameters = d.parameters;
         var step = d.step;
         var new_labels = d.new_labels; 
+
+        console.log('new parameters:');
+        console.log(parameters);
 
         this.Net.setParams(parameters);
 
@@ -333,6 +362,8 @@ Slave.prototype = {
             this.remove();
         } else if(data.type == 'download') {
             this.download();
+        } else if(data.type == 'classify') {
+            this.classify(data);
         }
         
     }
