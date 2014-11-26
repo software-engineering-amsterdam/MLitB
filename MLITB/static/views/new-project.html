@@ -41,17 +41,26 @@
                 <div class="col-xs-6">
                     <h4>Templates</h4>
                     <ul>
-                        <li>
+                      <li>
+                          <a ng-click="load_template('cifar100A')">Cifar 100 Model A</a>
+                      </li>
+                      <li>
+                          <a ng-click="load_template('cifar100B')">Cifar 100 Model B</a>
+                      </li>
+                      <li>
+                          <a ng-click="load_template('cifar100C')">Cifar 100 Model C</a>
+                      </li>
+                        <!-- <li>
                             <a ng-click="load_template('simple_mnist')">Simple MNIST digit classifier</a>
                         </li>
                         <li>
                             <a ng-click="load_template('elaborate_mnist')">Elaborate MNIST digit classifier</a>
+                        </li> -->
+                        <li>
+                            <a ng-click="load_template('cifar10')">Cifar 10 Model (older)</a>
                         </li>
                         <li>
-                            <a ng-click="load_template('cifar10')">Cifar 10 Model</a>
-                        </li>
-                        <li>
-                            <a ng-click="load_template('cifar100')">Cifar 100 Model</a>
+                            <a ng-click="load_template('cifar100')">Cifar 100 Model (older)</a>
                         </li>
                     </ul>
                 </div>

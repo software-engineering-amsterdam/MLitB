@@ -303,7 +303,93 @@ app.controller('new_project', function ($scope, $rootScope, $location) {
             {type: 'fc', conf: {"activation":"softmax"}}
           ]
         }
-
+        else if(type == 'cifar100A') {
+            $scope.layers = [
+            {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
+            {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1,"drop_prob":0.5}},
+            {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.5}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
+        else if(type == 'cifar100B') {
+            $scope.layers = [
+            {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
+            {type: 'conv', conf: {"sx":5,"stride":2,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
+        else if(type == 'cifar100C') {
+          $scope.layers = [
+          {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
+          {type: 'conv', conf: {"sx":5,"stride":2,"filters":24,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":3,"stride":1}},
+          {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":2,"stride":1}},
+          {type: 'conv', conf: {"sx":2,"stride":1,"filters":128,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":2,"stride":1}},
+          {type: 'fc', conf: {"activation":"softmax"}}
+        ]
+        }
+        else if( type == 'nin_cifar100_small'){
+          $scope.layers = [
+            {type : 'input', conf: {"sx":32,"sy":32,"depth":3}},
+            {type : 'conv', conf: {"sx" : 11, "stride" : 4, "filters" : 16, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 16, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 16, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 3, "stride" : 2}},
+            //{type : 'pool', conf: {"sx" : 54, "stride" : 1, "pool_type":'avg'}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
+        else if( type == 'nin_cifar100_smallxxx'){
+          $scope.layers = [
+            {type : 'input', conf: {"sx":32,"sy":32,"depth":3}},
+            {type : 'conv', conf: {"sx" : 11, "stride" : 4, "filters" : 16, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 16, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 16, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 3, "stride" : 2}},
+            {type : 'conv', conf: {"pad":2, "sx" : 5, "stride" : 1, "filters" : 32, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 32, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 32, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 3, "stride" : 2}},
+            {type : 'conv', conf: {"pad":1, "sx" : 3, "stride" : 1, "filters" : 48, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 48, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 48, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 3, "stride" : 2, "drop_prob" : 0.5}},
+            {type : 'conv', conf: {"pad":1, "sx" : 3, "stride" : 1, "filters" : 64, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 64, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 100, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 6, "stride" : 1, "pool_type":'avg'}},
+            {type: 'softmax', conf: {}}
+          ]
+        }
+        else if( type == 'nin_cifar100'){
+          $scope.layers = [
+            {type : 'input', conf: {"sx":32,"sy":32,"depth":3}},
+            {type : 'conv', conf: {"sx" : 11, "stride" : 4, "filters" : 96, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 96, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 96, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 3, "stride" : 2}},
+            {type : 'conv', conf: {"pad":2, "sx" : 5, "stride" : 1, "filters" : 256, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 256, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 256, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 3, "stride" : 2}},
+            {type : 'conv', conf: {"pad":1, "sx" : 3, "stride" : 1, "filters" : 384, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 384, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 384, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 3, "stride" : 2, "drop_prob" : 0.5}},
+            {type : 'conv', conf: {"pad":1, "sx" : 3, "stride" : 1, "filters" : 1024, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 1024, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'conv', conf: {"sx" : 1, "stride" : 1, "filters" : 100, "activation" : 'relu', "is_train":'yes'}},
+            {type : 'pool', conf: {"sx" : 6, "stride" : 1, "pool_type":'avg'}},
+            {type: 'softmax', conf: {}}
+          ]
+        }
         $scope.layer_errors = [];
         $scope.errors = [];
 
