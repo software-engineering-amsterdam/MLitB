@@ -1621,20 +1621,28 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       }
 
       //add new neuron for the last fc and all layers after it
-
+      var updated_conf_idx = []
       for (var i = updatePos;i<this.layers.length;i++){
-        console.log('length',this.layer_conf.length,i);
         // var f = this.layer_conf[i];
         //update physical layer
  
         var layer = this.layers[i];
         layer.addNeuron(N);
         if (layer.layer_type=='fc'){
-          this.layer_conf[i].num_neurons+=N;
-          this.conf[layer.conf_idx].num_neurons+=N;  
+          var lc=this.layer_conf[i].num_neurons;
+          this.layer_conf[i].num_neurons=lc+N;
+          if (updated_conf_idx.indexOf(layer.conf_idx)==-1){
+            this.conf[layer.conf_idx].num_neurons=lc+N;  
+            updated_conf_idx.push(layer.conf_idx);
+            
+          }
         } else if (layer.layer_type=='conv'){
-          this.layer_conf[i].filters+=N;
-          this.conf[layer.conf_idx].filters+=N;  
+          var lc=this.layer_conf[i].filters;
+          this.layer_conf[i].filters=lc+N;
+          if (updated_conf_idx.indexOf(layer.conf_idx)==-1){
+            this.conf[layer.conf_idx].filters=lc+N;  
+            updated_conf_idx.push(layer.conf_idx);
+          }
         }
         //update layer_conf
         
@@ -1663,7 +1671,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       var Prev_out = X;
       for (var i = 0; i < this.layers.length; i++) {
         var V_out = this.layers[i].forward(Prev_out,is_training);
- 
+        // console.log(this.layers[i].layer_type+' '+V_out.data[0]);
         Prev_out = V_out;
       };
  
