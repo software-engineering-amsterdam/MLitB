@@ -42,7 +42,6 @@ Slave.prototype = {
 
     download_data: function(data) {
         // from boss to this slave
-        console.log('download_data');
         this.data[data.id] = {
             data: data.data,
             label: data.label
@@ -154,8 +153,12 @@ Slave.prototype = {
             console.log('step '+step);
             console.log('before par'+parameters.length);
             // parameters = parameters.slice(parameters.length-2,parameters.length);
+            
+            if (step > 0) {
 
-            that.Net.setParams(parameters);
+                that.Net.setParams(parameters);
+
+            }
 
             that.add_new_labels(new_labels);
 
@@ -198,17 +201,15 @@ Slave.prototype = {
             // if (parameters == null){
             // let's use step=0, is that correct ?
 
+            
             if (step == 0){
                 param = [that.Net.getParams(), that.Net.getGrads()];
-                console.log('length of sent grad '+that.Net.getGrads()[0].length);
-                console.log('length of sent grad '+that.Net.getGrads()[1].length);
                 param_type = 'params_and_grads';
-
             } else if (that.new_labels.length){
                 //meaning that we just added some labels in the middle of trainig (not in step 0)
                 //we need to tell param server and send the initial value for newly added params
                 param = [that.Net.getParams(), that.Net.getGrads()];
-                param_type ='new_labels';
+                param_type = 'new_labels';
             } else {
                 param = that.Net.getGrads();
                 param_type = 'grads';
