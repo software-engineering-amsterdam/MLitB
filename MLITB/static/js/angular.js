@@ -508,9 +508,6 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
 
             var layers = [];
 
-            console.log('ZE FILE:');
-            console.log(nn_file);
-
             // set up layers according to angular spec
             for(var i = 0; i < nn_file.configs.length; i++) {
 
