@@ -121,6 +121,9 @@ Slave.prototype = {
         var step = d.step;
         var new_labels = d.new_labels; 
 
+        console.log('new parameters:');
+        console.log(parameters);
+
         this.Net.setParams(parameters);
 
         this.add_new_labels(new_labels);
