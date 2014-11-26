@@ -96,7 +96,7 @@ Slave.prototype = {
         console.log(this.Net);
 
         var Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
-        Input.data = data;
+        Input.data = data.data;
         this.Net.forward(Input);
         var results = this.Net.getPrediction().data;
 
@@ -120,6 +120,9 @@ Slave.prototype = {
         var parameters = d.parameters;
         var step = d.step;
         var new_labels = d.new_labels; 
+
+        console.log('new parameters:');
+        console.log(parameters);
 
         this.Net.setParams(parameters);
 
