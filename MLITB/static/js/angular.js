@@ -412,9 +412,7 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
         var new_nn = new mlitb.Net();
         var labels = [];
         var layers_length = $scope.layers.length;
-        console.log('set config and params');
         new_nn.setConfigsAndParams(nn_file);
-        console.log('finish set config');
 
         if($scope.nn.drop_last_layer == true) {
 
@@ -428,7 +426,6 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
 
             newl.is_train = angular.copy($scope.layers[$scope.layers.length - 1].is_train);
             newl.type = angular.copy($scope.layers[$scope.layers.length - 1].type);
-
             new_nn.addLayer([
                 newl
             ]);
@@ -443,7 +440,7 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
         var train;
         var is_ever_train_false = false;
 
-        for(var i = 0; i < layers_length; i++) {
+        for(var i = 0; i < layers_length-1; i++) {
 
             if($scope.layers[i].is_train == undefined) {
                 train = false;
@@ -458,6 +455,8 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
             new_nn.updateLayerTrain(i, train);
 
         }
+        //here I make the last one always true just to test
+        new_nn.updateLayerTrain(layers_length-1, true);
 
         if($scope.nn.drop_last_layer == true) {
 
