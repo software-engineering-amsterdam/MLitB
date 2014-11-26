@@ -56,6 +56,16 @@ Slave.prototype = {
 
     },
 
+    download: function() {
+
+        var net = this.Net.getConfigsAndParams();
+
+        this.send_message_to_boss('download_parameters', { 
+            data: net
+        });
+
+    },
+
     add_new_labels: function(new_labels) {
 
         if(new_labels.length) {
@@ -314,6 +324,8 @@ Slave.prototype = {
             this.download_data(data.data);
         } else if(data.type == 'remove') {
             this.remove();
+        } else if(data.type == 'download') {
+            this.download();
         }
         
     }

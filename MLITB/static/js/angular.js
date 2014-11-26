@@ -151,6 +151,12 @@ app.controller('detail', function ($scope, $rootScope, $routeParams, $location) 
 
     }
 
+    $scope.download = function(slave_id) {
+
+        $scope.boss.slave_download(slave_id);
+
+    }
+
     $scope.remove = function(slave_id) {
 
         $scope.boss.remove_slave(slave_id);
@@ -498,9 +504,12 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
         
         process_file_upload = function(file) {
 
-            nn_file = JSON.parse(file.target.result);
+            nn_file = JSON.parse(file.target.result).data;
 
             var layers = [];
+
+            console.log('ZE FILE:');
+            console.log(nn_file);
 
             // set up layers according to angular spec
             for(var i = 0; i < nn_file.configs.length; i++) {
@@ -508,7 +517,7 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
                 layers.push({
                     type: nn_file.configs[i].type,
                     conf: process_angular_layer(nn_file.configs[i]),
-                    is_train: true
+                    is_train: false
                 });
 
             }

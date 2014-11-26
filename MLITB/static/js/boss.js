@@ -107,6 +107,8 @@ Boss.prototype = {
             this.download_done();
         } else if(type == 'status') {
             this.change_status(that, data);            
+        } else if(type == 'download_parameters') {
+            this.download_parameters(data);            
         } else if(type == 'workingset') {
             // change status does angular.apply
             that.workingset = data;
@@ -417,6 +419,26 @@ Boss.prototype = {
             nn_id: nn_id,
             slave_id: slave_id
         });
+
+    },
+
+    slave_download: function(slave_id) {
+
+        var slave = this.slave_by_id(slave_id);
+
+        if(!slave) {
+            this.logger('! Cannot download parameters from slave: Slave does not exist: ' + slave_id);
+            return;   
+        }
+
+        this.message_to_slave(slave, 'download');
+
+    },
+
+    download_parameters: function(c) {
+
+        var blob = new Blob([JSON.stringify(c)], {type: "application/json;charset=utf-8"});
+        saveAs(blob, "parameters.json");
 
     },
 

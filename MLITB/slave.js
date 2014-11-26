@@ -131,8 +131,6 @@ Slave.prototype.track = function(nn) {
 
     }
 
-    console.log(' $$ Send track');
-
     this.send('track', tracking_data);
 
     this.process = [];

@@ -53,6 +53,12 @@ var NeuralNetwork = function(data, master) {
 
     }
 
+    // fix labels for new NNs:
+
+    for(var key in data.nn.index2label) {
+        this.labels.push(data.nn.index2label[key]);
+    }
+
 }
 
 NeuralNetwork.prototype = {
