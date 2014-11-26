@@ -439,7 +439,9 @@ Boss.prototype = {
 
     download_parameters: function(c) {
 
-        var blob = new Blob([JSON.stringify(c)], {type: "application/json;charset=utf-8"});
+        var data = c.data;
+
+        var blob = new Blob([JSON.stringify(data)], {type: "application/json;charset=utf-8"});
         saveAs(blob, "parameters.json");
 
     },

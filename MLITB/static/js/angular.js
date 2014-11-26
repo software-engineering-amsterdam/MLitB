@@ -606,7 +606,7 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
         
         process_file_upload = function(file) {
 
-            nn_file = JSON.parse(file.target.result).data;
+            nn_file = JSON.parse(file.target.result);
 
             var layers = [];
 
@@ -640,8 +640,7 @@ app.controller('new_project_from_file', function ($scope, $rootScope, $location)
         var reader = new FileReader();
 
         reader.onload = (function(theFile) {
-            return process_file_upload; //function(e) {
-            //};
+            return process_file_upload;
         })(formElement);
 
         reader.readAsText(formElement);
