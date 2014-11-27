@@ -20,7 +20,7 @@ app.run(function($rootScope, $location) {
 
     $rootScope.boss = new Boss($rootScope);
 
-    $rootScope.boss.start();
+    $rootScope.boss.start(host, imagehost);
 
 });
 

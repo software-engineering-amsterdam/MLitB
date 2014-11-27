@@ -66,7 +66,7 @@ Slave.prototype = {
     },
 
     add_new_labels: function(new_labels) {
-        console.log(this.id+' '+JSON.stringify(new_labels));
+        //console.log(this.id+' '+JSON.stringify(new_labels));
         if(new_labels.length) {
 
             var i = new_labels.length;
@@ -80,7 +80,7 @@ Slave.prototype = {
             }
 
         }
-        console.log(this.id+' '+JSON.stringify(this.new_labels));
+        //console.log(this.id+' '+JSON.stringify(this.new_labels));
         if(this.new_labels.length) {
 
             this.Net.addLabel(this.new_labels);
@@ -93,7 +93,7 @@ Slave.prototype = {
 
         var vol_input = this.Net.conf[0];
 
-        console.log(this.Net);
+        //console.log(this.Net);
 
         var Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
         Input.data = data.data;
@@ -121,8 +121,8 @@ Slave.prototype = {
         var step = d.step;
         var new_labels = d.new_labels; 
 
-        console.log('new parameters:');
-        console.log(parameters);
+        //console.log('new parameters:');
+        //console.log(parameters);
 
         this.Net.setParams(parameters);
 
@@ -179,8 +179,8 @@ Slave.prototype = {
         }
 
         initialise = function() {
-            console.log('step '+step);
-            console.log('before par'+parameters.length);
+            //console.log('step '+step);
+            //console.log('before par'+parameters.length);
             // parameters = parameters.slice(parameters.length-2,parameters.length);
             
             if (step > 0) {
@@ -188,9 +188,9 @@ Slave.prototype = {
                 that.Net.setParams(parameters);
 
             }
-            console.log(that.id+' before add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
+            //console.log(that.id+' before add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
             that.add_new_labels(new_labels);
-            console.log(that.id+' after add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
+            //console.log(that.id+' after add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
             vol_input = that.Net.conf[0];
 
         }
@@ -299,7 +299,7 @@ Slave.prototype = {
             that.logger('Downloading NN configuration done.');
             that.status('waiting for task');
 
-            console.log(that.Net);
+            //console.log(that.Net);
 
         }
 

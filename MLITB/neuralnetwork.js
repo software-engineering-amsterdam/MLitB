@@ -88,7 +88,7 @@ NeuralNetwork.prototype = {
 
     },
 
-    add_data: function(socket, ids) {
+    add_data: function(socket, ids, labels) {
 
         var i = ids.length;
         while(i--) {
@@ -102,6 +102,12 @@ NeuralNetwork.prototype = {
 
             this.data.push(new_point);
 
+        }
+
+        var i = labels.length;
+        while(i--) {
+            console.log(" $$ adding label", labels[i]);
+            this.add_label(labels[i]);
         }
 
         socket.emit('message', {

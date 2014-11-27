@@ -329,6 +329,7 @@ Master.prototype = {
 
     add_data: function(socket, data) {
 
+        var labels = data.labels;
         var nn_id = data.nn_id;
         var ids = data.ids;
 
@@ -339,7 +340,7 @@ Master.prototype = {
             return
         }
 
-        nn.add_data(socket, ids);
+        nn.add_data(socket, ids, labels);
 
     },
 

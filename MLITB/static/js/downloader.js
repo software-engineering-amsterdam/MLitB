@@ -3,6 +3,7 @@ importScripts('/static/js/webworker/jszip.js');
 var Downloader = function() {
 
 	this.boss_id;
+	this.imagehost;
 
 	this.download_queue = [];
 
@@ -17,9 +18,10 @@ Downloader.prototype = {
         this.send_message_to_boss('logger', t);
     },
 
-	start: function(boss_id) {
+	start: function(data) {
 
-		this.boss_id = boss_id;
+		this.boss_id = data.boss_id;
+		this.imagehost = data.imagehost;
 
 		this.logger('worker started.');
 
@@ -52,7 +54,8 @@ Downloader.prototype = {
 		var task = this.download_queue.shift();
 
 		var xhr = new XMLHttpRequest();
-		xhr.open('POST', 'http://localhost:8001/download/', true);
+
+		xhr.open('POST', this.imagehost + '/download/', true);
 		xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 		xhr.responseType = 'arraybuffer';
 

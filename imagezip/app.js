@@ -1,10 +1,22 @@
-var express    = require('express'),
+var program     = require('commander'),
+    express    = require('express'),
     bodyParser = require('body-parser'),
     util       = require('util'),
     formidable = require('formidable'),
     fs         = require('fs'),
     jszip      = require('jszip'),
     redis_s    = require('redis');
+
+program
+    .version('0.1.0')
+    .option('-p, --port', 'Port')
+    .parse(process.argv);
+
+var port = program.port;
+
+if(!port) {
+    port = 8001;
+}
 
 var UPLOAD_DIR = __dirname + '/uploads/';
 
@@ -66,8 +78,6 @@ app.post('/download', function(req, res) {
 
     }
 
-    console.log('request for data:', req.body.ids);
-
     fetch_images(req.body.ids);
 
 });
@@ -81,6 +91,8 @@ app.get('/upload', function (req, res) {
 app.post('/upload', function (req, res) {
 
     var return_ids = [];
+
+    var labels = [];
 
     var opop = function(obj) {
         for (var key in obj) {
@@ -105,7 +117,7 @@ app.post('/upload', function (req, res) {
         extension = file.name.split('.');
 
         names = file.name.split('/');
-        name = names[names.length-2];
+        name = names[names.length-2].toLowerCase();
 
         if(extension.length == 1 || 
             (extension[0] == '' && extension.length == 2)
@@ -128,6 +140,10 @@ app.post('/upload', function (req, res) {
                     console.log(err);
                 }
 
+                if(labels.indexOf(name) == -1 ) {
+                    labels.push(name);
+                }
+
                 redis.hmset(reply + 'a', {
                     "file": UPLOAD_DIR + reply, 
                     "label": name
@@ -146,7 +162,10 @@ app.post('/upload', function (req, res) {
         redis.get('counter', function(reply, reply) {
 
             res.writeHead(200, {'content-type': 'application/json'});
-            res.end(JSON.stringify({ ids: return_ids }));
+            res.end(JSON.stringify({ 
+                ids: return_ids,
+                labels: labels
+            }));
 
         });
 
@@ -173,4 +192,4 @@ app.post('/upload', function (req, res) {
 });
 
 
-app.listen(8001)
+app.listen(port)

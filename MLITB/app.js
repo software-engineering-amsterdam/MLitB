@@ -1,10 +1,29 @@
-var express     = require('express');
+var program     = require('commander'),
+    express     = require('express');
     app         = express(),
     server      = require('http').Server(app),
     io          = require('socket.io')(server),
     bodyParser  = require('body-parser'),
     master      = require('./master');
 
+
+program
+    .version('0.3.0')
+    .option('-h, --host', 'Host, port')
+    .option('-i, --imagehost', 'Host of imagezip')
+    .parse(process.argv);
+
+var host = program.host;
+
+if(!host) {
+    host = 'http://localhost:8000'
+}
+
+var imagehost = program.imagehost;
+
+if(!program.imagehost) {
+    imagehost = 'http://localhost:8001'
+}
 
 master = new master();
 
@@ -25,7 +44,10 @@ app.use('/static', express.static(__dirname + '/static'));
 
 app.get('/', function (req, res) {
     
-    res.render('index');
+    res.render('index', {
+        host: host,
+        imagehost: imagehost
+    });
 
 });
 

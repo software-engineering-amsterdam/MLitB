@@ -5,9 +5,6 @@ var Boss = function(angular) {
     this.id;
     this.socket;
 
-    this.host = 'http://localhost';
-    this.port = 8000;
-
     this.running = false;
 
     this.slaves = [];
@@ -17,6 +14,9 @@ var Boss = function(angular) {
     this.downloader = null; // the web worker for downloading data
 
     this.log = [];
+
+    this.host;
+    this.imagehost;
 
 }
 
@@ -276,7 +276,7 @@ Boss.prototype = {
 
     },
 
-    add_data: function(nn_id, ids_raw) {
+    add_data: function(nn_id, data) {
 
         var nn = this.nn_by_id(nn_id);
 
@@ -285,11 +285,12 @@ Boss.prototype = {
             return;   
         }
 
-        var ids = JSON.parse(ids_raw);
+        var data = JSON.parse(data);
 
         this.message_to_master('add_data', {
             nn_id: nn_id,
-            ids: ids.ids
+            ids: data.ids,
+            labels: data.labels
         });
 
     },
@@ -361,7 +362,7 @@ Boss.prototype = {
         pkg.boss = this.id;
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', this.host + ':' + this.port + '/add-nn/', true);
+        xhr.open('POST', this.host + '/add-nn/', true);
         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         console.log('boss/add_nn');
         xhr.onload = function () {
@@ -762,7 +763,8 @@ Boss.prototype = {
             that.downloader = downloader;
 
             that.message_to_downloader('start', {
-                boss_id: that.id
+                boss_id: that.id,
+                imagehost: this.imagehost
             });
 
             
@@ -770,7 +772,7 @@ Boss.prototype = {
 
     },
 
-    start: function() {
+    start: function(host, imagehost) {
 
         var that = this;
 
@@ -779,7 +781,10 @@ Boss.prototype = {
             return;
         }
 
-        this.socket = io.connect();
+        this.host = host;
+        this.imagehost = imagehost;
+
+        this.socket = io.connect(host);
 
         this.socket.on('message', function (d) { that.message_from_master(d); });
 
