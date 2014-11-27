@@ -1,7 +1,8 @@
 var Client     = require('./client'),
     Boss       = require('./boss'),
     master     = require('./master'),
-    SGDTrainer = require('./sgd');
+    SGDTrainer = require('./sgd'),
+    mlitb = require('./static/js/mlitb');
 
 var id = 0;
 
@@ -59,6 +60,13 @@ var NeuralNetwork = function(data, master) {
         this.labels.push(data.nn.index2label[key]);
     }
 
+    console.log('constructor '+JSON.stringify(this.labels));
+
+    this.Net = new mlitb.Net();
+    this.Net.setConfigsAndParams(this.configuration);
+    
+    this.SGD = new SGDTrainer(this, {});
+    this.SGD.set_parameters(this.hyperparameters);
 }
 
 NeuralNetwork.prototype = {
@@ -84,7 +92,9 @@ NeuralNetwork.prototype = {
 
     download: function() {
 
-        return this.configuration;
+        // return this.configuration;
+        // use the latest state of configs and params
+        return this.Net.getConfigsAndParams();
 
     },
 
@@ -105,10 +115,23 @@ NeuralNetwork.prototype = {
         }
 
         var i = labels.length;
+        var new_labels = [];
+
         while(i--) {
             console.log(" $$ adding label", labels[i]);
-            this.add_label(labels[i]);
+            var t = this.add_label(labels[i]);
+            if (t){
+                new_labels.push(labels[i])
+            }
         }
+
+        //add new label to our copy nn
+        this.Net.addLabel(new_labels);
+
+        var newParams = this.Net.getParams();
+        //tell SGD to accomodate this new labels
+        // console.log('sent to server '+newParams.length);
+        this.SGD.resize_param(newParams);
 
         socket.emit('message', {
             type: 'data_upload_done',
@@ -153,10 +176,12 @@ NeuralNetwork.prototype = {
 
         if(this.labels.indexOf(label) > -1) {
             // already exists.
-            return;
+            return false;
         }
 
         this.labels.push(label);
+
+        return true;
 
     },
 
@@ -734,11 +759,11 @@ NeuralNetwork.prototype = {
             return;
         }
 
-        if(this.step == 0) {
-            // Create object SGD Trainer            
-            this.SGD = new SGDTrainer(this, {});
-            this.SGD.set_parameters(this.hyperparameters);
-        }
+        // if(this.step == 0) {
+        //     // Create object SGD Trainer            
+        //     this.SGD = new SGDTrainer(this, {});
+        //     this.SGD.set_parameters(this.hyperparameters);
+        // }
 
         if(this.hyperparameters_changed) {
             console.log('Updated (NN) with new hyperparameters.', this.id);

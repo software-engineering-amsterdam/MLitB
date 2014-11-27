@@ -80,12 +80,13 @@ Slave.prototype = {
             }
 
         }
-        //console.log(this.id+' '+JSON.stringify(this.new_labels));
+        // console.log(this.id+' '+JSON.stringify(this.new_labels));
         if(this.new_labels.length) {
 
             this.Net.addLabel(this.new_labels);
 
         }
+        // console.log(this.id+' '+JSON.stringify(this.Net.label2index))
 
     },
 
@@ -182,9 +183,8 @@ Slave.prototype = {
             //console.log('step '+step);
             //console.log('before par'+parameters.length);
             // parameters = parameters.slice(parameters.length-2,parameters.length);
-            
             if (step > 0) {
-
+                
                 that.Net.setParams(parameters);
 
             }
@@ -231,18 +231,18 @@ Slave.prototype = {
             // let's use step=0, is that correct ?
 
             
-            if (step == 0){
-                param = [that.Net.getParams(), that.Net.getGrads()];
-                param_type = 'params_and_grads';
-            } else if (that.new_labels.length){
-                //meaning that we just added some labels in the middle of trainig (not in step 0)
-                //we need to tell param server and send the initial value for newly added params
-                param = [that.Net.getParams(), that.Net.getGrads()];
-                param_type = 'new_labels';
-            } else {
+            // if (step == 0){
+            //     param = [that.Net.getParams(), that.Net.getGrads()];
+            //     param_type = 'params_and_grads';
+            // } else if (that.new_labels.length){
+            //     //meaning that we just added some labels in the middle of trainig (not in step 0)
+            //     //we need to tell param server and send the initial value for newly added params
+            //     param = [that.Net.getParams(), that.Net.getGrads()];
+            //     param_type = 'new_labels';
+            // } else {
                 param = that.Net.getGrads();
                 param_type = 'grads';
-            }
+            // }
 
             parameters = {
                 parameters : param,
@@ -252,7 +252,7 @@ Slave.prototype = {
                 proceeded_data : proceeded_data
             };
 
-            console.log(that.id+' $ error: ' + error);
+            console.log(that.id+' $ error: ' + error+' vector '+nVector);
 
             that.logger(nVector.toString() + ' points processed');
 
@@ -290,11 +290,13 @@ Slave.prototype = {
             // i.e. layer conf, params, labels, etc. etc.
             // is only once.
             that.Net.setConfigsAndParams(response);
+            console.log(JSON.stringify(response.configs));
             // console.log('just after set nn'+that.Net.layers[that.Net.layers.length-2].layer_type+' '+that.Net.layers[that.Net.layers.length-2].filters.data.length);
 
 
             //set initial this.labels
-            that.labels = Object.keys(that.Net.label2index);
+            that.labels = Object.keys(that.Net.index2label);
+            console.log('labels after set '+JSON.stringify(that.labels));
 
             that.logger('Downloading NN configuration done.');
             that.status('waiting for task');

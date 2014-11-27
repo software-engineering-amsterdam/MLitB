@@ -77,6 +77,57 @@ SGDTrainer.prototype = {
 
   },
 
+  // initialise : function(initParams){
+        
+  //   this.last_params = initParams;
+
+
+  //   for (var i = 0; i < this.last_params.length; i++) {
+  //     this.last_grads.push(zeros(this.last_params[i].length));
+  //     this.sum_square_gads.push(zeros(this.last_params[i].length));
+  //   }
+
+  //   this.is_initialized = true;
+  // },
+
+  resize_param : function(newParams){
+    if (newParams.length==0){
+      return;
+    }
+    //this should be call from neuralnetwork when receiving new labels from uploaded data/camera
+    //there are 3 kinds of resizing : 
+    //0 : initialization for the first time
+    //1 : adding new filters (last layer is conv as in NiN case), 
+    //2 : only adding new elements (fc)
+    //check for the first condition
+    var NL = newParams.length;
+    var LL = this.last_params.length;
+    if (NL-LL > 0){
+      //first case, resize this.last_grads & this.sum_square_grads
+      for (var i=LL; i< NL;i++){
+        this.last_grads.push(zeros(newParams[i].length));
+        this.sum_square_gads.push(zeros(newParams[i].length));
+      }
+
+    } else {
+      //second case, new elements in the last 2 parameters (fc filter and bias)
+
+      for (var i = NL-2 ;i< NL;i++){
+        var temp = this.last_grads[i].concat(zeros(newParams[i].length-this.last_grads[i].length))
+        this.last_grads[i]=temp;
+        var temp = this.sum_square_gads[i].concat(zeros(newParams[i].length-this.sum_square_gads[i].length))
+        this.sum_square_gads[i]=temp;
+      }
+
+    }
+
+    //assume we always update NN in neuralnetworks.js, so we can just assige newParams to this.last_params
+    this.last_params = newParams;
+    console.log('length last param '+this.last_params.length);
+    console.log('length last grad '+this.last_grads.length);
+
+  },
+
   reduce : function(nn){
 
     old_parameters = nn.configuration.parameters;
@@ -89,31 +140,33 @@ SGDTrainer.prototype = {
 
     //for the first time, get parameter from any client
     //assume that in this situation, all client will send both param and grad
-    if (!this.is_initialized){
+    //==========================MOVE TO INITIALISE===========================
+    // if (!this.is_initialized){
 
-      if (new_parameters[0].parameters_type === 'params_and_grads'){
+    //   if (new_parameters[0].parameters_type === 'params_and_grads'){
         
-        this.last_params = new_parameters[0].parameters[0];
+    //     this.last_params = new_parameters[0].parameters[0];
 
-      } else if (new_parameters[0].parameters_type === 'grads'){
+    //   } else if (new_parameters[0].parameters_type === 'grads'){
 
-        // this.last_params = new_parameters[0].parameters;
+    //     // this.last_params = new_parameters[0].parameters;
 
-      } else {
+    //   } else {
 
-        console.log('THERE IS SOMETHING WRONG');
-        return;
+    //     console.log('THERE IS SOMETHING WRONG');
+    //     return;
         
-      }
+    //   }
 
-      for (var i = 0; i < this.last_params.length; i++) {
-        this.last_grads.push(zeros(this.last_params[i].length));
-        this.sum_square_gads.push(zeros(this.last_params[i].length));
-      }
+    //   for (var i = 0; i < this.last_params.length; i++) {
+    //     this.last_grads.push(zeros(this.last_params[i].length));
+    //     this.sum_square_gads.push(zeros(this.last_params[i].length));
+    //   }
 
-      this.is_initialized = true;
+    //   this.is_initialized = true;
 
-    } else {
+    // } else {
+    //=================================================
 
       //there's possibility to have new labels, so we need to extend
       //this.last_params, this.last_grads, this.sum_square_grads
@@ -197,7 +250,7 @@ SGDTrainer.prototype = {
           g[j] = 0.0;
         }
       }
-    }
+    // }
 
     
     this.iteration++;
