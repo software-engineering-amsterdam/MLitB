@@ -9,15 +9,24 @@ var program     = require('commander'),
 
 program
     .version('0.3.0')
-    .option('-h, --host', 'Host, port')
+    .option('-h, --host', 'Host')
+    .option('-p, --port', 'Port')
     .option('-i, --imagehost', 'Host of imagezip')
     .parse(process.argv);
+
+var port = program.port;
+
+if(!port) {
+    port = 8000;
+}
 
 var host = program.host;
 
 if(!host) {
-    host = 'http://localhost:8000'
+    host = 'http://localhost'
 }
+
+host = host + ':' + port;
 
 var imagehost = program.imagehost;
 
@@ -136,4 +145,8 @@ io.on('connection', function (socket) {
 
 });
 
-server.listen(8000)
+console.log('MLitB server listening on', port);
+console.log('ImageZip server assigned on host', imagehost);
+
+
+server.listen(program.port)

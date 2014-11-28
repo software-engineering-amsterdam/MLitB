@@ -197,4 +197,6 @@ app.post('/upload', function (req, res) {
 });
 
 
+console.log('ImageZip server listening on port', port);
+
 app.listen(port)
