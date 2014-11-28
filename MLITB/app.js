@@ -9,9 +9,9 @@ var program     = require('commander'),
 
 program
     .version('0.3.0')
-    .option('-h, --host', 'Host')
-    .option('-p, --port', 'Port', parseInt)
-    .option('-i, --imagehost', 'Host of imagezip')
+    .option('-h, --host <v>', 'Host')
+    .option('-p, --port <n>', 'Port', parseInt)
+    .option('-i, --imagehost <v>', 'Host of imagezip')
     .parse(process.argv);
 
 var port = program.port;
@@ -30,7 +30,7 @@ host = host + ':' + port;
 
 var imagehost = program.imagehost;
 
-if(!program.imagehost) {
+if(!imagehost) {
     imagehost = 'http://localhost:8001'
 }
 
