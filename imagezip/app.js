@@ -94,20 +94,25 @@ app.post('/upload', function (req, res) {
 
     var labels = [];
 
-    var opop = function(obj) {
-        for (var key in obj) {
-            // Uncomment below to fix prototype problem.
-            // if (!Object.hasOwnProperty.call(obj, key)) continue;
-            var result = obj[key];
-            // If the property can't be deleted fail with an error.
-            if (!delete obj[key]) { throw new Error(); }
-            return result;
-        } 
+    var obj_to_list = function(files) {
+
+        var list = [];
+
+        var r = Object.keys(files);
+
+        var i = r.length;
+        while(i--) {
+            list.push(files[r[i]]);
+        }
+
+        return list;
+
     }
 
     var process_zip_files = function(files) {
 
-        var file = opop(files);
+        var file = files.pop();
+
         var extension;
 
         if(!file) {
@@ -181,7 +186,7 @@ app.post('/upload', function (req, res) {
             if(err) throw err;
             var zip = new jszip(data);
 
-            process_zip_files(zip.files);
+            process_zip_files(obj_to_list(zip.files));
             
         });
 
