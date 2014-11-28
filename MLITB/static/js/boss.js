@@ -365,7 +365,6 @@ Boss.prototype = {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', this.host + '/add-nn/', true);
         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        console.log('boss/add_nn');
         xhr.onload = function () {
 
             that.logger('New neural added done.');
@@ -604,26 +603,38 @@ Boss.prototype = {
 
     process_data: function(a, slave) {
 
+        var obj_to_list = function(files) {
+
+            var list = [];
+
+            var r = Object.keys(files);
+
+            var i = r.length;
+            while(i--) {
+                list.push(files[r[i]]);
+            }
+
+            return list;
+
+        }
+
+        var extension_map = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif'
+        }
+
         var that = this;
 
         var ids = [];
 
         var nn = this.nn_by_id(slave.nn);
 
-        opop = function(obj) {
-          for (var key in obj) {
-            // Uncomment below to fix prototype problem.
-            // if (!Object.hasOwnProperty.call(obj, key)) continue;
-            var result = obj[key];
-            // If the property can't be deleted fail with an error.
-            if (!delete obj[key]) { throw new Error(); }
-            return result;
-          } 
-        }
-
         process = function(a) {
 
-            var file = opop(a);
+            var file = a.pop();
+
             if(!file) {
                 
                 that.logger('Uploading data to worker done.');
@@ -642,19 +653,37 @@ Boss.prototype = {
                 return;
             }
 
-            var id = parseInt(file.name.split('.')[0]);
-            ids.push(id);
+            var split = file.name.split('.');
+
+            var id = parseInt(split[0]);
+
+            var extension = split[split.length-1];
+
+            if(extension_map[extension] == 'undefined') {
+                this.logger('Could not interpret file, unsupported file format: ' + extension);
+                return process(a);
+            }
+
 
             var b = file.asUint8Array();
 
-            var blob = new Blob([b], {'type': 'image/jpeg'});
-            var url = URL.createObjectURL(blob);
+            var blob = new Blob([b]);
+            var url = URL.createObjectURL(blob, {type: 'text/plain'});
 
             var img = new Image();
 
             img.src = url;
 
+            img.onerror = function(e) {
+
+                that.logger('Error decoding image ID: ' + id);
+                return process(a);
+
+            }
+
             img.onload = function() {
+
+                ids.push(id);
 
                 var width = nn.configuration[0].sx;
                 var height = nn.configuration[0].sy;
@@ -687,13 +716,13 @@ Boss.prototype = {
                 context = null;
                 canvas = null;
 
-                process(a);
+                return process(a);
 
             }
 
         }
 
-        process(a);
+        return process(obj_to_list(a));
 
     },
 
