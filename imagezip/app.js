@@ -132,7 +132,7 @@ app.post('/upload', function (req, res) {
 
         extension = extension.pop().toLowerCase();
 
-        if(! (extension == 'jpeg' || extension == 'jpg')) {
+        if(! (extension == 'jpeg' || extension == 'jpg' || extension == 'png')) {
             return process_zip_files(files);
         }
 
