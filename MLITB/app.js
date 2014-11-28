@@ -149,4 +149,4 @@ console.log('MLitB server listening on', port);
 console.log('ImageZip server assigned on host', imagehost);
 
 
-server.listen(program.port)
+server.listen(port)
