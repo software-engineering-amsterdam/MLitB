@@ -10,7 +10,7 @@ var program     = require('commander'),
 program
     .version('0.3.0')
     .option('-h, --host', 'Host')
-    .option('-p, --port', 'Port')
+    .option('-p, --port', 'Port', parseInt)
     .option('-i, --imagehost', 'Host of imagezip')
     .parse(process.argv);
 

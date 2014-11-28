@@ -9,7 +9,7 @@ var program     = require('commander'),
 
 program
     .version('0.1.0')
-    .option('-p, --port', 'Port')
+    .option('-p, --port', 'Port', parseInt)
     .parse(process.argv);
 
 var port = program.port;
