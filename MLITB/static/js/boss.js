@@ -158,7 +158,8 @@ Boss.prototype = {
 
             that.message_to_slave(slave, 'start', {
                 boss_id: that.id,
-                nn_id: nn_id
+                nn_id: nn_id,
+                host: this.host
             });
 
             slave.nn = nn_id;
