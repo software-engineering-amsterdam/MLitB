@@ -31,6 +31,7 @@ var NeuralNetwork = function(data, master) {
     this.configuration = data.nn; // NN configuration
 
     this.parameters;
+    this.error = 0.0;
 
     this.iteration_time = data.iteration_time; // time per iteration
     this.runtime_elapsed = 0; // time elapsed
@@ -83,7 +84,7 @@ NeuralNetwork.prototype = {
             realtime_elapsed: this.realtime_elapsed,
             step: this.step,
             data_seen: this.data_seen,
-            slaves_operating: this.slaves_operating.length,
+            error: this.error.toFixed(6),
             hyperparameters: this.hyperparameters,
             running: this.running,
             configuration: this.configuration.configs

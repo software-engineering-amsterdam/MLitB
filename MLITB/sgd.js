@@ -306,21 +306,9 @@ SGDTrainer.prototype = {
     // set 'new' parameters.
 
     nn.parameters = this.last_params;
+    nn.error = totalError/totalVector;
 
     console.log(this.last_params[0].length, this.last_params[1].length);
-
-    /*
-    nn.send_stats({
-      type: 'parameter',
-      data: {
-        'error': totalError/totalVector,
-        'step': step,
-        'parameters': this.last_params,
-        'configuration': nn.configuration,
-        'labels': nn.labels
-      }
-    });
-    */
 
   }
 }

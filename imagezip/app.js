@@ -94,6 +94,9 @@ app.post('/upload', function (req, res) {
 
     var labels = [];
 
+    var illegal_chars = ['.', '_'];
+    var valid_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+
     var obj_to_list = function(files) {
 
         var list = [];
@@ -124,15 +127,27 @@ app.post('/upload', function (req, res) {
         names = file.name.split('/');
         name = names[names.length-2].toLowerCase();
 
-        if(extension.length == 1 || 
-            (extension[0] == '' && extension.length == 2)
-        ) {
+        // check for directory names / file names with illegal starting chars
+
+        var i = names.length;
+        while(i--) {
+            var n = names[i];
+            
+            if( illegal_chars.indexOf(n[0]) > -1) {
+                console.log('Illegal file/directory name:', names);
+                return process_zip_files(files);
+            }
+        }
+
+        if(extension.length == 1 || (extension[0] == '' && extension.length == 2)) {
+           console.log('Unsupported file extension:', names);
            return process_zip_files(files);
         }
 
         extension = extension.pop().toLowerCase();
 
-        if(! (extension == 'jpeg' || extension == 'jpg' || extension == 'png')) {
+        if(valid_extensions.indexOf(extension) == -1) {
+            console.log('Unsupported file extension:', names);
             return process_zip_files(files);
         }
 
