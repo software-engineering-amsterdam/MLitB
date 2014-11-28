@@ -15,7 +15,7 @@ function Slave(socket, boss) {
     this.latency = 10;
     this.linkspeed = 10;
 
-    this.max_power = 500;
+    this.max_power = 10000;
 
     this.assigned_power;
 
