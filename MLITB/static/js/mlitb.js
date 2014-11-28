@@ -528,7 +528,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       this.out_depth+=N;
       this.n_params+=N;
       for (var i=0;i<N;i++){
-        this.filters.push(new global.Vol(this.sx, this.sy, N));
+        this.filters.push(new global.Vol(this.sx, this.sy, this.in_depth));
       }
       var addedBias = new global.Vol(1,1, N, 0.1);
       this.biases.data = this.biases.data.concat(addedBias.data);
@@ -1002,7 +1002,6 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       return this.V_out;
     },
     backward: function(y) {
-
       var V_in_drv = global.zeros(this.V_in.data.length); // zero out the gradient of input Vol
 
       for(var i=0;i<this.out_depth;i++) {
@@ -1671,13 +1670,14 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       var Prev_out = X;
       for (var i = 0; i < this.layers.length; i++) {
         var V_out = this.layers[i].forward(Prev_out,is_training);
-        // console.log(this.layers[i].layer_type+' '+V_out.data[0]);
+        // console.log(this.layers[i].layer_type+' '+V_out.data[0]+', '+V_out.data[1]+', '+V_out.data[2]+', '+V_out.data[3]+', '+V_out.data[4]+', '+V_out.data[5]+', '+V_out.data[6]+', '+V_out.data[7]+', '+V_out.data[8]+', '+V_out.data[9]+', '+V_out.data[10]+', '+V_out.data[11]+', '+V_out.data[12]+', '+V_out.data[13]+', '+V_out.data[14]+', '+V_out.data[15]+', '+V_out.data[16]+', '+V_out.data[17]+', '+V_out.data[18]);
         Prev_out = V_out;
       };
  
     },
  
     backward : function (Y) {
+      // console.log('backward');
       //get label if input not number. 
       //label2index must be set trough setLabel function
       Y = typeof Y === 'number' ? Y : this.label2index[Y]
@@ -1688,6 +1688,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       for (var i = this.layers.length - 2; i >= 0; i--) {
         if (this.layers[i].is_train){
           this.layers[i].backward();  
+          // console.log(this.layers[i].layer_type);
         } else {
           break;
         }

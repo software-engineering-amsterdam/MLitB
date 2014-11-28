@@ -16,8 +16,6 @@ var Slave = function() {
     this.boss_id;
     this.nn_id;
 
-    this.host;
-
     this.data = {};
 
     this.Net; // the NN
@@ -182,11 +180,16 @@ Slave.prototype = {
         }
 
         initialise = function() {
-            //console.log('step '+step);
-            //console.log('before par'+parameters.length);
+            console.log('step '+step);
+
+            
             // parameters = parameters.slice(parameters.length-2,parameters.length);
             if (step > 0) {
-                
+                // console.log('before par '+parameters.length);
+                // for (var s=0;s<parameters.length;s++){
+                //     console.log(parameters[s].length+' -- ');
+                // }
+                // console.log('that par '+that.Net.getParams().length);    
                 that.Net.setParams(parameters);
 
             }
@@ -282,7 +285,7 @@ Slave.prototype = {
         var that = this;
 
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', this.host + '/download-nn/' + this.nn_id, true);
+        xhr.open('GET', 'http://localhost:8000/download-nn/' + this.nn_id, true);
         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 
         xhr.onload = function () {
@@ -331,7 +334,6 @@ Slave.prototype = {
 
         id = data.boss_id;
         this.nn_id = data.nn_id;
-        this.host = data.host;
 
         this.boss_id = id;
         this.start_socket(id);
