@@ -197,7 +197,7 @@ app.controller('detail', function ($scope, $rootScope, $routeParams, $location) 
             $('#adddata').modal('hide');
         }
 
-        request.open("POST", imagehost + '/upload");
+        request.open("POST", imagehost + "/upload");
         request.send(new FormData(formElement));
     }
 
