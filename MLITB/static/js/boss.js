@@ -667,8 +667,8 @@ Boss.prototype = {
 
             var b = file.asUint8Array();
 
-            var blob = new Blob([b]);
-            var url = URL.createObjectURL(blob, {type: 'text/plain'});
+            var blob = new Blob([b], {type: 'text/plain'});
+            var url = URL.createObjectURL(blob);
 
             var img = new Image();
 
