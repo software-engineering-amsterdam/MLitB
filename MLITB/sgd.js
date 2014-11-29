@@ -10,15 +10,41 @@
  */
 
 // helper function to make array of zeroes
-var zeros = function(n) {
-    var arr = new Array(n);
+// var zeros = function(n) {
+//     var arr = new Array(n);
   
-    for(var i=0;i<n;i++) { 
-        arr[i] = 0; 
-    }
+//     for(var i=0;i<n;i++) { 
+//         arr[i] = 0; 
+//     }
 
-    return arr;
-}
+//     return arr;
+// }
+
+var zeros = function(n) {
+    if(typeof(n)==='undefined' || isNaN(n)) { return []; }
+    if(typeof ArrayBuffer === 'undefined') {
+      // lacking browser support
+      var arr = new Array(n);
+      for(var i=0;i<n;i++) { arr[i]= 0; }
+      return arr;
+    } else {
+      return new Float32Array(n);
+    }
+    // var arr = new Array(n);
+    // for(var i=0;i<n;i++) { arr[i]= 0; }
+    // return arr;
+  }
+
+  var concat32 = function(first, second)
+  {
+    var firstLength = first.length,
+        result = new Float32Array(firstLength + second.length);
+
+    result.set(first);
+    result.set(second, firstLength);
+
+    return result;
+  }
 
 
 var SGDTrainer = function (nn, net) {
@@ -113,9 +139,9 @@ SGDTrainer.prototype = {
       //second case, new elements in the last 2 parameters (fc filter and bias)
 
       for (var i = NL-2 ;i< NL;i++){
-        var temp = this.last_grads[i].concat(zeros(newParams[i].length-this.last_grads[i].length))
+        var temp = concat32(this.last_grads[i],zeros(newParams[i].length-this.last_grads[i].length))
         this.last_grads[i]=temp;
-        var temp = this.sum_square_gads[i].concat(zeros(newParams[i].length-this.sum_square_gads[i].length))
+        var temp = concat32(this.sum_square_gads[i],zeros(newParams[i].length-this.sum_square_gads[i].length))
         this.sum_square_gads[i]=temp;
       }
 
@@ -204,7 +230,7 @@ SGDTrainer.prototype = {
       for (var i = 0; i < this.last_params.length; i++) {
         // var pg = this.last_params[i];
         var p = this.last_params[i];
-        var g = [];
+        var g = zeros(p.length);
 
         //add up all gradient vectors. grad length = param length
         for (var gi = 0; gi < p.length; gi++) {
@@ -219,7 +245,7 @@ SGDTrainer.prototype = {
               total_gi += new_parameters[k].parameters[i][gi];
             }
           }
-          g.push(total_gi);
+          g[gi](total_gi);
         };
         var plen = p.length;
         var lg = this.last_grads[i];
@@ -230,14 +256,14 @@ SGDTrainer.prototype = {
           var l2_grad = this.l2_decay*p[j];
           var l1_grad = this.l1_decay*(p[j]>0 ? 1 : -1);
           // add new gradient element for new added neuron
-          if (typeof lg[j]==='undefined'){
-            lg.push(0.0);
-          }
+          // if (typeof lg[j]==='undefined'){
+          //   lg.push(0.0);
+          // }
           var lgj = lg[j];
           // add new gradient element for new added neuron
-          if (typeof ssg[j]==='undefined'){
-            ssg.push(0.0);
-          }
+          // if (typeof ssg[j]==='undefined'){
+          //   ssg.push(0.0);
+          // }
           ssg[j] += ((g[j]/totalVector) *(g[j]/totalVector));
           var tess = Math.sqrt(ssg[j]);
           if (tess<=1){
@@ -308,7 +334,7 @@ SGDTrainer.prototype = {
     nn.parameters = this.last_params;
     nn.error = totalError/totalVector;
 
-    console.log(this.last_params[0].length, this.last_params[1].length);
+    // console.log(this.last_params[0].length, this.last_params[1].length);
 
   }
 }

@@ -78,137 +78,151 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     throw new Error("Unable to copy obj! Its type isn't supported.");
   }
 
-    var zeros = function(n) {
-    // if(typeof(n)==='undefined' || isNaN(n)) { return []; }
-    // if(typeof ArrayBuffer === 'undefined') {
-    //   // lacking browser support
-    //   var arr = new Array(n);
-    //   for(var i=0;i<n;i++) { arr[i]= 0; }
-    //   return arr;
-    // } else {
-    //   return new Float64Array(n);
+  var zeros = function(n) {
+    if(typeof(n)==='undefined' || isNaN(n)) { return []; }
+    if(typeof ArrayBuffer === 'undefined') {
+      // lacking browser support
+      console.log('lack browser support of typed array');
+      var arr = new Array(n);
+      for(var i=0;i<n;i++) { arr[i]= 0; }
+      return arr;
+    } else {
+      return new Float32Array(n);
+    }
+    // var arr = new Array(n);
+    // for(var i=0;i<n;i++) { arr[i]= 0; }
+    // return arr;
+  }
+
+  var concat32 = function(first, second)
+  {
+    console.log('concat '+firstLength+' '+second.length);
+    // if (Object.prototype.toString.call(c))
+    var firstLength = first.length,
+        result = new Float32Array(firstLength + second.length);
+
+    result.set(first);
+    result.set(second, firstLength);
+
+    return result;
+  }
+
+  // var Vector = function(item){
+  //   this.v = item;
+  // }
+
+  // Vector.prototype = {
+  //   add : function(other){
+  //       result = global.zeros(l);
+  //       var l = this.v.length;
+  //       if (l == other.length){
+  //           for (var i = 0; i < l; i++) {
+  //               result[i] = this.v[i]+other[i];
+  //           };
+            
+  //       } else if (typeof other==='number'){
+  //           for (var i = 0; i < l; i++) {
+  //               result[i] = this.v[i]+other;
+  //           };
+  //       }
+  //       return result;
+  //   },
+  //   divide : function(other){
+  //       result = global.zeros(l);
+  //       var l = this.v.length;
+  //       if (l == other.length){
+  //           for (var i = 0; i < l; i++) {
+  //               result[i] = this.v[i]/other[i];
+  //           };
+            
+  //       } else if (typeof other==='number'){
+  //           for (var i = 0; i < l; i++) {
+  //               result[i] = this.v[i]/other;
+  //           };
+  //       }
+  //       return result;
+  //   }
+  // };
+
+    // var add = function (A, B) {
+    //     if (typeof A === 'object' && typeof B === 'object'){
+    //         var sa = size(A);
+    //         var sb = size(B);
+            
+    //         if (sa[0] === sb[0] && sa[1] === sb[1]){
+    //             var res = [];
+    //             for (var i = 0; i < sa[0]; i++) {
+    //                 res[i] = [];
+    //                 for (var j = 0; j< sa[1]; j++)
+    //                     res[i][j] = A[i][j]+B[i][j];
+    //             }
+    //             return res;
+    //         } else {
+    //             console.log('ERROR!! matrix dimension does not match');
+    //         }
+    //     }else if (typeof A === 'object' && typeof B === 'number'){
+    //         var sa = size(A);
+    //         var res = [];
+    //         for (var i = 0; i < sa[0]; i++) {
+    //             res[i]=[];
+    //             for (var j = 0; j < sa[1]; j++) {
+    //                 res[i][j] = A[i][j] + B;
+    //             };
+    //         }
+    //         return res;
+    //     }
     // }
-    var arr = new Array(n);
-    for(var i=0;i<n;i++) { arr[i]= 0; }
-    return arr;
-  }
 
-  var Vector = function(item){
-    this.v = item;
-  }
+    // var dot = function(m1, m2, opt){
+    //     if (typeof m1==='number' && typeof m2==='number')
+    //         return m1*m2
+    //     else if (typeof m1==='object' && typeof m2 === 'number'){
+    //         var m1 = typeof m1[0].length == 'undefined' ? [m1] : m1;    
+    //         var res = [];
+    //         for (var i = 0; i < m1.length; i++) {
+    //             res[i] = [];
+    //             for (var j = 0; j < m1[0].length; j++) {
+    //                 res[i][j] = m1[i][j]*m2;
+    //             }
+    //         }
+    //         return res;
+    //     } else {
+    //         var m1 = typeof m1[0].length == 'undefined' ? [m1] : m1;
+    //         var m2 = typeof m2[0].length == 'undefined' ? [m2] : m2;
+    //         var s1 = size(m1);
+    //         var s2 = size(m2);
 
-  Vector.prototype = {
-    add : function(other){
-        result = global.zeros(l);
-        var l = this.v.length;
-        if (l == other.length){
-            for (var i = 0; i < l; i++) {
-                result[i] = this.v[i]+other[i];
-            };
-            
-        } else if (typeof other==='number'){
-            for (var i = 0; i < l; i++) {
-                result[i] = this.v[i]+other;
-            };
-        }
-        return result;
-    },
-    divide : function(other){
-        result = global.zeros(l);
-        var l = this.v.length;
-        if (l == other.length){
-            for (var i = 0; i < l; i++) {
-                result[i] = this.v[i]/other[i];
-            };
-            
-        } else if (typeof other==='number'){
-            for (var i = 0; i < l; i++) {
-                result[i] = this.v[i]/other;
-            };
-        }
-        return result;
-    }
-  };
-
-    var add = function (A, B) {
-        if (typeof A === 'object' && typeof B === 'object'){
-            var sa = size(A);
-            var sb = size(B);
-            
-            if (sa[0] === sb[0] && sa[1] === sb[1]){
-                var res = [];
-                for (var i = 0; i < sa[0]; i++) {
-                    res[i] = [];
-                    for (var j = 0; j< sa[1]; j++)
-                        res[i][j] = A[i][j]+B[i][j];
-                }
-                return res;
-            } else {
-                console.log('ERROR!! matrix dimension does not match');
-            }
-        }else if (typeof A === 'object' && typeof B === 'number'){
-            var sa = size(A);
-            var res = [];
-            for (var i = 0; i < sa[0]; i++) {
-                res[i]=[];
-                for (var j = 0; j < sa[1]; j++) {
-                    res[i][j] = A[i][j] + B;
-                };
-            }
-            return res;
-        }
-    }
-
-    var dot = function(m1, m2, opt){
-        if (typeof m1==='number' && typeof m2==='number')
-            return m1*m2
-        else if (typeof m1==='object' && typeof m2 === 'number'){
-            var m1 = typeof m1[0].length == 'undefined' ? [m1] : m1;    
-            var res = [];
-            for (var i = 0; i < m1.length; i++) {
-                res[i] = [];
-                for (var j = 0; j < m1[0].length; j++) {
-                    res[i][j] = m1[i][j]*m2;
-                }
-            }
-            return res;
-        } else {
-            var m1 = typeof m1[0].length == 'undefined' ? [m1] : m1;
-            var m2 = typeof m2[0].length == 'undefined' ? [m2] : m2;
-            var s1 = size(m1);
-            var s2 = size(m2);
-
-            if (typeof opt === 'undefined' && s1[1] !== s2[0]) {
-                console.log('ERROR!! matrix dimension does not match');
-            } else if (opt === 'r' && s1[1] !== s2[1]) { //multiply with transposed right matrix
-                console.log('ERROR!! matrix dimension does not match');
-            } else if (opt === 'l' && s1[0] !== s2[0]) { //multiply with transposed left matrix
-                console.log('ERROR!! matrix dimension does not match');
-            } else{
-                var result = [];
-                var p = opt === 'l' ? s1[1] : s1[0];
-                var q = opt === 'r'? s2[0] : s2[1];
-                var r = opt === 'l' ? s1[0] : s1[1];
-                if (typeof opt === 'undefined')
-                    var getDot = function(m1,m2,i,j,k){return m1[i][k] * m2[k][j];}
-                else if (opt === 'r') 
-                    var getDot = function(m1,m2,i,j,k){return m1[i][k] * m2[j][k];}
-                else if (opt === 'l')
-                    var getDot = function(m1,m2,i,j,k){return m1[k][i] * m2[k][j];}
-            for (var i = 0; i < p; i++) {
-            result[i] = [];
-            for (var j = 0; j < q; j++) {
-                var sum = 0;
-                for (var k = 0; k < r; k++) {
-                    sum += getDot(m1,m2,i,j,k)
-                }
-                result[i][j] = sum;
-            }
-            }
-            return result.length === 1 ? result[0] : result; 
-            }
-        }
-    }
+    //         if (typeof opt === 'undefined' && s1[1] !== s2[0]) {
+    //             console.log('ERROR!! matrix dimension does not match');
+    //         } else if (opt === 'r' && s1[1] !== s2[1]) { //multiply with transposed right matrix
+    //             console.log('ERROR!! matrix dimension does not match');
+    //         } else if (opt === 'l' && s1[0] !== s2[0]) { //multiply with transposed left matrix
+    //             console.log('ERROR!! matrix dimension does not match');
+    //         } else{
+    //             var result = [];
+    //             var p = opt === 'l' ? s1[1] : s1[0];
+    //             var q = opt === 'r'? s2[0] : s2[1];
+    //             var r = opt === 'l' ? s1[0] : s1[1];
+    //             if (typeof opt === 'undefined')
+    //                 var getDot = function(m1,m2,i,j,k){return m1[i][k] * m2[k][j];}
+    //             else if (opt === 'r') 
+    //                 var getDot = function(m1,m2,i,j,k){return m1[i][k] * m2[j][k];}
+    //             else if (opt === 'l')
+    //                 var getDot = function(m1,m2,i,j,k){return m1[k][i] * m2[k][j];}
+    //         for (var i = 0; i < p; i++) {
+    //         result[i] = [];
+    //         for (var j = 0; j < q; j++) {
+    //             var sum = 0;
+    //             for (var k = 0; k < r; k++) {
+    //                 sum += getDot(m1,m2,i,j,k)
+    //             }
+    //             result[i][j] = sum;
+    //         }
+    //         }
+    //         return result.length === 1 ? result[0] : result; 
+    //         }
+    //     }
+    // }
 
     var size = function (m) {
         var m = typeof m[0].length == 'undefined' ? [m] : m
@@ -225,9 +239,9 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         return result
     }
 
-    var checkGrad = function () {
-        // body...
-    }
+    // var checkGrad = function () {
+    //     // body...
+    // }
 
     // Random number utilities
   var return_v = false;
@@ -251,15 +265,16 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
   var randn = function(mu, std){ return mu+gaussRandom()*std; }
 
     global.zeros = zeros;
-    global.dot = dot;
-    global.add = add;
+    global.concat32 = concat32;
+    // global.dot = dot;
+    // global.add = add;
     global.normalize = normalize;
     global.clone = clone;
     global.clone_obj = clone_obj;
     global.randf = randf;
     global.randi = randi;
     global.randn = randn;
-    global.Vector = Vector;
+    // global.Vector = Vector;
 })(mlitb);
 (function(global) {
     "use strict";
@@ -531,8 +546,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         this.filters.push(new global.Vol(this.sx, this.sy, this.in_depth));
       }
       var addedBias = new global.Vol(1,1, N, 0.1);
-      this.biases.data = this.biases.data.concat(addedBias.data);
-      this.biases.drv = this.biases.drv.concat(addedBias.drv);
+      this.biases.data = global.concat32(this.biases.data,addedBias.data);
+      this.biases.drv = global.concat32(this.biases.drv, addedBias.drv);
     },
     getParamsAndGrads : function (ignore_is_train) {
       var out = [];
@@ -720,11 +735,11 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     addNeuron : function(N){
       this.out_depth+=N;
       var addedFilter = new global.Vol(1, this.in_neurons, N);
-      this.filters.data = this.filters.data.concat(addedFilter.data);
-      this.filters.drv = this.filters.drv.concat(addedFilter.drv);
+      this.filters.data = global.concat32(this.filters.data,addedFilter.data);
+      this.filters.drv = global.concat32(this.filters.drv,addedFilter.drv);
       var addedBias = new global.Vol(1,1, N, 0.1);
-      this.biases.data = this.biases.data.concat(addedBias.data);
-      this.biases.drv = this.biases.drv.concat(addedBias.drv);
+      this.biases.data = global.concat32(this.biases.data,addedBias.data);
+      this.biases.drv = global.concat32(this.biases.drv,addedBias.drv);
     },
 
     getParamsAndGrads : function (ignore_is_train) {
@@ -1276,8 +1291,8 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
     addNeuron : function(N){
       this.out_depth+=N;
-      this.max_pos_x = this.max_pos_x.concat(global.zeros(this.out_sx*this.out_sy*N));
-      this.max_pos_y = this.max_pos_y.concat(global.zeros(this.out_sx*this.out_sy*N));
+      this.max_pos_x = global.concat32(this.max_pos_x,global.zeros(this.out_sx*this.out_sy*N));
+      this.max_pos_y = global.concat32(this.max_pos_y,global.zeros(this.out_sx*this.out_sy*N));
     },
     getParamsAndGrads : function () {
       return [];
