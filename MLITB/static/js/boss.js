@@ -122,10 +122,23 @@ Boss.prototype = {
 
         var buffer = (typeof buffer === "undefined") ? null : buffer;
 
-        slave.postMessage({
-            type: type,
-            data: data
-        }, buffer);
+        // firefox issue
+
+        if(buffer) {
+
+            slave.postMessage({
+                type: type,
+                data: data
+            }, buffer);
+
+        } else {
+
+            slave.postMessage({
+                type: type,
+                data: data
+            });
+
+        } 
 
     },
 
