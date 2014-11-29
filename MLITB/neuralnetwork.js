@@ -91,6 +91,19 @@ NeuralNetwork.prototype = {
         }
     },
 
+    remove: function() {
+
+        // before removal, disconnect all slaves.
+        // disconnect events in the NN are called automatically.
+        var i = this.slaves_connected.length;
+        while(i--) {
+            this.slaves_connected[i].socket.disconnect()
+        }
+
+        return;
+
+    },
+
     download: function() {
 
         // return this.configuration;

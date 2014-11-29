@@ -18,6 +18,8 @@ var Boss = function(angular) {
     this.host;
     this.imagehost;
 
+    this.camera_image;
+
 }
 
 Boss.prototype = {
@@ -122,10 +124,23 @@ Boss.prototype = {
 
         var buffer = (typeof buffer === "undefined") ? null : buffer;
 
-        slave.postMessage({
-            type: type,
-            data: data
-        }, buffer);
+        // firefox issue
+
+        if(buffer) {
+
+            slave.postMessage({
+                type: type,
+                data: data
+            }, buffer);
+
+        } else {
+
+            slave.postMessage({
+                type: type,
+                data: data
+            });
+
+        } 
 
     },
 
@@ -163,7 +178,6 @@ Boss.prototype = {
             });
 
             slave.nn = nn_id;
-
 
             slave.type = null;
             slave.state = 'idle';
@@ -375,6 +389,19 @@ Boss.prototype = {
 
     },
 
+    remove_nn: function(nn_id) {
+
+        if(!this.nn_by_id(nn_id)) {
+            this.logger('! Cannot remove NN: NN does not exist: ' + nn_id);
+            return;   
+        }
+
+        this.message_to_master('remove_nn', {
+            nn_id: nn_id
+        });
+
+    },
+
     slave_work: function(nn_id, slave_id) {
 
         var slave;
@@ -444,6 +471,17 @@ Boss.prototype = {
 
         var blob = new Blob([JSON.stringify(data)], {type: "application/json;charset=utf-8"});
         saveAs(blob, "parameters.json");
+
+    },
+
+    add_label: function(slave_id, label) {
+
+        var slave = this.slave_by_id(slave_id);
+
+        if(!slave) {
+            this.logger('! Cannot add image label: Slave does not exist: ' + slave_id);
+            return;   
+        }
 
     },
 

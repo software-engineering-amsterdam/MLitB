@@ -14,6 +14,10 @@
                 <canvas id="image"></canvas>
             </p>
 
+            <div ng-show="label_added">
+                <p>Label and image added to server.</p>
+            </div>
+
             <div ng-show="working">
                 <p>Working... <img src="/static/images/spinner.gif" /></p>
             </div>
@@ -38,7 +42,6 @@
                             </tbody>
                         </table>
                     </ul>
-                    <!--
                     <form role="form" name="new_label_form">
                         <div class="row">
                             <div class="col-xs-5">
@@ -48,14 +51,15 @@
                                 </div>
                             </div>
                         </div>
+                        <!--
                         <div class="checkbox">
                             <label>
                                 <input type="checkbox" ng-model="new_label_public"> Add image to public training set
                             </label>
                         </div>
+                        -->
                         <button type="submit" ng-click="add_label()" class="btn btn-default">Add label</button>
                     </form>
-                    -->
                 </div>
             </div>
 

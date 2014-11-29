@@ -112,12 +112,52 @@ app.controller('camera', function ($scope, $rootScope, $routeParams, $location) 
     }
 
     $scope.working = false;
+    $scope.label_added = false;
 
     $rootScope.camera_done = function(results) {
 
         $scope.classify_results = results;
         $scope.working = false;
         $scope.$apply();
+
+    }
+
+    $scope.add_label = function() {
+
+        var canvas = document.getElementById('image');
+
+        var base64 = canvas.toDataURL();
+        var blobBin = atob(base64.split(',')[1]);
+
+        var array = [];
+        for(var i = 0; i < blobBin.length; i++) {
+            array.push(blobBin.charCodeAt(i));
+        }
+
+        var file = new Uint8Array(array);
+
+        var zip = new JSZip();
+        zip.folder($scope.new_label).file("genfile.jpg", file);
+
+        var gen_zip = zip.generate({type: "blob"});
+        var formData = new FormData();
+
+        formData.append("upload", gen_zip);
+
+        var request = new XMLHttpRequest();
+
+        request.onload = function() {
+            
+            $scope.boss.add_data($routeParams.nn_id, this.response);
+            $scope.label_added = true;
+            $scope.$apply();
+
+        }
+
+        request.open("POST", imagehost + "/upload");
+        request.send(formData);
+
+
 
     }
 
@@ -139,6 +179,11 @@ app.controller('detail', function ($scope, $rootScope, $routeParams, $location) 
 
     $scope.$watch('boss.nns', function() {
         $scope.nn = $scope.boss.nn_by_id($routeParams.nn_id);
+
+        if(!$scope.nn) {
+            $location.path('/project-index/');
+        }
+
     });
 
     $scope.nn = $scope.boss.nn_by_id($routeParams.nn_id);
@@ -197,8 +242,10 @@ app.controller('detail', function ($scope, $rootScope, $routeParams, $location) 
             $('#adddata').modal('hide');
         }
 
+        var formData = new FormData(formElement);
+
         request.open("POST", imagehost + "/upload");
-        request.send(new FormData(formElement));
+        request.send(formData);
     }
 
     $scope.open_hyperparameters = function(nn) {
@@ -223,6 +270,13 @@ app.controller('detail', function ($scope, $rootScope, $routeParams, $location) 
         var r = confirm('Are you sure to reboot the network?\nThe current iteration will be stopped and restarted.\nYou will lose only data of the current iteration.');
         if(r == true) {
             $scope.boss.reboot_nn(nn_id);
+        }
+    }
+
+    $scope.remove_nn = function(nn_id) {
+        var r = confirm('Are you sure you wish to remove the network?\nYou will lose all data.');
+        if(r == true) {
+            $scope.boss.remove_nn(nn_id);
         }
     }
 

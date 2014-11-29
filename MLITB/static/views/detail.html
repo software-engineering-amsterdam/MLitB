@@ -66,6 +66,11 @@
               Reboot
             </button>
 
+            <button type="button" ng-click="remove_nn(nn.id)" class="btn btn-danger pull-right">
+              <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+              Remove
+            </button>
+
             <h3>Your slaves</h3>
 
             <div ng-hide="nn_slaves.length">
