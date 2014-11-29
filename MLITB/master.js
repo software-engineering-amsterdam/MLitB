@@ -410,6 +410,33 @@ Master.prototype = {
 
     },
 
+    remove_nn: function(d) {
+
+        nn_id = d.nn_id;
+        nn = this.nn_by_id(nn_id);
+
+        if(!nn) {
+            console.log("! Cannot remove NN: NN does not exist", nn_id);
+            return;
+        }
+
+        nn.remove();
+
+
+        var i = this.nns.length;
+        while(i--) {
+            if(this.nns[i].id == nn.id) {
+                this.nns.splice(i, 1);
+            }
+        }
+
+        delete nn;
+
+        this.broadcast_nns();
+
+
+    },
+
     reduction: function(d) {
 
         nn_id = d.nn_id;

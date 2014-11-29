@@ -96,8 +96,6 @@ Slave.prototype = {
 
         var vol_input = this.Net.conf[0];
 
-        //console.log(this.Net);
-
         var Input = new mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
         Input.data = data.data;
         this.Net.forward(Input);
@@ -317,6 +315,13 @@ Slave.prototype = {
         xhr.send();
 
         
+
+    },
+
+    disconnect: function() {
+
+        this.logger('Worker terminated');
+        this.status('terminated');
 
     },
 

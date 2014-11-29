@@ -133,6 +133,8 @@ io.on('connection', function (socket) {
             master.pause_nn(data);
         } else if(type == 'reboot_nn') {
             master.reboot_nn(data);
+        } else if(type == 'remove_nn') {
+            master.remove_nn(data);
         } else if(type == "reduction") {
             master.reduction(data);
         }

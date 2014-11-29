@@ -28,6 +28,10 @@ Worker.prototype.start_socket = function(id) {
 
     this.socket = io();
     this.socket.on('message', function (d) { that.message_from_master(d); });
+    this.socket.on('disconnect', function (d) { 
+        that.disconnect(); 
+        this.port.close();
+    });
 
 }
 

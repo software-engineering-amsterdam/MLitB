@@ -125,6 +125,12 @@ app.post('/upload', function (req, res) {
         extension = file.name.split('.');
 
         names = file.name.split('/');
+
+        if(names.length < 2) {
+            console.log('Faulty directory structure:', names);
+            return process_zip_files(files);
+        }
+
         name = names[names.length-2].toLowerCase();
 
         // check for directory names / file names with illegal starting chars
@@ -198,6 +204,7 @@ app.post('/upload', function (req, res) {
     form.parse(req, function(err, fields, files) {
 
         fs.readFile(files.upload.path, function(err, data) {
+
             if(err) throw err;
             var zip = new jszip(data);
 
