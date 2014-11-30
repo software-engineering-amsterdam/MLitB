@@ -29,6 +29,9 @@ var Slave = function() {
 
     this.new_labels = [];
 
+    this.is_stats = false;
+    this.stats_running = false;
+
 }
 
 Slave.prototype = {
@@ -40,6 +43,21 @@ Slave.prototype = {
 
     status: function(text) {
         this.send_message_to_boss('status', text);
+    },
+
+    obj_to_list: function(files) {
+
+        var list = [];
+
+        var r = Object.keys(files);
+
+        var i = r.length;
+        while(i--) {
+            list.push(files[r[i]]);
+        }
+
+        return list;
+
     },
 
     download_data: function(data) {
@@ -122,14 +140,52 @@ Slave.prototype = {
         var step = d.step;
         var new_labels = d.new_labels; 
 
-        //console.log('new parameters:');
-        //console.log(parameters);
-
         this.Net.setParams(parameters);
 
         this.add_new_labels(new_labels);
 
         this.status('tracking: ' + step);
+
+        if(this.is_stats && !this.stats_running) {
+            this.stats();
+        }
+
+    },
+
+    stats: function() {
+
+        this.stats_running = true;
+
+        var data = this.obj_to_list(this.data);
+
+        var i = data.length;
+
+        var error = 0.0;
+        var nVector = 0;
+        var vol_input = this.Net.conf[0];
+
+        while(i--) {
+
+            point = data[i];
+
+            Input = new this.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
+            Input.data = point.data;
+            this.Net.forward(Input,true);
+            newerr = this.Net.backward(point.label);
+
+            error += newerr;
+    
+
+        }
+
+        this.logger('Stats error: ' + error.toString());
+        this.stats_running = false;
+
+    },
+
+    start_stats: function() {
+
+        this.is_stats = true;
 
     },
 
@@ -379,6 +435,8 @@ Slave.prototype = {
             this.download();
         } else if(data.type == 'classify') {
             this.classify(data);
+        } else if(data.type == 'start_stats') {
+            this.start_stats();
         }
         
     }

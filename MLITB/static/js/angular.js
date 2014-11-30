@@ -49,6 +49,10 @@ app.config(['$routeProvider',
         templateUrl: 'static/views/camera.html',
         controller: 'camera'
     }).
+    when('/project-index/:nn_id/slave/:slave_id/stats', {
+        templateUrl: 'static/views/stats.html',
+        controller: 'stats'
+    }).
     when('/new-project', {
         templateUrl: 'static/views/new-project.html',
         controller: 'new_project'
@@ -98,6 +102,40 @@ app.controller('project_index', function ($scope, $rootScope, $location) {
 
     $scope.number_of_nn_my_slaves_by_id = function(nn_id) {
         return $scope.boss.number_of_nn_my_slaves_by_id(nn_id);
+    }
+
+});
+
+app.controller('stats', function ($scope, $rootScope, $routeParams, $location) {
+
+    $scope.adddataspinner = false;
+
+    $scope.nn = $scope.boss.nn_by_id($routeParams.nn_id);
+    $scope.slave = $scope.boss.slave_by_id($routeParams.slave_id);
+
+    if(!$scope.nn || !$scope.slave ) {
+        $location.path('/project-index/');
+    }
+
+    add_data_done = function() {
+
+        $scope.adddataspinner = false;
+        $('#adddata').modal('hide');
+        $scope.$apply();
+
+        $scope.boss.message_to_slave($scope.slave, 'start_stats');
+
+    }
+
+    $scope.adddata = function(nn_id, e) {
+        e.preventDefault();
+
+        $scope.adddataspinner = true;
+
+        var fileField = document.getElementById('filefield');
+        
+        $scope.boss.add_stats_file($routeParams.slave_id, fileField.files[0], add_data_done);
+
     }
 
 });

@@ -573,6 +573,117 @@ Boss.prototype = {
 
     },
 
+    add_stats_file: function(slave_id, file, cb) {
+
+        var obj_to_list = function(files) {
+
+            var list = [];
+
+            var r = Object.keys(files);
+
+            var i = r.length;
+            while(i--) {
+                list.push(files[r[i]]);
+            }
+
+            return list;
+
+        }
+
+        var flatten_zip_file = function(files) {
+
+            var new_files = {};
+
+            var illegal_chars = ['.', '_'];
+            var valid_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+            files = obj_to_list(files);
+
+            var i = files.length;
+            while(i--) {
+                var file = files[i];
+
+                extension = file.name.split('.');
+
+                names = file.name.split('/');
+
+                if(names.length < 2) {
+                    console.log('Faulty directory structure:', names);
+                    continue;
+                }
+
+                name = names[names.length-2].toLowerCase();
+
+                // check for directory names / file names with illegal starting chars
+
+                var j = names.length;
+
+                var faulty = false;
+
+                while(j--) {
+
+                    var n = names[j];
+                    
+                    if( illegal_chars.indexOf(n[0]) > -1) {
+                        console.log('Illegal file/directory name:', names);
+                        faulty = true;
+                        break;
+                    }
+                }
+
+                if(faulty) {
+                    continue;
+                }
+
+                if(extension.length == 1 || (extension[0] == '' && extension.length == 2)) {
+                   console.log('Unsupported file extension:', names);
+                   continue;
+                }
+
+                extension = extension.pop().toLowerCase();
+
+                if(valid_extensions.indexOf(extension) == -1) {
+                    console.log('Unsupported file extension:', names);
+                    continue;
+                }
+
+                file.comment = name;
+                file.name = i + '.jpg';
+
+                new_files[i] = file;
+
+            }
+
+            return new_files;
+
+        }
+
+        var that = this;
+
+        slave = this.slave_by_id(slave_id);
+
+        if(!slave) {
+            this.logger('! Cannot remove slave: Slave does not exist: ' + slave_id);
+            return;   
+        }
+
+        var reader = new FileReader();
+
+        reader.onload = function(theFile) {
+
+            var zip = new JSZip();
+            zip.load(reader.result);
+
+            //flatten_zip_file(zip.files);
+
+            that.process_data(flatten_zip_file(zip.files), slave, true, cb);
+
+        };
+
+        reader.readAsArrayBuffer(file);
+
+    },
+
     remove_slave: function(slave_id) {
 
         var slave;
@@ -639,7 +750,7 @@ Boss.prototype = {
 
     },
 
-    process_data: function(a, slave) {
+    process_data: function(a, slave, tracking, cb) {
 
         var obj_to_list = function(files) {
 
@@ -655,6 +766,8 @@ Boss.prototype = {
             return list;
 
         }
+
+        var cb = (typeof cb === "undefined") ? false : cb;
 
         var extension_map = {
             'jpg': 'image/jpeg',
@@ -677,18 +790,29 @@ Boss.prototype = {
                 
                 that.logger('Uploading data to worker done.');
                 
-                // report to master
-                that.message_to_master('register_data', {
-                    ids: ids,
-                    slave_id: slave.id,
-                    nn_id: slave.nn
-                });
+                if(!tracking) {
 
-                slave.state = 'downloading done - waiting for master';
-                that.angular.apply();
+                    // report to master
+                    that.message_to_master('register_data', {
+                        ids: ids,
+                        slave_id: slave.id,
+                        nn_id: slave.nn
+                    });
 
-                that.download_done();
+                    slave.state = 'downloading done - waiting for master';
+                    that.angular.apply();
+
+                    that.download_done();
+                
+                }
+
+                if(cb) {
+                    cb();
+                }
+
                 return;
+
+
             }
 
             var split = file.name.split('.');
@@ -786,7 +910,7 @@ Boss.prototype = {
         var new_zip = new JSZip();
         new_zip.load(data);
 
-        this.process_data(new_zip.files, slave);
+        this.process_data(new_zip.files, slave, false);
 
     },
 
