@@ -93,7 +93,7 @@
                     <tr ng-repeat="slave in nn_slaves" ng-click="nn_detail(nn.id);">
                       <td>{{ slave.id | limitTo:-4 }}</td>
                       <td>{{ slave.data_allocated }} / {{ slave.data_cached }} / {{ slave.workingset }}</td>
-                      <td>{{ slave.state }}</td>
+                      <td><span ng-show="slave.working" class="glyphicon glyphicon-flash" aria-hidden="true"></span> {{ slave.state }}</td>
                       <td>
                         <div ng-hide="slave.type">
                           <a ng-click="work(nn.id, slave.id)">train</a> |

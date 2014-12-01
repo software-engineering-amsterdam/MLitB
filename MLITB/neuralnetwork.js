@@ -132,7 +132,6 @@ NeuralNetwork.prototype = {
         var new_labels = [];
 
         while(i--) {
-            console.log(" $$ adding label", labels[i]);
             var t = this.add_label(labels[i]);
             if (t){
                 new_labels.push(labels[i])
@@ -155,8 +154,6 @@ NeuralNetwork.prototype = {
     },
 
     register_data: function(slave, ids) {
-
-        console.log('register data');
 
         slave = this.slave_available(slave);
 
@@ -651,6 +648,8 @@ NeuralNetwork.prototype = {
 
         }
 
+        console.log("Initiating (NN)", this.id);
+
         var datamap = this.data.filter(filter_data).sort(sort_data);
 
         if(!datamap.length) {
@@ -671,6 +670,9 @@ NeuralNetwork.prototype = {
         }
 
         var i = slaves.length;
+
+        var slaves_to_work = 0;
+
         while(i--) {
     
             // first the slaves with least cache pick their choice
@@ -687,19 +689,23 @@ NeuralNetwork.prototype = {
                     // assign
                     slave.process.push(point.id);
 
-                    if(slave.process.length == slave.assigned_power) {
+                    //if(slave.process.length == slave.assigned_power) {
 
                         this.slaves_operating.push(slave);
                         slave.work(this);
+
+                        slaves_to_work += 1;
                         break;
 
-                    }
+                    //}
 
                 }
 
             }
 
         }
+
+        console.log('(NN) sent', slaves_to_work, 'slaves to work:', this.id);
 
     },
 

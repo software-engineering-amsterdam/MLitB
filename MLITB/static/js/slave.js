@@ -146,13 +146,15 @@ Slave.prototype = {
 
         this.status('tracking: ' + step);
 
-        if(this.is_stats && !this.stats_running) {
+        if(this.is_stats == true && this.stats_running == false) {
             this.stats();
         }
 
     },
 
     stats: function() {
+
+        var that = this;
 
         this.stats_running = true;
 
@@ -175,11 +177,16 @@ Slave.prototype = {
 
             error += newerr;
     
-
         }
 
         this.logger('Stats error: ' + error.toString());
-        this.stats_running = false;
+        
+        // we need to clear the event queue.
+        setTimeout(function() {
+            that.stats_running = false;
+        }, 100);
+
+        
 
     },
 
@@ -221,17 +228,7 @@ Slave.prototype = {
 
         shuffle_data = function() {
 
-            workingset = [];
-
-            var i = data.length;
-
-            while(i--) {
-               
-                workingset.push(that.data[data[i]]);
-
-            }
-
-            workingset = shuffle(workingset);
+            workingset = shuffle(data.slice());
 
         }
 
@@ -264,7 +261,8 @@ Slave.prototype = {
                     shuffle_data();
                 }
 
-                point = workingset.pop();
+                point_id = workingset.pop()
+                point = that.data[point_id];
 
                 Input = new that.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
                 Input.data = point.data;

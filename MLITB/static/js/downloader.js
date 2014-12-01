@@ -31,9 +31,9 @@ Downloader.prototype = {
 
 		this.download_queue.push(data);
 		
-		if(!this.working) {
+		//if(!this.working) {
 			this.process_download_queue();
-		}
+		//}
 
 	},
 
@@ -45,9 +45,9 @@ Downloader.prototype = {
 			return;
 		}
 
-		if(this.working == true) {
-			return;
-		}
+		//if(this.working == true) {
+		//	return;
+		//}
 
 		this.working = true;
 		
@@ -72,6 +72,8 @@ Downloader.prototype = {
 			}, [this.response]);
 
 			that.working = false;
+
+			that.process_download_queue();
 			
 		}
 

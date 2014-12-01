@@ -20,6 +20,10 @@ var Boss = function(angular) {
 
     this.camera_image;
 
+    this.process_shards = {};
+    this.process_data_working = false;
+    this.process_key = 0;
+
 }
 
 Boss.prototype = {
@@ -35,6 +39,21 @@ Boss.prototype = {
         this.log = this.log.slice(-100, 200);
 
         this.angular.apply();
+    },
+
+    obj_to_list: function(files) {
+
+        var list = [];
+
+        var r = Object.keys(files);
+
+        var i = r.length;
+        while(i--) {
+            list.push(files[r[i]]);
+        }
+
+        return list;
+
     },
 
     nn_by_id: function(id) {
@@ -89,7 +108,13 @@ Boss.prototype = {
 
     change_status: function(slave, text) {
 
-        slave.state = data;
+        if(text == 'working') {
+            slave.working = true;
+        } else if(text == 'waiting for master') {
+            slave.working = false;
+        }
+
+        slave.state = text;
         this.angular.apply();
 
     },
@@ -184,6 +209,7 @@ Boss.prototype = {
             slave.data_cached = 0;
             slave.data_allocated = 0;
             slave.workingset = 0;
+            slave.working = false;
 
             that.slaves.push(slave);
 
@@ -218,6 +244,8 @@ Boss.prototype = {
 
         var slave = this.slave_by_id(data.slave_id);
         slave.data_allocated = data.data.length;
+
+        slave.state = 'downloading data';
 
         this.logger('Data assignment for slave "' + data.slave_id + '": ' + data.data.length + ' points.');
 
@@ -575,20 +603,7 @@ Boss.prototype = {
 
     add_stats_file: function(slave_id, file, cb) {
 
-        var obj_to_list = function(files) {
-
-            var list = [];
-
-            var r = Object.keys(files);
-
-            var i = r.length;
-            while(i--) {
-                list.push(files[r[i]]);
-            }
-
-            return list;
-
-        }
+        var that = this;
 
         var flatten_zip_file = function(files) {
 
@@ -597,7 +612,7 @@ Boss.prototype = {
             var illegal_chars = ['.', '_'];
             var valid_extensions = ['jpg', 'jpeg', 'png', 'gif'];
 
-            files = obj_to_list(files);
+            files = that.obj_to_list(files);
 
             var i = files.length;
             while(i--) {
@@ -674,9 +689,21 @@ Boss.prototype = {
             var zip = new JSZip();
             zip.load(reader.result);
 
-            //flatten_zip_file(zip.files);
+            var job = {
+                files: flatten_zip_file(zip.files),
+                tracking: true,
+                callback: cb
+            }
 
-            that.process_data(flatten_zip_file(zip.files), slave, true, cb);
+            if(that.process_shards[slave_id] === undefined) {
+                that.process_shards[slave_id] = [];
+            }
+
+            that.process_shards[slave_id].push(job);
+
+            if(!that.process_data_working) {
+                that.process_data();
+            }
 
         };
 
@@ -750,24 +777,43 @@ Boss.prototype = {
 
     },
 
-    process_data: function(a, slave, tracking, cb) {
+    process_data: function() {
 
-        var obj_to_list = function(files) {
+        console.log('start process data');
 
-            var list = [];
+        this.process_data_working = true;
 
-            var r = Object.keys(files);
+        // interleave data. Select next key from object, else start over.
+        var process_data_keys = Object.keys(this.process_shards);
 
-            var i = r.length;
-            while(i--) {
-                list.push(files[r[i]]);
-            }
+        console.log('process data keys:', process_data_keys);
 
-            return list;
-
+        if(process_data_keys.length == 0) {
+            this.process_data_working = false;
+            return;            
         }
 
-        var cb = (typeof cb === "undefined") ? false : cb;
+        var key = process_data_keys[this.process_key];
+
+        console.log('key:', key);
+
+        if(key === undefined) {
+            this.process_key = 0;
+            return this.process_data();
+        }
+
+        var slave_jobs = this.process_shards[key];
+
+        console.log('slave jobs:', slave_jobs);
+
+        if(slave_jobs.length == 0) {
+            delete this.process_shards[key];
+            return this.process_data();
+        }
+
+        var job = slave_jobs.pop();
+
+        console.log('job:', job);
 
         var extension_map = {
             'jpg': 'image/jpeg',
@@ -780,6 +826,8 @@ Boss.prototype = {
 
         var ids = [];
 
+        var slave = this.slave_by_id(key);
+
         var nn = this.nn_by_id(slave.nn);
 
         process = function(a) {
@@ -788,9 +836,9 @@ Boss.prototype = {
 
             if(!file) {
                 
-                that.logger('Uploading data to worker done.');
+                //that.logger('Uploading data to worker done.');
                 
-                if(!tracking) {
+                if(!job.tracking) {
 
                     // report to master
                     that.message_to_master('register_data', {
@@ -799,21 +847,23 @@ Boss.prototype = {
                         nn_id: slave.nn
                     });
 
-                    slave.state = 'downloading done - waiting for master';
+                    slave.state = 'download done';
                     that.angular.apply();
 
-                    that.download_done();
+                    //that.download_done();
                 
                 }
 
-                if(cb) {
-                    cb();
+                if(job.callback) {
+                    job.callback();
                 }
 
-                return;
-
+                that.process_key += 1;
+                return that.process_data();
 
             }
+
+            slave.state = 'decoding data';
 
             var split = file.name.split('.');
 
@@ -884,11 +934,36 @@ Boss.prototype = {
 
         }
 
-        return process(obj_to_list(a));
+        slave.state = 'decoding data';
+
+        return process(this.obj_to_list(job.files));
 
     },
 
     data_for_slave: function(data) {
+
+        shard_files = function(files) {
+
+            var shard_size = 100;
+            var files_size = files.length;
+            var shards = files_size / shard_size;
+            shards = Math.ceil(shards);
+
+            var slice;
+            var sharded_files = [];
+            for(var i = 0; i < shards; i++) {
+
+                slice_start = i * shard_size;
+                slice_end = (i + 1) * shard_size;
+
+                slice = files.slice(slice_start, slice_end);
+                sharded_files.push(slice);
+
+            }
+
+            return sharded_files;
+
+        }
 
         var slave_id = data.slave_id;
         var data = data.data;
@@ -900,17 +975,42 @@ Boss.prototype = {
             
             // signal downloader to continue.
             this.download_done();
+            return;
 
-            return;   
         }
 
-        slave.state = 'downloading data';
+        slave.state = 'waiting to decode';
         this.angular.apply();
 
         var new_zip = new JSZip();
         new_zip.load(data);
 
-        this.process_data(new_zip.files, slave, false);
+        console.log('sharding files');
+
+        var shards = shard_files(this.obj_to_list(new_zip.files));
+
+        console.log('sharding files done:', shards);
+
+        if(this.process_shards[slave_id] === undefined) {
+            this.process_shards[slave_id] = [];
+        }
+
+        var i = shards.length;
+        while(i--) {
+
+            var job = {
+                files: shards[i],
+                tracking: false,
+                callback: false
+            }
+
+            this.process_shards[slave_id].push(job);
+
+        }
+
+        if(!this.process_data_working) {
+            this.process_data();
+        }
 
     },
 
