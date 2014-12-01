@@ -399,9 +399,19 @@ app.controller('new_project', function ($scope, $rootScope, $location) {
             $scope.layers = [
             {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
             {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":3,"stride":1,"drop_prob":0.5}},
+            {type: 'pool', conf: {"sx":3,"stride":1}},
             {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.5}},
+            {type: 'pool', conf: {"sx":2,"stride":1}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
+        else if(type == 'cifar100A_drop') {
+            $scope.layers = [
+            {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
+            {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.1}},
             {type: 'fc', conf: {"activation":"softmax"}}
           ]
         }
@@ -415,6 +425,16 @@ app.controller('new_project', function ($scope, $rootScope, $location) {
             {type: 'fc', conf: {"activation":"softmax"}}
           ]
         }
+        else if(type == 'cifar100B_drop') {
+            $scope.layers = [
+            {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
+            {type: 'conv', conf: {"sx":5,"stride":2,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.1}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
         else if(type == 'cifar100C') {
           $scope.layers = [
           {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
@@ -422,6 +442,82 @@ app.controller('new_project', function ($scope, $rootScope, $location) {
           {type: 'pool', conf: {"sx":3,"stride":1}},
           {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
           {type: 'pool', conf: {"sx":2,"stride":1}},
+          {type: 'conv', conf: {"sx":2,"stride":1,"filters":128,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":2,"stride":1}},
+          {type: 'fc', conf: {"activation":"softmax"}}
+        ]
+        }
+        else if(type == 'cifar100C_drop') {
+          $scope.layers = [
+          {type: 'input', conf: {"sx":32,"sy":32,"depth":3}},
+          {type: 'conv', conf: {"sx":5,"stride":2,"filters":24,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":3,"stride":1}},
+          {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.3}},
+          {type: 'conv', conf: {"sx":2,"stride":1,"filters":128,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":2,"stride":1}},
+          {type: 'fc', conf: {"activation":"softmax"}}
+        ]
+        }
+        else if(type == 'imagenetA') {
+            $scope.layers = [
+            {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
+            {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
+        else if(type == 'imagenetA_drop') {
+            $scope.layers = [
+            {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
+            {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.1}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
+        else if(type == 'imagenetB') {
+            $scope.layers = [
+            {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
+            {type: 'conv', conf: {"sx":5,"stride":2,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
+        else if(type == 'imagenetB_drop') {
+            $scope.layers = [
+            {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
+            {type: 'conv', conf: {"sx":5,"stride":2,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.1}},
+            {type: 'fc', conf: {"activation":"softmax"}}
+          ]
+        }
+        else if(type == 'imagenetC') {
+          $scope.layers = [
+          {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
+          {type: 'conv', conf: {"sx":5,"stride":2,"filters":24,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":3,"stride":1}},
+          {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":2,"stride":1}},
+          {type: 'conv', conf: {"sx":2,"stride":1,"filters":128,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":2,"stride":1}},
+          {type: 'fc', conf: {"activation":"softmax"}}
+        ]
+        }
+        else if(type == 'imagenetC_drop') {
+          $scope.layers = [
+          {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
+          {type: 'conv', conf: {"sx":5,"stride":2,"filters":24,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":3,"stride":1}},
+          {type: 'conv', conf: {"sx":3,"stride":2,"filters":64,"activation":"relu"}},
+          {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.3}},
           {type: 'conv', conf: {"sx":2,"stride":1,"filters":128,"activation":"relu"}},
           {type: 'pool', conf: {"sx":2,"stride":1}},
           {type: 'fc', conf: {"activation":"softmax"}}
