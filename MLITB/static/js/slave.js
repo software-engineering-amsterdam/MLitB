@@ -163,6 +163,8 @@ Slave.prototype = {
         var error = 0.0;
         var nVector = 0;
         var vol_input = this.Net.conf[0];
+        var pred;
+        var max=0;
 
         while(i--) {
 
@@ -171,14 +173,24 @@ Slave.prototype = {
             Input = new this.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
             Input.data = point.data;
             this.Net.forward(Input,true);
-            newerr = this.Net.backward(point.label);
-
-            error += newerr;
+            // newerr = this.Net.backward(point.label);
+            pred = this.Net.getPrediction().data;
+            
+            max = 0;
+            for (var j = 1; j < pred.length; j++) {
+                if (pred[j]>pred[max]){max = j}
+            };
+            
+            if (point.label !== this.Net.index2label[max]){
+                error += 1;    
+            }
+            
+            
     
 
         }
 
-        this.logger('Stats error: ' + error.toString());
+        this.logger('Stats error: ' + error.toString()+'/'+data.length.toString());
         this.stats_running = false;
 
     },
