@@ -689,17 +689,20 @@ NeuralNetwork.prototype = {
                     // assign
                     slave.process.push(point.id);
 
-                    //if(slave.process.length == slave.assigned_power) {
-
-                        this.slaves_operating.push(slave);
-                        slave.work(this);
-
-                        slaves_to_work += 1;
+                    if(slave.process.length == slave.assigned_power) {
                         break;
-
-                    //}
+                    }
 
                 }
+
+            }
+
+            if(slave.process.length > 0) {
+
+                this.slaves_operating.push(slave);
+                slave.work(this);
+
+                slaves_to_work += 1;
 
             }
 

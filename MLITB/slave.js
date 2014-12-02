@@ -96,6 +96,8 @@ Slave.prototype.work = function(nn) {
 
     }
 
+    console.log(' $$ slave', this.socket.id, 'works on', this.process.length, 'data points');
+
     this.send('work', work_data);
 
     this.process = [];
