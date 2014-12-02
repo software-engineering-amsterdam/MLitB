@@ -31,6 +31,7 @@ var Slave = function() {
 
     this.new_labels = [];
 
+    this.is_track = false;
     this.is_stats = false;
     this.stats_running = false;
 
@@ -114,9 +115,11 @@ Slave.prototype = {
 
         console.log(' $$ parameters set.');
 
-        if(this.is_stats == true && this.stats_running == false) {
-            console.log(' $$ tracker updated');
+        if(this.is_track) {
             this.status('tracking: ' + step);
+        }
+
+        if(this.is_stats == true && this.stats_running == false) {
             return this.stats(step);
         }
 
@@ -241,6 +244,12 @@ Slave.prototype = {
         this.is_stats = true;
 
     },
+
+    start_track: function() {
+
+        this.is_track = true;
+
+    },    
 
     job: function(d) {
 
@@ -493,6 +502,8 @@ Slave.prototype = {
             this.classify(data);
         } else if(data.type == 'start_stats') {
             this.start_stats();
+        } else if(data.type == 'start_track') {
+            this.start_track();
         }
         
     }

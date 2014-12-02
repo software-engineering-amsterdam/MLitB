@@ -512,6 +512,8 @@ Boss.prototype = {
 
         slave.type = 'track';
 
+        this.message_to_slave(slave, 'start_track');
+
         this.message_to_master('slave_track', {
             nn_id: nn_id,
             slave_id: slave_id
