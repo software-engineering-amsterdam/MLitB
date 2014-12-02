@@ -136,7 +136,7 @@ app.controller('stats', function ($scope, $rootScope, $routeParams, $location) {
         
         $scope.boss.add_stats_file($routeParams.slave_id, fileField.files[0], add_data_done);
 
-    }
+    }  
 
 });
 
@@ -195,13 +195,20 @@ app.controller('camera', function ($scope, $rootScope, $routeParams, $location) 
         request.open("POST", imagehost + "/upload");
         request.send(formData);
 
+    }
 
+    $scope.assign_label = function(label) {
+
+        $scope.new_label = label;
+        $scope.add_label();
 
     }
 
     handleFileSelect = function(evt) {
 
         $scope.working = true;
+        $scope.label_added = false;
+        $scope.new_label = '';
         $scope.$apply();
         $scope.boss.handle_camera(evt, $routeParams.slave_id);
 

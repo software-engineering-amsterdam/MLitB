@@ -106,7 +106,7 @@ Slave.prototype = {
             this.Net.addLabel(this.new_labels);
 
         }
-        // console.log(this.id+' '+JSON.stringify(this.Net.label2index))
+        //console.log(this.id + ': ' + JSON.stringify(this.Net.label2index));
 
     },
 
@@ -147,12 +147,12 @@ Slave.prototype = {
         this.status('tracking: ' + step);
 
         if(this.is_stats == true && this.stats_running == false) {
-            this.stats();
+            this.stats(step);
         }
 
     },
 
-    stats: function() {
+    stats: function(step) {
 
         var that = this;
 
@@ -186,12 +186,15 @@ Slave.prototype = {
             if (point.label !== this.Net.index2label[max]){
                 error += 1;    
             }
-            
-            
     
         }
+
+        var error_pretty = (error / data.length) * 100.0;
         
-        this.logger('Stats error: ' + error.toString()+'/'+data.length.toString());
+        this.send_message_to_boss('stats_results', {
+            step: step,
+            error: error_pretty.toFixed(3)
+        });
         
         // we need to clear the event queue.
         // i.e. to pass lagging updates.

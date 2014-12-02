@@ -138,6 +138,8 @@ Boss.prototype = {
             this.download_parameters(data);            
         } else if(type == 'classify_results') {
             this.classify_results(data);            
+        } else if(type == 'stats_results') {
+            this.stats_results(that, data);            
         } else if(type == 'workingset') {
             // change status does angular.apply
             that.workingset = data;
@@ -711,6 +713,86 @@ Boss.prototype = {
 
     },
 
+    init_chart: function(slave, selector, name, color) {
+
+        var data = [];
+        /*
+        if(slave.chart_data && slave.chart_data.length) {
+            data = slave.chart_data;
+        }
+        */
+       
+        $(selector).highcharts({
+            title: {
+                text: null
+            },
+            exporting: {
+                enabled: true
+            },
+            yAxis: {
+                title: {
+                    text: null
+                },
+                plotLines: [{
+                    value: 0,
+                    width: 1,
+                    color: color
+                }]
+            },
+            xAxis: {
+              minTickInterval: 1
+            },
+            series: [{
+              data: data,
+              name: name,
+              color: color,
+              point: {
+                  events: {
+                      'click': function() {
+                          if (this.series.data.length > 1) this.remove();
+                      }
+                  }
+              }
+            }]
+        });
+
+        return $(selector).highcharts();
+
+    },
+
+    stats_results: function(slave, data) {
+
+        var drawChart = function(chart, point) {
+
+            series = chart.series[0];
+
+            shift = false;
+            if(series.data.length >= 2000) {
+                shift = true;
+            }
+
+            chart.series[0].addPoint(point, true, shift);
+
+            /*
+            if(!slave.chart_data) {
+                slave.chart_data = [];
+            }
+
+            slave.chart_data.push(point);
+            */
+
+            return chart;
+
+        }
+
+        if(!slave.chart) {
+            slave.chart = this.init_chart(slave, '#chartcontainer', 'error', '#0000FF');
+        }
+
+        slave.chart = drawChart(slave.chart, [data.step, parseFloat(data.error)]);
+
+    },
+
     remove_slave: function(slave_id) {
 
         var slave;
@@ -779,14 +861,10 @@ Boss.prototype = {
 
     process_data: function() {
 
-        console.log('start process data');
-
         this.process_data_working = true;
 
         // interleave data. Select next key from object, else start over.
         var process_data_keys = Object.keys(this.process_shards);
-
-        console.log('process data keys:', process_data_keys);
 
         if(process_data_keys.length == 0) {
             this.process_data_working = false;
@@ -795,8 +873,6 @@ Boss.prototype = {
 
         var key = process_data_keys[this.process_key];
 
-        console.log('key:', key);
-
         if(key === undefined) {
             this.process_key = 0;
             return this.process_data();
@@ -804,16 +880,12 @@ Boss.prototype = {
 
         var slave_jobs = this.process_shards[key];
 
-        console.log('slave jobs:', slave_jobs);
-
         if(slave_jobs.length == 0) {
             delete this.process_shards[key];
             return this.process_data();
         }
 
         var job = slave_jobs.pop();
-
-        console.log('job:', job);
 
         var extension_map = {
             'jpg': 'image/jpeg',
@@ -985,11 +1057,7 @@ Boss.prototype = {
         var new_zip = new JSZip();
         new_zip.load(data);
 
-        console.log('sharding files');
-
         var shards = shard_files(this.obj_to_list(new_zip.files));
-
-        console.log('sharding files done:', shards);
 
         if(this.process_shards[slave_id] === undefined) {
             this.process_shards[slave_id] = [];

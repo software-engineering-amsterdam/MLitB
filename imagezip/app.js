@@ -209,10 +209,10 @@ app.post('/upload', function (req, res) {
             var zip = new jszip(data);
 
             process_zip_files(obj_to_list(zip.files));
+
+            fs.unlinkSync(files.upload.path);
             
         });
-
-        fs.unlinkSync(files.upload.path);
 
     });
 

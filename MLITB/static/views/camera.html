@@ -14,10 +14,6 @@
                 <canvas id="image"></canvas>
             </p>
 
-            <div ng-show="label_added">
-                <p>Label and image added to server.</p>
-            </div>
-
             <div ng-show="working">
                 <p>Working... <img src="/static/images/spinner.gif" /></p>
             </div>
@@ -25,41 +21,45 @@
             <div ng-hide="working">
                 <div ng-show="classify_results">
                     <h4>Results</h4>
-                        <table class="table table-condensed">
+                    <p ng-hide="label_added">Click a result to add the image to the network.</p>
+                    <p ng-show="label_added">Label and image added to server.</p>
+                    <div ng-hide="label_added">
+                        <table class="table table-condensed table-hover">
                             <thead>
                                 <tr>
-                                    <td>Index</td>
-                                    <td>Label</td>
+                                    <td width="10%">Index</td>
+                                    <td width="30%">Label</td>
                                     <td>Probability</td>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr data-ng-repeat="item in classify_results">
+                                <tr data-ng-repeat="item in classify_results" ng-click="assign_label(item[1])">
                                     <td>{{ item[0] }}</td>
                                     <td>{{ item[1] }}</td>
                                     <td>{{ item[2] }}</td>
                                 </tr>
                             </tbody>
                         </table>
-                    </ul>
-                    <form role="form" name="new_label_form">
-                        <div class="row">
-                            <div class="col-xs-5">
-                                <div class="form-group">
-                                    <label for="name">New label:</label>
-                                    <input type="text" class="form-control" ng-model="new_label" id="label">
+
+                        <form role="form" name="new_label_form">
+                            <div class="row">
+                                <div class="col-xs-5">
+                                    <div class="form-group">
+                                        <label for="name">Or add with new label:</label>
+                                        <input type="text" class="form-control" ng-model="new_label" id="label">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <!--
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" ng-model="new_label_public"> Add image to public training set
-                            </label>
-                        </div>
-                        -->
-                        <button type="submit" ng-click="add_label()" class="btn btn-default">Add label</button>
-                    </form>
+                            <!--
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" ng-model="new_label_public"> Add image to public training set
+                                </label>
+                            </div>
+                            -->
+                            <button type="submit" ng-click="add_label()" class="btn btn-default">Add label</button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
