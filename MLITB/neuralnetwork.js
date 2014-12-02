@@ -108,7 +108,24 @@ NeuralNetwork.prototype = {
 
         // return this.configuration;
         // use the latest state of configs and params
-        return this.Net.getConfigsAndParams();
+        return {
+            step: this.step,
+            net: this.Net.getConfigsAndParams()
+        }
+
+    },
+
+    download_parameters: function() {
+
+        var parameters = this.parameters;
+        if(!parameters) {
+            parameters = this.configuration.params;
+        }
+
+        return {
+            parameters: parameters,
+            step: this.step
+        }
 
     },
 
@@ -431,6 +448,46 @@ NeuralNetwork.prototype = {
 
     },
 
+    notify_bosses: function() {
+
+        // instead of server-side event, send all bosses with active workers a notification to download parameters with XHR
+        var bosses_ids = [];
+        var bosses = [];
+
+        console.log(' $$ notifying bosses');
+
+        var i = this.slaves.length;
+        while(i--) {
+
+            var boss = this.slaves[i].boss;
+
+            if(bosses_ids.indexOf(boss.socket.id) == -1) {
+                bosses_ids.push(boss.socket.id);
+                bosses.push(boss);
+            }
+
+        }
+
+        var i = this.slaves_tracking.length;
+        while(i--) {
+
+            var boss = this.slaves_tracking[i].boss;
+
+            if(bosses_ids.indexOf(boss.socket.id) == -1) {
+                bosses_ids.push(boss.socket.id);
+                bosses.push(boss);
+            }
+
+        }
+
+        var i = bosses.length;
+        console.log(' $$ notifying', i, 'bosses');
+        while(i--) {
+            bosses[i].send('download_new_parameters', this.id);
+        }
+
+    },
+
     run: function() {
 
         if(!this.running) {
@@ -712,7 +769,7 @@ NeuralNetwork.prototype = {
 
     },
 
-    reduction: function(slave, parameters, new_labels) {
+    reduction: function(slave, parameters) { //, new_labels) {
 
         if(!this.running) {
             console.log("! Cannot reduce (slave) to (NN): NN not running", slave.socket.id, this.id);
@@ -741,10 +798,12 @@ NeuralNetwork.prototype = {
         this.runtime_elapsed += parseInt(this.iteration_time);
         this.data_seen += parameters.nVector;
 
+        /*
         var i = new_labels.length;
         while(i--) {
             this.add_label(new_labels[i]);
         }
+        */
 
         if(!this.slaves_operating.length && this.running == false) {
 
@@ -782,12 +841,6 @@ NeuralNetwork.prototype = {
             return;
         }
 
-        // if(this.step == 0) {
-        //     // Create object SGD Trainer            
-        //     this.SGD = new SGDTrainer(this, {});
-        //     this.SGD.set_parameters(this.hyperparameters);
-        // }
-
         if(this.hyperparameters_changed) {
             console.log('Updated (NN) with new hyperparameters.', this.id);
             this.SGD.set_parameters(this.hyperparameters);
@@ -798,12 +851,19 @@ NeuralNetwork.prototype = {
 
         this.step++;
 
+        this.notify_bosses();
+        this.master.broadcast_nns();
+
+        /*
+
         var i = this.slaves_tracking.length;
         while(i--) {
             this.slaves_tracking[i].track(this);
         }
 
-        this.master.broadcast_nns();
+        */
+
+        
 
     }
 

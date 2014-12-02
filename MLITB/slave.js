@@ -80,29 +80,37 @@ Slave.prototype.work = function(nn) {
 
     }
 
+    /*
+
     var parameters = nn.parameters;
     if(!parameters) {
         parameters = nn.configuration.params;
     }
 
-    var work_data = {
+    */
 
-        type: 'work',
+    var work_data = {
+        
         data: this.process,
         iteration_time: nn.iteration_time, // fix for lag etc.
+        new_labels: new_labels,
+        step: nn.step
+        /*
         parameters: parameters,
-        step: nn.step,
-        new_labels: new_labels
+        step: nn.step
+        */
 
     }
 
     console.log(' $$ slave', this.socket.id, 'works on', this.process.length, 'data points');
 
-    this.send('work', work_data);
+    this.send('job', work_data);
 
     this.process = [];
 
 }
+
+/*
 
 Slave.prototype.track = function(nn) {
 
@@ -138,5 +146,7 @@ Slave.prototype.track = function(nn) {
     this.process = [];
 
 }
+
+*/
 
 module.exports = Slave;

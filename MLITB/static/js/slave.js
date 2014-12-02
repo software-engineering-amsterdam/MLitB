@@ -23,6 +23,8 @@ var Slave = function() {
     this.Net; // the NN
     this.is_initialised;
 
+    this.step = 0;
+
     this.is_train = true;
 
     this.labels = [];
@@ -85,6 +87,51 @@ Slave.prototype = {
 
     },
 
+    new_parameters: function(d) {
+
+        console.log(' $$ slave got new parameters');
+
+        var data = JSON.parse(d);
+
+        var parameters = data.parameters
+        var new_labels = data.new_labels;
+
+        var step = data.step;
+
+        // parameters = parameters.slice(parameters.length-2,parameters.length);
+        if (step > 0) {
+            // console.log('before par '+parameters.length);
+            // for (var s=0;s<parameters.length;s++){
+            //     console.log(parameters[s].length+' -- ');
+            // }
+            // console.log('that par '+that.Net.getParams().length);    
+            this.Net.setParams(parameters);
+
+        }
+
+        // set step now. If worker was waiting, signal to go.
+        this.step = data.step;
+
+        console.log(' $$ parameters set.');
+
+        if(this.is_stats == true && this.stats_running == false) {
+            console.log(' $$ tracker updated');
+            this.status('tracking: ' + step);
+            return this.stats(step);
+        }
+
+        if(this.waiting_for_parameters == true) {
+
+            this.waiting_for_parameters = false;
+
+            console.log(' $$ release to work');
+
+            this.work(this.wait_parameters);
+
+        }
+        
+    },
+
     add_new_labels: function(new_labels) {
         //console.log(this.id+' '+JSON.stringify(new_labels));
         if(new_labels.length) {
@@ -107,6 +154,8 @@ Slave.prototype = {
 
         }
         //console.log(this.id + ': ' + JSON.stringify(this.Net.label2index));
+
+        this.new_labels = [];
 
     },
 
@@ -131,24 +180,6 @@ Slave.prototype = {
         });
 
         this.send_message_to_boss('classify_results', labeledResults);
-
-    },
-
-    track: function(d) {
-
-        var parameters = d.parameters;
-        var step = d.step;
-        var new_labels = d.new_labels; 
-
-        this.Net.setParams(parameters);
-
-        this.add_new_labels(new_labels);
-
-        this.status('tracking: ' + step);
-
-        if(this.is_stats == true && this.stats_running == false) {
-            this.stats(step);
-        }
 
     },
 
@@ -211,27 +242,48 @@ Slave.prototype = {
 
     },
 
+    job: function(d) {
+
+        // start time immediately
+        this.start_time = (new Date).getTime();
+
+        var step = d.step;
+
+        // IMPORTANT: it CANNOT work when the parameters are not downloaded yet by XHR!
+        if(this.step < step) {
+            this.waiting_for_parameters = true;
+            this.wait_parameters = d;
+            this.status('waiting for parameters');
+
+            console.log(' $$ parameters NOT on time for work');
+
+            return;
+        }
+
+        console.log(' $$ parameters on time for work');
+
+        this.work(d);
+
+    },
+
     work: function(d) {
 
         var that = this;
-        
+
+        var data = d.data;
+        var new_labels = d.new_labels;
+        var iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
+
+        var time = (new Date).getTime();
+
+        console.log(' $$ time loss due to parameter download delay:', time - this.start_time, 'MS');
+
         this.send_message_to_boss('workingset', d.data.length);
         that.status('working');
-
-        // start time immediately
-        var start_time = (new Date).getTime();
-
-        data = d.data;
-        iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
-
-        parameters = d.parameters;
-        step = d.step;
         
-        new_labels = d.new_labels; 
-
-        var vol_input;
         var workingset = [];
 
+        var vol_input = that.Net.conf[0];
         var error = 0.0;
         var nVector = 0;
         var proceeded_data = [];
@@ -248,24 +300,12 @@ Slave.prototype = {
         }
 
         initialise = function() {
-            console.log('step '+step);
 
-            
-            // parameters = parameters.slice(parameters.length-2,parameters.length);
-            if (step > 0) {
-                // console.log('before par '+parameters.length);
-                // for (var s=0;s<parameters.length;s++){
-                //     console.log(parameters[s].length+' -- ');
-                // }
-                // console.log('that par '+that.Net.getParams().length);    
-                that.Net.setParams(parameters);
-
-            }
             //console.log(that.id+' before add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
+            
             that.add_new_labels(new_labels);
-            //console.log(that.id+' after add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
-            vol_input = that.Net.conf[0];
 
+            //console.log(that.id+' after add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
         }
 
         learn = function() {
@@ -290,7 +330,7 @@ Slave.prototype = {
 
                 current_time = (new Date).getTime();
 
-                if(current_time > (start_time + iteration_time)) {
+                if(current_time > (that.start_time + iteration_time)) {
                     return;
                 }
 
@@ -333,13 +373,13 @@ Slave.prototype = {
             that.send_message_to_master('reduction', {
                 slave: that.id,
                 nn_id: that.nn_id,
-                parameters: parameters,
-                new_labels: that.new_labels
+                parameters: parameters //,
+                //new_labels: that.new_labels
             }); 
 
-            that.new_labels = [];
-
         }
+
+        console.log('step '+ this.step);
 
         initialise();
         learn();
@@ -360,17 +400,20 @@ Slave.prototype = {
         xhr.onload = function () {
 
             var response = JSON.parse(this.response);
+
             // apply configuration
             // i.e. layer conf, params, labels, etc. etc.
             // is only once.
-            that.Net.setConfigsAndParams(response);
-            console.log(JSON.stringify(response.configs));
+            that.Net.setConfigsAndParams(response.net);
+            console.log(JSON.stringify(response.net.configs));
             // console.log('just after set nn'+that.Net.layers[that.Net.layers.length-2].layer_type+' '+that.Net.layers[that.Net.layers.length-2].filters.data.length);
 
 
-            //set initial this.labels
+            // set initial this.labels
             that.labels = Object.keys(that.Net.index2label);
             console.log('labels after set '+JSON.stringify(that.labels));
+
+            that.step = response.step;
 
             that.logger('Downloading NN configuration done.');
             that.status('waiting for task');
@@ -426,10 +469,8 @@ Slave.prototype = {
 
         if(data.type == 'slave_id') {
             this.set_slave_id(data.data);
-        } else if(data.type == 'work') {
-            this.work(data.data);
-        } else if(data.type == 'track') {
-            this.track(data.data);
+        } else if(data.type == 'job') {
+            this.job(data.data);
         }
 
     },
@@ -442,6 +483,8 @@ Slave.prototype = {
             this.start(data.data);
         } else if(data.type == 'download_data') {
             this.download_data(data.data);
+        } else if(data.type == 'parameters') {
+            this.new_parameters(data.data);
         } else if(data.type == 'remove') {
             this.remove();
         } else if(data.type == 'download') {

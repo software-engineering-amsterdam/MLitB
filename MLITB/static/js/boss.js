@@ -276,6 +276,41 @@ Boss.prototype = {
 
     },
 
+    download_new_parameters: function(nn_id) {
+        // download NN parameters by XHR
+
+        var that = this;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', this.host + '/nn-parameters/' + nn_id + '/', true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+        console.log( ' $$ downloading new parameters');
+
+        xhr.onload = function () {
+
+            console.log( ' $$ parameter download done');
+
+            var response = this.response;
+
+            // send to all associated workers for this nns
+
+            var slaves = that.slaves_by_nn_id(nn_id);
+
+            var i = slaves.length;
+            while(i--) {
+
+                console.log( ' $$ sending parameters to slave:', slaves[i].id);
+                that.message_to_slave(slaves[i], 'parameters', response);
+
+            }
+
+        }
+            
+        xhr.send();
+
+    },
+
     start_nn: function(nn_id) {
 
         var nn = this.nn_by_id(nn_id);
@@ -383,6 +418,8 @@ Boss.prototype = {
             this.data_assignment(data);
         } else if(type == 'data_upload_done') {
             this.data_upload_done(data);
+        } else if(type == 'download_new_parameters') {
+            this.download_new_parameters(data);
         }
 
     },

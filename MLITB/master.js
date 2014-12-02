@@ -120,6 +120,19 @@ Master.prototype = {
 
     },
 
+    nn_parameters: function(nn_id) {
+
+        var nn = this.nn_by_id(nn_id);
+
+        if(!nn) {
+            console.log("! Could not download NN parameters: NN not found (NN id): ", nn_id);
+            return false;
+        }
+
+        return nn.download_parameters();
+
+    },
+
     save_hyperparameters: function(d) {
 
         var nn_id = d.nn_id;
@@ -442,7 +455,7 @@ Master.prototype = {
         nn_id = d.nn_id;
         slave_id = d.slave;
         parameters = d.parameters;
-        new_labels = d.new_labels;
+        //new_labels = d.new_labels;
 
         slave = this.slave_by_id(slave_id);
 
@@ -458,7 +471,7 @@ Master.prototype = {
             return;
         }
 
-        nn.reduction(slave, parameters, new_labels);
+        nn.reduction(slave, parameters); //, new_labels);
 
     },
 
