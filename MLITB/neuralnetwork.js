@@ -117,6 +117,7 @@ NeuralNetwork.prototype = {
 
     download_parameters: function() {
 
+        console.log('nn download_parameters');
         var parameters = this.parameters;
         if(!parameters) {
             parameters = this.configuration.params;
@@ -124,12 +125,14 @@ NeuralNetwork.prototype = {
 
         return {
             parameters: parameters,
-            step: this.step
+            step: this.step,
+            new_labels : this.Net.getLabel()
         }
 
     },
 
     add_data: function(socket, ids, labels) {
+
 
         var i = ids.length;
         while(i--) {
@@ -155,13 +158,17 @@ NeuralNetwork.prototype = {
             }
         }
 
-        //add new label to our copy nn
-        this.Net.addLabel(new_labels);
+        if (new_labels.length){
+            console.log('add new labels, resize param '+JSON.stringify(new_labels));
+            //add new label to our copy nn
+            this.Net.addLabel(new_labels);
 
-        var newParams = this.Net.getParams();
-        //tell SGD to accomodate this new labels
-        // console.log('sent to server '+newParams.length);
-        this.SGD.resize_param(newParams);
+            var newParams = this.Net.getParams();
+            //tell SGD to accomodate this new labels
+            // console.log('sent to server '+newParams.length);
+            this.SGD.resize_param(newParams);    
+        }
+        
 
         socket.emit('message', {
             type: 'data_upload_done',

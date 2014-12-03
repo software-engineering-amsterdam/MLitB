@@ -34,6 +34,8 @@ var Slave = function() {
     this.is_track = false;
     this.is_stats = false;
     this.stats_running = false;
+    this.point_list = {};
+    this.prev_data = {};
 
 }
 
@@ -96,16 +98,27 @@ Slave.prototype = {
 
         var parameters = data.parameters
         var new_labels = data.new_labels;
+        var newL = new_labels.length;
+        var oldL = Object.keys(this.Net.label2index).length;
+        if (newL> oldL){
+            //if there's any difference in label length, than add new
+            //this should be enough, no need to do any further checking
+            //since we can only addLabel and not remove label,
+            //the order should be consistent from the neuralnetwork.js
+            var addedLabel = new_labels.slice(oldL,newL);
+            if(addedLabel.length) {
+                console.log(this.id+' adding labels '+JSON.stringify(addedLabel));
+
+                this.Net.addLabel(addedLabel);
+            }
+
+        } else if (newL<oldL){
+            console.log(' Something is wrong, new labels size is smaller');
+        }
 
         var step = data.step;
 
-        // parameters = parameters.slice(parameters.length-2,parameters.length);
         if (step > 0) {
-            // console.log('before par '+parameters.length);
-            // for (var s=0;s<parameters.length;s++){
-            //     console.log(parameters[s].length+' -- ');
-            // }
-            // console.log('that par '+that.Net.getParams().length);    
             this.Net.setParams(parameters);
 
         }
@@ -135,32 +148,32 @@ Slave.prototype = {
         
     },
 
-    add_new_labels: function(new_labels) {
-        //console.log(this.id+' '+JSON.stringify(new_labels));
-        if(new_labels.length) {
+    // add_new_labels: function(new_labels) {
+    //     //console.log(this.id+' '+JSON.stringify(new_labels));
+    //     if(new_labels.length) {
 
-            var i = new_labels.length;
-            while(i--) {
-                var label = new_labels[i];
-                // new label does not exist in new_labels or existing labels.
-                if(this.labels.indexOf(label) == -1 && this.new_labels.indexOf(label) == -1) {
-                    this.labels.push(label);
-                    this.new_labels.push(label);
-                }
-            }
+    //         var i = new_labels.length;
+    //         while(i--) {
+    //             var label = new_labels[i];
+    //             // new label does not exist in new_labels or existing labels.
+    //             if(this.labels.indexOf(label) == -1 && this.new_labels.indexOf(label) == -1) {
+    //                 this.labels.push(label);
+    //                 this.new_labels.push(label);
+    //             }
+    //         }
 
-        }
-        // console.log(this.id+' '+JSON.stringify(this.new_labels));
-        if(this.new_labels.length) {
+    //     }
+    //     // console.log(this.id+' '+JSON.stringify(this.new_labels));
+    //     if(this.new_labels.length) {
 
-            this.Net.addLabel(this.new_labels);
+    //         this.Net.addLabel(this.new_labels);
 
-        }
-        //console.log(this.id + ': ' + JSON.stringify(this.Net.label2index));
+    //     }
+    //     //console.log(this.id + ': ' + JSON.stringify(this.Net.label2index));
 
-        this.new_labels = [];
+    //     this.new_labels = [];
 
-    },
+    // },
 
     classify: function(data) {
 
@@ -279,8 +292,26 @@ Slave.prototype = {
 
         var that = this;
 
+
         var data = d.data;
-        var new_labels = d.new_labels;
+        var idx;
+        // if (that.step>100&& this.step%10==0)
+        //     console.log(that.id+' point '+JSON.stringify(data));
+        // var s = {};
+        // var diff=0;
+        // for (var dd=0;dd<data.length;dd++){
+        //     idx = data[dd];
+        //     s[idx]=1;
+        //     // that.point_list[idx]=(that.point_list[idx]||0)+1;    
+        //     if (!that.prev_data[idx]){
+        //         diff +=1;
+        //     }
+        // }
+        // console.log('point diff '+diff+' / '+data.length+' / '+Object.keys(that.data).length);
+        // that.prev_data = s;
+        
+        // var new_labels = d.new_labels;
+        // console.log('point d.new_labels '+JSON.stringify(new_labels));
         var iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
 
         var time = (new Date).getTime();
@@ -303,16 +334,19 @@ Slave.prototype = {
         };
 
         shuffle_data = function() {
+            console.log('suffle');
 
             workingset = shuffle(data.slice());
 
         }
 
+
         initialise = function() {
 
             //console.log(that.id+' before add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
             
-            that.add_new_labels(new_labels);
+            //no need to do this anymore
+            // that.add_new_labels(new_labels);
 
             //console.log(that.id+' after add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
         }
@@ -326,6 +360,7 @@ Slave.prototype = {
                 }
 
                 point_id = workingset.pop()
+                // that.point_list[ddd]=(that.point_list[point_id]||0)+1;
                 point = that.data[point_id];
 
                 Input = new that.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
@@ -340,10 +375,14 @@ Slave.prototype = {
                 current_time = (new Date).getTime();
 
                 if(current_time > (that.start_time + iteration_time)) {
+                    var pp=Object.keys(that.point_list);
+                    // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
                     return;
                 }
 
             }
+            var pp=Object.keys(that.point_list);
+            // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
 
         }
 

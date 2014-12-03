@@ -501,30 +501,30 @@ app.controller('new_project', function ($scope, $rootScope, $location) {
         else if(type == 'imagenetA') {
             $scope.layers = [
             {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
-            {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":11,"stride":4,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":2}},
             {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":2,"stride":1}},
+            {type: 'pool', conf: {"sx":3,"stride":2}},
             {type: 'fc', conf: {"activation":"softmax"}}
           ]
         }
         else if(type == 'imagenetA_drop') {
             $scope.layers = [
             {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
-            {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
+            {type: 'conv', conf: {"sx":11,"stride":4,"filters":24,"activation":"relu"}},
             {type: 'pool', conf: {"sx":3,"stride":1,"drop_prob":0.1}},
             {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":2,"stride":1}},
+            {type: 'pool', conf: {"sx":3,"stride":2}},
             {type: 'fc', conf: {"activation":"softmax"}}
           ]
         }
         else if(type == 'imagenetA_drop2') {
             $scope.layers = [
             {type: 'input', conf: {"sx":224,"sy":224,"depth":3}},
-            {type: 'conv', conf: {"sx":6,"stride":3,"filters":24,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":3,"stride":1}},
+            {type: 'conv', conf: {"sx":11,"stride":4,"filters":24,"activation":"relu"}},
+            {type: 'pool', conf: {"sx":3,"stride":2}},
             {type: 'conv', conf: {"sx":4,"stride":2,"filters":48,"activation":"relu"}},
-            {type: 'pool', conf: {"sx":2,"stride":1,"drop_prob":0.1}},
+            {type: 'pool', conf: {"sx":3,"stride":2,"drop_prob":0.1}},
             {type: 'fc', conf: {"activation":"softmax"}}
           ]
         }

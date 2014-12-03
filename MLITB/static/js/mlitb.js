@@ -1432,6 +1432,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     this.conf = [];
     this.label2index = {}; //maps string label to index
     this.index2label = {}; //maps index to label
+    this.orderedLabel = []; //we will use this later and remove the label2index and index2label
     
   }
   Net.prototype = {
@@ -1604,8 +1605,13 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           var index=currentLabelSize+N;
           this.label2index[lab]= index;
           this.index2label[index]=lab;
+          this.orderedLabel.push(lab);
           N+=1;
         }
+      }
+
+      if (N==0){
+        return this.label2index;
       }
 
       //find position of the last fc layer
@@ -1651,7 +1657,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
     },
 
     setLabel : function(list_labels){
-      var orderedLabel = [];
+      this.orderedLabel = [];
       this.label2index = {};
       this.index2label = {};
       for (var i=0;i<list_labels.length;i++){
@@ -1659,10 +1665,21 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
         if (! this.label2index.hasOwnProperty(lab)){
           this.label2index[lab]=i;
           this.index2label[i]=lab;
-          orderedLabel.push(lab);  
+          this.orderedLabel.push(lab);  
         }
       }
       return this.label2index;
+    },
+
+    getLabel : function(){
+      //later just use 
+      //return this.orderedLabel
+      //now don't make big change
+      var orderedLabel = [];
+      for (var i=0;i<Object.keys(this.index2label).length;i++){
+        orderedLabel.push(this.index2label[i]);
+      }
+      return orderedLabel;
     },
 
     forward : function (X,is_training) {

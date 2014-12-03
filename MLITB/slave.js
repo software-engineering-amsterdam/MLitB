@@ -67,18 +67,18 @@ Slave.prototype.process_cache = function(nn) {
 
 Slave.prototype.work = function(nn) {
 
-    var new_labels = [];
+    // var new_labels = [];
 
-    // find intersection of labels.
-    var i = nn.labels.length;
-    while(i--) {
-        var label = nn.labels[i];
-        if(this.labels.indexOf(label) == -1) {
-            new_labels.push(label);
-            this.labels.push(label);
-        }
+    // // find intersection of labels.
+    // var i = nn.labels.length;
+    // while(i--) {
+    //     var label = nn.labels[i];
+    //     if(this.labels.indexOf(label) == -1) {
+    //         new_labels.push(label);
+    //         this.labels.push(label);
+    //     }
 
-    }
+    // }
 
     /*
 
@@ -93,7 +93,7 @@ Slave.prototype.work = function(nn) {
         
         data: this.process,
         iteration_time: nn.iteration_time, // fix for lag etc.
-        new_labels: new_labels,
+        // new_labels: new_labels,
         step: nn.step
         /*
         parameters: parameters,
