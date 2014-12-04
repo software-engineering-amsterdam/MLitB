@@ -526,7 +526,7 @@ NeuralNetwork.prototype = {
             //prioritize less assigned data
             // low to high
             // cache = a.cache.length - b.cache.length; 
-            cache = a.assigned - b.assigned;
+            cache = b.assigned - a.assigned;
             if(cache == 0) {
                 return a.cache.length - b.cache.length;
             }
@@ -717,7 +717,7 @@ NeuralNetwork.prototype = {
             var l = slaves.length;
             while (l--){
                 var slave = slaves[l];
-                if (!slave.saturated() ) {
+                if ( (!slave.saturated()) && (slave.uncached.length < slave.power)){
                     //this slave can receive new uncached data
                     // sl.assigned_cache.push(point);
                     // point.assigned.push(sl);
