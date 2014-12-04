@@ -106,8 +106,6 @@ Slave.prototype.work = function(nn) {
 
     this.send('job', work_data);
 
-    this.process = [];
-
 }
 
 /*

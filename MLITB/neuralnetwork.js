@@ -2,7 +2,10 @@ var Client     = require('./client'),
     Boss       = require('./boss'),
     master     = require('./master'),
     SGDTrainer = require('./sgd'),
+    Test = require('./tests'),
     mlitb = require('./static/js/mlitb');
+
+var Test = new Test();
 
 var id = 0;
 
@@ -587,23 +590,17 @@ NeuralNetwork.prototype = {
             slave = this.slaves[i];
 
             power_float = slave.power / normalize_factor;
-            power_int = Math.floor(power_float);
-
-            fraction_difference += power_float - power_int;
-
-            if (Math.abs(fraction_difference - 1) < 0.000001) {
-                power_int += 1;
-                fraction_difference = 0;
-            }
+            power_int = Math.ceil(power_float);
 
             if(power_int > slave.max_power) {
                 power_int = slave.max_power;
             }
 
-            slave.assigned_power = power_int;
+            slave.assigned_power = power_int
 
             // dump assigned cache
             slave.assigned_cache = [];
+            slave.process = [];
 
         }
 
@@ -616,6 +613,7 @@ NeuralNetwork.prototype = {
             point = this.data[j];
 
             point.process = [];
+            point.selected = false;
 
             var k = point.cache.length;
 
@@ -748,10 +746,16 @@ NeuralNetwork.prototype = {
 
                 var point = datamap[j];
 
+                if(point.selected) {
+                    continue;
+                }
+
                 if(in_cache(point,slave)) {
 
                     // assign
                     slave.process.push(point.id);
+
+                    point.selected = true;
 
                     if(slave.process.length == slave.assigned_power) {
                         break;
@@ -771,6 +775,8 @@ NeuralNetwork.prototype = {
             }
 
         }
+
+        Test.dataset_should_be_fully_allocated(this);
 
         console.log('(NN) sent', slaves_to_work, 'slaves to work:', this.id);
 

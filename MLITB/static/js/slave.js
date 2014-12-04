@@ -334,7 +334,8 @@ Slave.prototype = {
         };
 
         shuffle_data = function() {
-            console.log('suffle');
+            
+            console.log('shuffle');
 
             workingset = shuffle(data.slice());
 
