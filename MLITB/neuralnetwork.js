@@ -667,9 +667,9 @@ NeuralNetwork.prototype = {
             un_cached +=1
 
             //this point is not cached by anyone
-            //assign it because we prioritize un assigned data
+            //assign it because we prioritize less assigned data
             //don't worry about not using cache, because here we limit
-            //the number of new data request by slave.max_data_transfer
+            //the number of new data request by slave.power
             var slaves = this.slaves.sort(sort_slaves);
             var l = slaves.length;
             while (l--){
