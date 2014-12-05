@@ -355,14 +355,14 @@ NeuralNetwork.prototype = {
 
             var j = this.data[i].assigned.length;
             while(j--) {
-                if(this.data[i].assigned[j].id == client.socket.id) {
+                if(this.data[i].assigned[j].socket.id == client.socket.id) { //shouldn't it assigned[j].socke.assignedt.id ?
                     this.data[i].assigned.splice(j, 1);
                 }
             }
 
             var j = this.data[i].cache.length;
             while(j--) {
-                if(this.data[i].cache[j].id == client.socket.id) {
+                if(this.data[i].cache[j].socket.id == client.socket.id) {
                     this.data[i].cache.splice(j, 1);
                 }
             }
@@ -525,23 +525,23 @@ NeuralNetwork.prototype = {
 
         sort_data = function(a,b) {
             //prioritize less assigned data
-            // low to high
+            // sort hight assigned to low, but process from the end of list
             // cache = a.cache.length - b.cache.length; 
             cache = b.assigned_ctr - a.assigned_ctr;
             if(cache == 0) {
-                return b.cache.length - a.cache.length;
+                return a.cache.length - b.cache.length;
             }
             return cache;
         }
 
-        sort_slaves = function(a, b) {
-            // low to high
-            cache = b.assigned_cache.length - a.assigned_cache.length;
-            if(cache == 0) {
-                return a.assigned_power.length - b.assigned_power.length;
-            }
-            return cache;
-        }
+        // sort_slaves = function(a, b) {
+        //     // low to high
+        //     cache = b.assigned_cache.length - a.assigned_cache.length;
+        //     if(cache == 0) {
+        //         return a.assigned_power.length - b.assigned_power.length;
+        //     }
+        //     return cache;
+        // }
 
         filter_unfilled_slaves = function(a) {
             return !a.saturated()
@@ -552,6 +552,15 @@ NeuralNetwork.prototype = {
         }
 
         in_slave_cache = function(point, slave) {
+            //in cache or on the way
+            
+            var m = point.assigned.length;
+            while(m--) {
+                if(point.assigned[m].socket.id == slave.socket.id) {
+                    return true;
+                }
+            }
+            // return false;
 
             var m = point.cache.length;
             while(m--) {
@@ -559,15 +568,28 @@ NeuralNetwork.prototype = {
                     return true;
                 }
             }
+            return false;
+
+            
+        }
+
+        rm_assigned = function(point, slave) {
+            //on the way
+            // var m = point.assigned.length;
+            // while(m--) {
+            //     if(point.assigned[m].socket.id == slave.socket.id) {
+            //         return true;
+            //     }
+            // }
             // return false;
 
-            var m = point.assigned.length;
-            while(m--) {
-                if(point.assigned[m].socket.id == slave.socket.id) {
-                    return true;
+            var j = point.assigned.length;
+
+            while(j--) {
+                if(point.assigned[j].socket.id == slave.socket.id) {
+                    point.assigned.splice(j, 1);
                 }
             }
-            return false;
 
         }
 
@@ -636,16 +658,16 @@ NeuralNetwork.prototype = {
 
         }
 
-        var j = this.data.length;
 
-        // assign data points to slaves having it already in cache 
+        // sort data descending by #allocated/processed
         this.data = this.data.sort(sort_data);
 
-        
-
         var un_cached =0;
-        var unassigned =0;
         var uncached_list = [];
+
+
+        // assign data points to slaves having it already in cache or on the way/assigned
+        var j = this.data.length;
         while(j--) {
 
             point = this.data[j];
@@ -653,18 +675,14 @@ NeuralNetwork.prototype = {
             point.process = [];
             point.selected = false;
 
-            var K = point.cache.length;
+            var k = point.assigned.length;
 
-            // while(k--) {
-            for (var k=0;k<K;k++){
+            while(k--) {
 
-                var cache_slave = point.cache[k];
+                var cache_slave = point.assigned[k];
 
                 if(!cache_slave.saturated() ) {
                     cache_slave.assigned_cache.push(point);
-                    // point.assigned++;
-                    point.assigned.push(cache_slave);
-
                     point.process.push(cache_slave);
 
                     break;
@@ -672,167 +690,72 @@ NeuralNetwork.prototype = {
 
             }
 
-            // if (point.process.length){
-            //     continue;
-            // }
-
-            
-
-            //this point is not cached by anyone
-            //assign it because we prioritize less assigned data
-            //don't worry about not using cache, because here we limit
-            //the number of new data request by slave.power
-            // var slaves = this.slaves.sort(sort_slaves);
-            // var l = slaves.length;
-            // while (l--){
-            //     var slave = slaves[l];
-            //     if ( (!slave.saturated()) && (slave.uncached.length < slave.power)){
-            //         //this slave can receive new uncached data
-            //         // sl.assigned_cache.push(point);
-            //         // point.assigned.push(sl);
-            //         // if(!in_slave_cache(point, sl)) {
-            //         //     sl.uncached.push(point);
-            //         // }
-            //         // point.process.push(sl);
-
-            //         slave.assigned_cache.push(point);
-                
-            //         if(!in_cache(point, slave)) {
-            //             slave.uncached.push(point);
-            //         }
-                    
-            //         point.assigned++;
-
-            //         point.process.push(slave);
-
-            //         break;
-            //     }
-            // }
-
-
             if (! point.process.length){
-                un_cached +=1
-                uncached_list.push(point)
+                un_cached +=1;
+                uncached_list.push(point); //now the remaining list become ascending
             }
 
         }
 
-        var u = uncached_list.length;
-        // var slaves = this.slaves.sort(sort_slaves);
-        var slaves = this.slaves.sort(sort_slaves);
-        while (u--){
-            //check the
+        console.log('uncached  data '+un_cached);
+        var U = uncached_list.length; //here the list is ascending
+        var slaves = this.slaves;
+
+
+
+        // console.log('AFTER ASSIGN CACHE');
+        // var ll = this.slaves.length;
+        // while(ll--){
+        //     if (!this.slaves[ll].saturated()){
+        //         console.log('#### '+this.slaves[ll].socket.id+' NOT SATURATED');    
+        //     }
+        // }
+
+        // var UA = un_assigned.length;
+        var un_processed = [];
+        for (var u=0;u<U;u++){
+
             var point = uncached_list[u];
-            
-            //prioritize slave in point.assigned
-            var A=point.assigned.length;
-            for (var a=0;a<A;a++){
-                var assigned_slave = point.assigned[a];
-                if ( (!assigned_slave.saturated()) && (assigned_slave.uncached.length < assigned_slave.power)){
-                    //this slave can receive new uncached data
-                    // sl.assigned_cache.push(point);
-                    // point.assigned.push(sl);
-                    // if(!in_slave_cache(point, sl)) {
-                    //     sl.uncached.push(point);
-                    // }
-                    // point.process.push(sl);
-
-                    assigned_slave.assigned_cache.push(point);
-                
-                    if(!in_slave_cache(point, assigned_slave)) {
-                        slave.uncached.push(point);
-                    }
-                    
-                    // point.assigned++;
-                    point.assigned.push(assigned_slave);
-
-                    point.process.push(assigned_slave);
-
-                    break;
-                }
-            }
-
-            if (point.process.length){
-                continue;
-            }
-
-
-
+            //point is not in anybody cache, and not being transferred
+            //to preserve consistent order of traversing slaves, start from the first
+            var L = slaves.length;
             var l = slaves.length;
 
             while (l--){
                 var slave = slaves[l];
                 if ( (!slave.saturated()) && (slave.uncached.length < slave.power)){
-                    //this slave can receive new uncached data
-                    // sl.assigned_cache.push(point);
-                    // point.assigned.push(sl);
-                    // if(!in_slave_cache(point, sl)) {
-                    //     sl.uncached.push(point);
-                    // }
-                    // point.process.push(sl);
-
                     slave.assigned_cache.push(point);
                 
                     if(!in_slave_cache(point, slave)) {
                         slave.uncached.push(point);
+                         
+                        
                     }
+                    rm_assigned(point,slave);
+                    point.assigned.push(slave);    
                     
-                    // point.assigned++;
-                    point.assigned.push(slave);
-
                     point.process.push(slave);
-
+                    
                     break;
                 }
 
             }
+            if (!point.process.length){
+                un_processed.push(point);
+            }
         }
 
-        console.log('uncached  data '+un_cached);
-        // console.log('unprocess data '+unassigned);
+        console.log('unproccessed data '+un_processed.length);
+
+        
+        
         
 
-        //after this point, either data has been covered or all slaves has full
-
-        // this.data = this.data.sort(sort_data);
-
-        // var unfilled_slaves = this.slaves.filter(filter_unfilled_slaves);
-
-        // var j = unfilled_slaves.length;
-
-        // var k = this.data.length;
-
-        // // assign remaining uncached data points
-
-        // while(j-- && k--) {
-
-        //     var slave = unfilled_slaves[j];
-
-        //     var point = this.data[k];
-
-        //     if(!point.process.length) {
-
-        //         slave.assigned_cache.push(point);
-                
-        //         if(!in_slave_cache(point, slave)) {
-        //             slave.uncached.push(point);
-        //         }
-                
-        //         point.assigned.push(slave);
-
-        //         point.process.push(slave);
-
-        //     }
-
-        //     if(!slave.saturated()) {
-        //         j++;
-        //     }
-
-        // }
         
 
-        var i = this.slaves.length;
-        while(i--) {
+        var I = this.slaves.length;
+        for (var i=0;i<I;i++){
+        // while(i--) {
             this.slaves[i].process_cache(this);
         }
 
@@ -878,7 +801,7 @@ NeuralNetwork.prototype = {
 
         console.log("Initiating (NN)", this.id);
 
-        var datamap = this.data.filter(filter_data).sort(sort_data);
+        var datamap = this.data.filter(filter_data)//sort(sort_data);
 
         if(!datamap.length) {
             console.log('> 1 (NN) cannot initiate: data not available on slaves (yet)', this.id);
@@ -887,7 +810,8 @@ NeuralNetwork.prototype = {
         }
 
         // sort on slave cache size
-        var slaves = this.slaves.filter(filter_slaves).sort(sort_slaves);
+        // var slaves = this.slaves.filter(filter_slaves).sort(sort_slaves);
+        var slaves = this.slaves.filter(filter_slaves)
         //var slaves = this.slaves.sort(sort_slaves);
 
         if(!slaves.length) {
@@ -923,9 +847,9 @@ NeuralNetwork.prototype = {
                     point.selected = true;
                     point.assigned_ctr+=1
                 }
-                else if(slave.process.length == slave.assigned_power) {
-                    console.log('THIS SHOULD HAPPEN ONCE OR NEVER');
-                }
+                // else if(slave.process.length == slave.assigned_power) {
+                //     console.log('THIS SHOULD HAPPEN ONCE OR NEVER');
+                // }
 
             } else {
                 //weird sometime this happen
@@ -948,46 +872,6 @@ NeuralNetwork.prototype = {
             }
         }
 
-        // while(i--) {
-    
-        //     // first the slaves with least cache pick their choice
-        //     var slave = slaves[i];
-
-        //     var j = datamap.length;
-
-        //     while(j--) {
-
-        //         var point = datamap[j];
-
-        //         if(point.selected) {
-        //             continue;
-        //         }
-
-        //         if(in_cache(point,slave)) {
-
-        //             // assign
-        //             slave.process.push(point.id);
-
-        //             point.selected = true;
-
-        //             if(slave.process.length == slave.assigned_power) {
-        //                 break;
-        //             }
-
-        //         }
-
-        //     }
-
-        //     if(slave.process.length > 0) {
-
-        //         this.slaves_operating.push(slave);
-        //         slave.work(this);
-
-        //         slaves_to_work += 1;
-
-        //     }
-
-        // }
 
         Test.dataset_should_be_fully_allocated(this);
 
