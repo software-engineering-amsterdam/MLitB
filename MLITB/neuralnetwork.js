@@ -68,9 +68,11 @@ var NeuralNetwork = function(data, master) {
 
     this.Net = new mlitb.Net();
     this.Net.setConfigsAndParams(this.configuration);
+    var newParams = this.Net.getParams();
     
     this.SGD = new SGDTrainer(this, {});
     this.SGD.set_parameters(this.hyperparameters);
+    this.SGD.resize_param(newParams); 
 }
 
 NeuralNetwork.prototype = {
