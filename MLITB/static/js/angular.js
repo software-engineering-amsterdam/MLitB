@@ -1,4 +1,4 @@
-var app = angular.module('mlitb', ['ngRoute', 'ui.sortable']);
+var app = angular.module('mlitb', ['ngRoute', 'ui.sortable', 'routeStyles']);
 
 app.run(function($rootScope, $location) {
     
@@ -45,6 +45,11 @@ app.config(['$routeProvider',
         templateUrl: 'static/views/detail.html',
         controller: 'detail'
     }).
+    when('/project-index/:nn_id/public', {
+        templateUrl: 'static/views/public.html',
+        controller: 'public',
+        css: 'static/css/public.css'
+    }).    
     when('/project-index/:nn_id/slave/:slave_id/camera', {
         templateUrl: 'static/views/camera.html',
         controller: 'camera'
@@ -91,6 +96,116 @@ app.controller('home', function ($scope, $rootScope, $location) {
     $scope.nn_detail = function(nn_id) {
         $location.path('/project-index/' + nn_id);
     };
+
+});
+
+app.controller('public', function ($scope, $rootScope, $routeParams, $location) {
+
+    $rootScope.public_ready = false;
+    $scope.working = false;
+    $scope.label_added = false;
+
+    $scope.slave_working = false;
+
+    $scope.start = function() {
+
+        $scope.nn = $scope.boss.nn_by_id($routeParams.nn_id);
+
+        if(!$scope.nn) {
+            $location.path('/project-index/');
+        }
+
+        if($rootScope.camera_slave || $rootScope.worker_slave) {
+            $rootScope.public_ready = true;
+            return;
+        }
+
+        $scope.boss.start_public($routeParams.nn_id);
+
+        $scope.$watch('boss.nns', function() {
+            $scope.nn = $scope.boss.nn_by_id($routeParams.nn_id);
+
+            if(!$scope.nn) {
+                $location.path('/project-index/');
+            }
+
+        });
+
+    }
+
+    $scope.start_work = function() {
+
+        $scope.boss.slave_work($routeParams.nn_id, $rootScope.worker_slave.id);
+        $scope.message_be_gone = true;
+        $scope.slave_working = true;
+
+    }
+
+    $scope.add_label = function() {
+
+        var canvas = document.getElementById('image');
+
+        var base64 = canvas.toDataURL();
+        var blobBin = atob(base64.split(',')[1]);
+
+        var array = [];
+        for(var i = 0; i < blobBin.length; i++) {
+            array.push(blobBin.charCodeAt(i));
+        }
+
+        var file = new Uint8Array(array);
+
+        var zip = new JSZip();
+        zip.folder($scope.new_label).file("genfile.jpg", file);
+
+        var gen_zip = zip.generate({type: "blob"});
+        var formData = new FormData();
+
+        formData.append("upload", gen_zip);
+
+        var request = new XMLHttpRequest();
+
+        request.onload = function() {
+            
+            $scope.boss.add_data($routeParams.nn_id, this.response);
+            $scope.label_added = true;
+            $scope.$apply();
+
+        }
+
+        request.open("POST", imagehost + "/upload");
+        request.send(formData);
+
+    }
+
+    $scope.assign_label = function(label) {
+
+        $scope.new_label = label;
+        $scope.add_label();
+
+    }
+
+    $rootScope.camera_done = function(results) {
+
+        $scope.classify_results = results;
+        $scope.working = false;
+        $scope.$apply();
+
+    }
+
+    handleFileSelect = function(evt) {
+
+        $scope.working = true;
+        $scope.label_added = false;
+        $scope.new_label = '';
+        $scope.$apply();
+
+        $scope.boss.handle_camera(evt, $rootScope.camera_slave.id);
+
+    }
+
+    document.getElementById('picture').addEventListener('change', handleFileSelect, false);
+
 
 });
 

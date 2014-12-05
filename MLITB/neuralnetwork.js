@@ -90,7 +90,8 @@ NeuralNetwork.prototype = {
             error: this.error.toFixed(6),
             hyperparameters: this.hyperparameters,
             running: this.running,
-            configuration: this.configuration.configs
+            configuration: this.configuration.configs,
+            power: this.total_power()
         }
     },
 
@@ -1024,12 +1025,7 @@ NeuralNetwork.prototype = {
         this.runtime_elapsed += parseInt(this.iteration_time);
         this.data_seen += parameters.nVector;
 
-        /*
-        var i = new_labels.length;
-        while(i--) {
-            this.add_label(new_labels[i]);
-        }
-        */
+        slave.power = parameters.nVector;
 
         if(!this.slaves_operating.length && this.running == false) {
 

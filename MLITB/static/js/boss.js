@@ -112,11 +112,21 @@ Boss.prototype = {
             slave.working = true;
         } else if(text == 'waiting for master') {
             slave.working = false;
+        } else if(text == 'waiting for task') {
+            
+            if(slave.task_callback) {
+                slave.task_callback(slave);
+            }
+
         }
 
         slave.state = text;
         this.angular.apply();
 
+    },
+
+    worker_stats: function(slave, data) {
+        slave.power = data.worker_power;
     },
 
     message_from_slave: function(that, e) {
@@ -139,7 +149,9 @@ Boss.prototype = {
         } else if(type == 'classify_results') {
             this.classify_results(data);            
         } else if(type == 'stats_results') {
-            this.stats_results(that, data);            
+            this.stats_results(that, data);
+        } else if(type == 'worker_stats') {
+            this.worker_stats(that, data);
         } else if(type == 'workingset') {
             // change status does angular.apply
             that.workingset = data;
@@ -184,10 +196,13 @@ Boss.prototype = {
 
     },
 
-    start_slave: function(nn_id) {
+    start_slave: function(nn_id, task_callback) {
 
         var that = this;
         var slave;
+
+        // task immediately to assign at ready.
+        var task_callback = (typeof task_callback === "undefined") ? false : task_callback;
 
         if(!this.nn_by_id(nn_id)) {
             this.logger('! Cannot start slave: NN does not exist: ' + nn_id);
@@ -213,11 +228,17 @@ Boss.prototype = {
             slave.workingset = 0;
             slave.working = false;
 
+            if(task_callback) {
+                slave.task_callback = task_callback;
+            }
+
             that.slaves.push(slave);
 
             that.angular.apply();
 
         });
+
+        return slave;
 
     },
 
@@ -470,7 +491,7 @@ Boss.prototype = {
     },
 
     slave_work: function(nn_id, slave_id) {
-
+        
         var slave;
 
         if(!this.nn_by_id(nn_id)) {
@@ -1147,6 +1168,41 @@ Boss.prototype = {
         } else if(type == 'data_for_slave') {
             this.data_for_slave(data);
         }
+
+    },
+
+    start_public: function(nn_id) {
+
+        // start up 2 workers
+        // id 0: camera - set to track immediately
+        // id 1: worker - 
+
+        var that = this;
+
+        var set_camera_task = function(slave) {
+
+            console.log('set camera task');
+
+            that.slave_track(slave.nn, slave.id);
+
+            that.angular.public_ready = true;
+            that.angular.camera_slave = slave;
+            that.angular.apply();
+
+        }
+
+        var set_worker_start = function(slave) {
+
+            that.angular.worker_slave = slave;
+            that.angular.public_ready = true;
+            that.angular.apply();
+
+        }
+
+        var camera_slave = this.start_slave(nn_id, set_camera_task); // camera one
+        var worker_slave = this.start_slave(nn_id, set_worker_start); // worker one
+
+        return [camera_slave, worker_slave];
 
     },
 

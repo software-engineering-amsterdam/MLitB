@@ -266,6 +266,10 @@ Slave.prototype = {
 
     job: function(d) {
 
+        this.send_message_to_boss('worker_stats', {
+            worker_power: d.assigned_power,
+        });
+
         // start time immediately
         this.start_time = (new Date).getTime();
 
