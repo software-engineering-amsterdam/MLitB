@@ -1,33 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>MLitB by software-engineering-amsterdam</title>
+    <meta name="description" content="MLitB : Machine Learning in the Browser">
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>MLitB</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
-        <h1>MLitB</h1>
-        <p>Machine Learning in the Browser</p>
 
-        <p class="view"><a href="https://github.com/software-engineering-amsterdam/MLitB">View the Project on GitHub <small>software-engineering-amsterdam/MLitB</small></a></p>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/software-engineering-amsterdam/MLitB">View on GitHub</a>
 
+          <h1 id="project_title">MLitB</h1>
+          <h2 id="project_tagline">Machine Learning in the Browser</h2>
 
-        <ul>
-          <li><a href="https://github.com/software-engineering-amsterdam/MLitB/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/software-engineering-amsterdam/MLitB/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/software-engineering-amsterdam/MLitB">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/software-engineering-amsterdam/MLitB/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/software-engineering-amsterdam/MLitB/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
         <h3>
 <a id="what-is-mlitb" class="anchor" href="#what-is-mlitb" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is MLitB?</h3>
 
@@ -45,38 +48,100 @@
 <h3>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h3>
 
-<p>Requirements: <code>node.js</code>, <code>redis-server</code>, <code>npm</code>, and npm modeules <code>express</code>, <code>commander</code>.</p>
+<h4>
+<a id="servers" class="anchor" href="#servers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Servers</h4>
 
-<p>After installing the above requirements, clone the MLitB repository.  </p>
+<p>To install, clone the MLitB repository.  Then use the <code>node.js</code> package manager <code>npm</code> to install the required packages.  MLitB uses two servers, a master Machine Learning server (MLitB) and a data server (that for now only handled zipped image directories).</p>
+
+<pre><code>$ cd MLitB/MLitB
+$ npm i
+$ cd MLitB/imagezip
+$ npm i
+</code></pre>
+
+<p>The data server uses <code>redis</code> to organize data vectors; download and installation information can be found at <a href="http://redis.io/download">http://redis.io/download</a>.</p>
+
+<h4>
+<a id="clients" class="anchor" href="#clients" aria-hidden="true"><span class="octicon octicon-link"></span></a>Clients</h4>
+
+<p>Clients do not require any software installation beyond a browser.  </p>
+
+<h4>
+<a id="running-mlitb" class="anchor" href="#running-mlitb" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running MLitB</h4>
+
+<h5>
+<a id="start-the-servers" class="anchor" href="#start-the-servers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Start the servers</h5>
 
 <p>In a terminal, start redis</p>
 
 <pre><code>$ redis-server &amp;
 </code></pre>
 
-<p>In another terminal, start the application:</p>
+<p>Start the Machine Learning server.  From the <code>MLitB/MLitB</code> directory, start the <code>node</code> application:</p>
 
-<pre><code>$ node app.js -h localhost
+<pre><code>$ node app.js -h mlitb_host
 </code></pre>
 
-<p>In another terminal, start the master node:</p>
+<p>Start the Data server.  From the <code>MLitB/imagezip</code> directory, start the <code>node</code> application:</p>
 
-<pre><code>$ node master.js
+<pre><code>$ node app.js  -h mlitb_host
 </code></pre>
 
-<p>Now open a tab in your browser to <code>local_host:8000</code></p>
+<p>Now open a tab in your browser to <a href="http://mlitb_host:8000">http://mlitb_host:8000</a> (without specifying the host url the default is <a href="http://localhost:8000/">http://localhost:8000/</a>).  Note that the data server will be running on port 8001.</p>
+
+<h4>
+<a id="create-a-new-project" class="anchor" href="#create-a-new-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Create a new project</h4>
+
+<p>Click <a href="http://localhost:8000/#/new-project">http://localhost:8000/#/new-project</a>.  Select a preconfigured Neural Network from the selection on the right.  Add a name and select an <em>iteration time</em>.  The iteration time is the length in msecs of a synchronized event loop.  During an event loop, the ML server and its clients perform MapReduce step, along with other events such as data uploading/downloading, client joining/leaving, etc.  Click <em>Add Neural Network</em> and a new NN will be added to the project list.</p>
+
+<p>From the project list, click the new NN.  From this view you can upload data, modify hyperparameters, and add slave nodes.</p>
+
+<h4>
+<a id="image-data" class="anchor" href="#image-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Image data</h4>
+
+<p>MLitB is a prototype based on image classification.  The only data types understood at the moment are images (jpeg/png) that can be uploaded in zipped directory structure.  For example, files can be organised like <code>/dataset/cat/cat1.jpg</code>, <code>/dataset/dog/dog1.jpg</code>, etc;  these files should be compressed to <code>dataset.zip</code>.  Then select <code>dataset.zip</code> when uploading data.  MLitB will automatically assign labels <code>cat</code> and <code>dog</code> to the data vectors.  Note that you can upload data of any size; the images will be cropped automatically based on the dimensions of the first layer of the NN.</p>
+
+<h4>
+<a id="training" class="anchor" href="#training" aria-hidden="true"><span class="octicon octicon-link"></span></a>Training</h4>
+
+<p>To train, click <code>Add Slave</code>, then choose <code>train</code> for their task.  Click <code>Restart</code> to begin training.</p>
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
 
 <p>MLitB is a collaborative effort between researchers at the University of Amsterdam with support from Amsterdam Data Science.</p>
+
+<ul>
+<li>Ted Meeds <code>tmeeds@gmail.com</code>
+</li>
+<li>Remco Hendriks <code>remco@topnotchdevelopment.nl</code>
+</li>
+<li>Said al Faraby <code>said.al.faraby@gmail.com</code>
+</li>
+<li>Magiel Bruntink <code>magiel.bruntink@gmail.com</code>
+</li>
+<li>Max Welling <code>welling.max@gmail.com</code>
+</li>
+</ul>
+
+<h3>
+<a id="mlitb-reference" class="anchor" href="#mlitb-reference" aria-hidden="true"><span class="octicon octicon-link"></span></a>MLitB Reference</h3>
+
+<p>Please cite MLitB whenever possible:</p>
+
+<p>arXiv bibtex</p>
       </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/software-engineering-amsterdam">software-engineering-amsterdam</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">MLitB maintained by <a href="https://github.com/software-engineering-amsterdam">software-engineering-amsterdam</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
-    <script src="javascripts/scale.fix.js"></script>
+
     
+
   </body>
 </html>
