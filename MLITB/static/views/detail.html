@@ -1,0 +1,225 @@
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <h2>{{ nn.id }} : {{ nn.name }}</h2>
+
+            <table class="table table-condensed">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Workers attached</th>
+                  <th>Workers assigned</th>
+                  <th>Error</th>
+                  <th>Data size</th>
+                  <th>Data processed</th>
+                  <th>Iteration time</th>
+                  <th>Runtime elapsed</th>
+                  <th>Realtime elapsed</th>
+                  <th>Step</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <span ng-show="nn.running" class="glyphicon glyphicon-play" aria-hidden="true"></span>
+                    <span ng-show="!nn.running" class="glyphicon glyphicon-pause" aria-hidden="true"></span>
+                  </td>
+                  <td>{{ nn.slaves_connected }}</td>
+                  <td>{{ nn.slaves }}</td>
+                  <td>{{ nn.error }}</td>
+                  <td>{{ nn.data }}</td>
+                  <td>{{ nn.data_seen }}</td>
+                  <td>{{ nn.iteration_time }}</td>
+                  <td>{{ nn.runtime_elapsed }}</td>
+                  <td>{{ nn.realtime_elapsed }}</td>
+                  <td>{{ nn.step }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <a href="#/project-index/{{ nn.id }}/public" target="_blank" type="button" class="btn btn-success btn-md">
+              Public
+            </a>
+
+            <button type="button" class="btn btn-primary btn-md" ng-click="open_hyperparameters(nn)">
+              Hyperparameters
+            </button>
+
+            <button type="button" class="btn btn-primary btn-md" data-toggle="modal" data-target="#adddata">
+              Add data
+            </button>
+
+            <button type="button" ng-click="join(nn.id)" class="btn btn-primary btn-md">
+              Add worker
+            </button>
+
+            &nbsp;
+
+            <button type="button" ng-click="start(nn.id)" class="btn btn-default">
+              <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+              (Re)start
+            </button>
+
+            <button type="button" ng-click="pause(nn.id)" class="btn btn-default">
+              <span class="glyphicon glyphicon-pause" aria-hidden="true"></span>
+              Pause
+            </button>
+
+            <button type="button" ng-click="reboot(nn.id)" class="btn btn-default">
+              <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+              Reboot
+            </button>
+
+            <button type="button" ng-click="remove_nn(nn.id)" class="btn btn-danger pull-right">
+              <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+              Remove
+            </button>
+
+            <h3>Your workers</h3>
+
+            <div ng-hide="nn_slaves.length">
+            	<p>You currently have no workers on this network.</p>
+            </div>
+
+            <div ng-show="nn_slaves.length">
+                <table class="table table-condensed table-hover">
+                  <thead>
+                    <tr>
+                      <th width="7%">ID</th>
+                      <th width="15%">Data allocated / cached / working</th>
+                      <th width="30%">Status</th>
+                      <th>Tasks</th>
+                      <th width="25%">Actions</th>
+                      <th width="7%">Remove</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-repeat="slave in nn_slaves" ng-click="nn_detail(nn.id);">
+                      <td>{{ slave.id | limitTo:-4 }}</td>
+                      <td>{{ slave.data_allocated }} / {{ slave.data_cached }} / {{ slave.workingset }}</td>
+                      <td><span ng-show="slave.working" class="glyphicon glyphicon-flash" aria-hidden="true"></span> {{ slave.state }}</td>
+                      <td>
+                        <div ng-hide="slave.type">
+                          <a ng-click="work(nn.id, slave.id)">train</a> |
+                          <a ng-click="track(nn.id, slave.id)">track</a>
+                        </div>
+                        <div ng-show="slave.type">
+                          {{ slave.type }}
+                        </div>
+                      </td>
+                      <td>
+                        <div ng-show="slave.type == 'track'">
+                          <a ng-click="download(slave.id)">download</a> | 
+                          <a href="#/project-index/{{ nn.id }}/slave/{{ slave.id }}/camera">camera</a> | 
+                          <a href="#/project-index/{{ nn.id }}/slave/{{ slave.id }}/stats">stats</a>
+                        </div>
+                      </td>
+
+                      <td><a ng-click="remove(slave.id)">remove</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+           	</div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="hyperparameters" tabindex="-1" role="dialog" aria-labelledby="hyperparametersLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="form-horizontal" role="form">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="myModalLabel">Hyperparameters</h4>
+        </div>
+
+        <!--
+        learning_rate : 0.01, //starting value of learning rate
+        lr_decay : 0.999, //multiplication factor
+        lr_decay_interval : 2, //iteration interval of learning rate decay
+        lr_threshold : 0.00001, //0.001, //lower bound of learning rate
+        momentum : 0.9,
+        batch_size : 16, 
+        l2_decay : 0.000, 
+        l1_decay : 0.000
+      -->
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="learningrate" class="col-sm-5 control-label">Learning rate</label>
+            <div class="col-sm-7">
+              <input type="number" ng-model="hyperparameters.learning_rate" class="form-control" id="learningrate" placeholder="Learning rate" step="0.0001">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="learningratedecay" class="col-sm-5 control-label">Learning rate decay</label>
+            <div class="col-sm-7">
+              <input type="number" ng-model="hyperparameters.lr_decay" class="form-control" id="learningratedecay" placeholder="Learning rate decay" step="0.0001">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="learningratedecayinterval" class="col-sm-5 control-label">Learning rate decay interval</label>
+            <div class="col-sm-7">
+              <input type="number" ng-model="hyperparameters.lr_decay_interval" class="form-control" id="learningratedecayinterval" placeholder="Learning rate decay interval" step="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="learningratethreshold" class="col-sm-5 control-label">Learning rate threshold</label>
+            <div class="col-sm-7">
+              <input type="number" ng-model="hyperparameters.lr_threshold" class="form-control" id="learningratethreshold" placeholder="Learning rate threshold" step="0.000001">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="momentum" class="col-sm-5 control-label">Momentum</label>
+            <div class="col-sm-7">
+              <input type="number" ng-model="hyperparameters.momentum" class="form-control" id="momentum" placeholder="Momentum" step="0.01">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="batchsize" class="col-sm-5 control-label">Batch size</label>
+            <div class="col-sm-7">
+              <input type="number" ng-model="hyperparameters.batch_size" class="form-control" id="batchsize" placeholder="Batch size" step="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="l2decay" class="col-sm-5 control-label">L2 decay</label>
+            <div class="col-sm-7">
+              <input type="number" ng-model="hyperparameters.l2_decay" class="form-control" id="l2decay" placeholder="L2 decay" step="0.0001">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="l1decay" class="col-sm-5 control-label">L1 decay</label>
+            <div class="col-sm-7">
+              <input type="number" ng-model="hyperparameters.l1_decay" class="form-control" id="l1decay" placeholder="L1 decay"step="0.0001">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="submit" ng-click="save_hyperparameters(nn.id)" class="btn btn-primary" data-dismiss="modal">Save &amp; close</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="adddata" tabindex="-1" role="dialog" aria-labelledby="adddataLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="datauploadform" class="form-horizontal" role="form" enctype="multipart/form-data" method="post">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="myModalLabel">Add data</h4>
+        </div>
+        <div class="modal-body">
+            <input type="file" name="upload" multiple="multiple">
+        </div>
+        <div class="modal-footer">
+          <img ng-show="adddataspinner" src="/static/images/spinner.gif" />
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="submit" ng-click="adddata(nn.id, $event)" class="btn btn-primary">Upload</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

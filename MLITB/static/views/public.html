@@ -1,0 +1,155 @@
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+
+            <div ng-hide="nn">
+
+              <p>Welcome to the Machine Learning in the Browser NIPS 2014 demo.</p>
+              <p>Click start below to begin.</p>
+              <p>You can find us at <a href="https://github.com/software-engineering-amsterdam/MLitB/">https://github.com/software-engineering-amsterdam/MLitB/</a></p>
+
+              <button type="button" ng-click="start()" class="btn btn-success btn-lg">
+                <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+                Start
+              </button>
+
+            </div>
+
+            <div ng-show="nn">
+
+              <h4>Network: {{ nn.name }} </h4>
+
+              <table class="table table-condensed">
+                <tr>
+                    <th>Network error:</th>
+                    <td>{{ nn.error }} ({{ nn.error  * 100.0 | number: 1}}%)</td>
+                </tr>
+                <tr>
+                    <th>Data:</th>
+                    <td>{{ nn.data }} images</td>
+                </tr>
+                <tr>
+                    <th>Devices working:</th>
+                    <td>{{ nn.slaves }}</td>
+                </tr>
+                <tr>
+                    <th>Network power:</th>
+                    <td>{{ nn.power }} images/iteration</td>
+                </tr>
+              </table>
+              <div >
+                <h4 ng-show="slave_working">My stats:</h4>
+                <p ng-show="!worker_slave.power && slave_working">Fetching stats... please wait.</p>
+                <table class="table table-condensed" ng-show="worker_slave.power > 0">
+                  <tr>
+                      <th>Power:</th>
+                      <td>{{ worker_slave.power }} images/iteration</td>
+                  </tr>
+                  <tr>
+                      <th>Collaboration:</th>
+                      <td>{{ worker_slave.power / nn.power * 100.0 | number : 1 }} % of total network.</td>
+                  </tr>
+                </table>
+              </div>
+
+              <p ng-hide="slave_working"> Click 'start training' to collaborate a little of your computing power to train the network.</p>
+              <p> Click 'choose or take picture' to classify an image.</p>
+
+              <div ng-hide="public_ready">
+                <p>Loading configuration...</p>
+                <img src="/static/images/spinner.gif" />
+
+              </div>
+
+              <div ng-show="public_ready">
+
+                <p>
+
+                <button type="button" ng-click="start_work()" ng-hide="slave_working" class="btn btn-default btn-lg">
+                  <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+                  Start training
+                </button>
+
+                <div class="well well-sm" ng-show="message_be_gone">
+                  <p>Thank you for collaborating. Please keep this window open for awhile.</p>
+                  <p>You can take pictures below and find out the network's improvement</p>
+                  <button type="button" ng-click="message_be_gone = false" class="btn btn-default">
+                    Close message
+                  </button>
+                </div>
+
+              </p>
+
+                <p>
+                  <span class="btn btn-default btn-file btn-lg">
+                    <input id="picture" name="files" type="file"> 
+                    <span class="glyphicon glyphicon-camera"></span> 
+                    Choose or take picture
+                  </span>
+                </p>
+
+                <p>
+                    <canvas id="image"></canvas>
+                </p>
+
+                <div ng-show="working">
+                    <p>Working... <img src="/static/images/spinner.gif" /></p>
+                </div>
+
+                <div ng-hide="working">
+                    <div ng-show="classify_results">
+                        <h4>Results</h4>
+                        <p ng-hide="label_added">Click a result to add the image to the network.</p>
+                        <p ng-show="label_added">Label and image added to server. You can take more pictures if you like. If you added a new label (category), please take more pictures of similar items.</p>
+                        <div ng-hide="label_added">
+                            <table class="table table-condensed table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="30%">Label</th>
+                                        <th>Probability</th>
+                                        <th>Add</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr data-ng-repeat="item in classify_results | limitTo: 10" ng-click="assign_label(item[1])">
+                                        <td>{{ item[1] }}</td>
+                                        <td>{{ item[2] }}</td>
+                                        <td>
+                                          <button type="button" class="btn btn-default btn-xs">
+                                            <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                                            Add
+                                          </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <form role="form" name="new_label_form">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="form-group">
+                                            <label for="name">Or add with new label:</label>
+                                            <input type="text" class="form-control" ng-model="new_label" id="label">
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" ng-model="new_label_public"> Add image to public training set
+                                    </label>
+                                </div>
+                                -->
+                                <button type="submit" ng-click="add_label()" class="btn btn-default">Add label</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+              </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>

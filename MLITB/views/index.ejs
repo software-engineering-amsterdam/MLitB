@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="mlitb">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MLitB</title>
+
+    <link href="/static/css/_bower.css" rel="stylesheet">
+    <link href="/static/css/mlitb.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+
+      <!-- Static navbar -->
+      <nav class="navbar navbar-default" role="navigation" ng-controller="navbar">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#/home">MLitB &nbsp; <small>NIPS demo fall 2014</small></a>
+          </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              <li ng-class="{active: page_active == 'home'}" ng-click="page_active='home'"><a href="#/home">Home</a></li>
+              <li ng-class="{active: page_active == 'project_index'}" ng-click="page_active='project_index'"><a href="#/project-index">Project index</a></li>
+              <li ng-class="{active: page_active == 'new_project'}" ng-click="page_active='new_project'"><a href="#/new-project">New project</a></li>
+              <li ng-class="{active: page_active == 'new_project_from_file'}" ng-click="page_active='new_project_from_file'"><a href="#/new-project-from-file">New project from file</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div><!--/.container-fluid -->
+      </nav>
+
+
+      <div ng-view></div>
+
+      <div class="container c-log">
+        <div class="row">
+          <div class="col-lg-12">
+
+            <h4>Log</h4>
+            <pre class="log"><span ng-repeat="line in log | reverse track by $index ">{{ line }}</span></pre>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <script type="text/javascript">
+      var host = '<%=host %>';
+      var imagehost = '<%= imagehost %>';
+    </script>
+
+    <script src="/static/js/_bower.js"></script>
+    <script src="/static/js/mlitb.js"></script>
+    <script src="/static/js/webworker/binaryajax.js"></script>
+    <script src="/static/js/webworker/exif.js"></script>
+    <script src="/static/js/webworker/megapix.js"></script>
+    <script src="/static/js/webworker/filesaver.js"></script>
+    <script src="/static/js/webworker/highcharts.js"></script>
+    <script src="/static/js/webworker/highcharts-more.js"></script>
+    <script src="/static/js/webworker/hc-exporting.js"></script>
+    <script src="/static/js/boss.js"></script>
+    <script src="/static/js/angular.js"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+ul.nav.navbar-nav, .navbar-toggle.collapsed {
+	display: none;
+}
+
+.c-log {
+	display: none;
+}

@@ -1,0 +1,35 @@
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <h2>{{ nn.id }} : {{ nn.name }}</h2>
+
+            <button type="button" class="btn btn-primary btn-md" data-toggle="modal" data-target="#adddata">
+              Add data
+            </button>
+
+            <div id="chartcontainer"> </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="adddata" tabindex="-1" role="dialog" aria-labelledby="adddataLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="datauploadform" class="form-horizontal" role="form" enctype="multipart/form-data" method="post">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="myModalLabel">Add data</h4>
+        </div>
+        <div class="modal-body">
+            <input type="file" id="filefield" name="upload">
+        </div>
+        <div class="modal-footer">
+          <img ng-show="adddataspinner" src="/static/images/spinner.gif" />
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="submit" ng-click="adddata(nn.id, $event)" class="btn btn-primary">Upload</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
