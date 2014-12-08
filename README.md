@@ -1,5 +1,5 @@
 ### What is MLitB?
-Machine Learning in the Browser (MLitB) is an ambitious software development project whose aim is to bring ML, in all its facets, to an audience that includes both the general public and the research community.  MLitB is not just a software library, but is a philosophical approach to achieving our goals of bringing powerful machine learning models to a global audience.
+Machine Learning in the Browser (MLitB, <http://software-engineering-amsterdam.github.io/MLitB/>) is an ambitious software development project whose aim is to bring ML, in all its facets, to an audience that includes both the general public and the research community.  MLitB is not just a software library, but is a philosophical approach to achieving our goals of bringing powerful machine learning models to a global audience.
 
 #### Why Machine Learning in the Browser?
 The ubiquity of the browser as a computational engine makes it an ideal platform for the development of massively distributed and collaborative machine learning.  
