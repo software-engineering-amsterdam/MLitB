@@ -94,7 +94,8 @@ Slave.prototype.work = function(nn) {
         data: this.process,
         iteration_time: nn.iteration_time, // fix for lag etc.
         step: nn.step,
-        assigned_power: this.assigned_power
+        assigned_power: this.assigned_power,
+        power: this.power
         /*
         parameters: parameters,
         step: nn.step

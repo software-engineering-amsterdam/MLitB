@@ -140,7 +140,7 @@ app.post('/upload', function (req, res) {
             var n = names[i];
             
             if( illegal_chars.indexOf(n[0]) > -1) {
-                console.log('Illegal file/directory name:', names);
+                //console.log('Illegal file/directory name:', names);
                 return process_zip_files(files);
             }
         }
