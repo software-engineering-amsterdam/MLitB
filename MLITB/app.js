@@ -7,9 +7,9 @@ var program     = require('commander'),
     master      = require('./master');
 
 
-io.set('close timeout', 10);
-io.set('heartbeat timeout', 10);
-io.set('heartbeat interval', 20);
+//io.set('close timeout', 20);
+//io.set('heartbeat timeout', 20);
+// io.set('heartbeat interval', 40);
 
 program
     .version('0.3.0')
