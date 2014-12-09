@@ -7,6 +7,10 @@ var program     = require('commander'),
     master      = require('./master');
 
 
+io.set('close timeout', 10);
+io.set('heartbeat timeout', 10);
+io.set('heartbeat interval', 20);
+
 program
     .version('0.3.0')
     .option('-h, --host <v>', 'Host')
@@ -155,6 +159,8 @@ io.on('connection', function (socket) {
             master.remove_nn(data);
         } else if(type == "reduction") {
             master.reduction(data);
+        } else if(type == "pong") {
+            master.pong(socket);
         }
 
     });
@@ -162,6 +168,8 @@ io.on('connection', function (socket) {
     socket.on('disconnect', function() {
         master.client_disconnected(socket);    
     })
+
+
 
 });
 

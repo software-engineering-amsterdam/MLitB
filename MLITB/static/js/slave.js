@@ -524,6 +524,8 @@ Slave.prototype = {
             this.set_slave_id(data.data);
         } else if(data.type == 'job') {
             this.job(data.data);
+        } else if(data.type == 'ping') {
+            this.send_message_to_master('pong');
         }
 
     },

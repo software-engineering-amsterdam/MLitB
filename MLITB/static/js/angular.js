@@ -33,6 +33,11 @@ app.filter('reverse', function() {
 app.config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
+    when('/nips', {
+        templateUrl: 'static/views/nips.html',
+        controller: 'nips',
+        css: 'static/css/public.css'
+    }).
     when('/home', {
         templateUrl: 'static/views/home.html',
         controller: 'home'
@@ -77,13 +82,21 @@ app.config(['$routeProvider',
     }).
     */
     otherwise({
-        redirectTo: '/home'
+        redirectTo: '/nips'
     });
 }]);
 
 app.controller('navbar', function ($scope, $rootScope) {
 
     $scope.page_active = 'home';
+
+});
+
+app.controller('nips', function ($scope, $rootScope, $location) {
+
+    $scope.nn_public = function(nn_id) {
+        $location.path('/project-index/' + nn_id + '/public');
+    };
 
 });
 

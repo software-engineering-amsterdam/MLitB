@@ -95,6 +95,22 @@ Master.prototype = {
 
     },
 
+    pong: function(socket) {
+
+        var client = this.boss_by_id(socket.id);
+
+        if(!client) {
+            client = this.slave_by_id(socket.id);
+
+            if(!client) {
+                // client is lost, and not here anymore. Leave it.
+            }
+        }
+
+        client.pong();
+
+    },
+
 	add_nn: function(boss, data) {
 
         var nn = new neuralnetwork(data, this);
@@ -161,6 +177,9 @@ Master.prototype = {
 
 		this.logger('New boss connected: ' + new_boss.socket.id);
 
+        // start pinging
+        //new_boss.ping();
+
 		new_boss.send('list_nns', this.list_nns());
 
 	},
@@ -209,6 +228,9 @@ Master.prototype = {
         console.log("> New slave connected (with boss):", new_slave.socket.id, new_slave.boss.socket.id);
 
         nn.add_slave(new_slave);
+
+        // start pinging
+        //new_slave.ping();
 
         this.broadcast_nns();
 

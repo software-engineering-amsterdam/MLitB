@@ -441,6 +441,8 @@ Boss.prototype = {
             this.data_upload_done(data);
         } else if(type == 'download_new_parameters') {
             this.download_new_parameters(data);
+        } else if(type == 'ping') {
+            this.message_to_master('pong');
         }
 
     },

@@ -2,6 +2,10 @@ ul.nav.navbar-nav, .navbar-toggle.collapsed {
 	display: none;
 }
 
+.navbar.navbar-default button.navbar-toggle {
+	display: none;
+}
+
 .c-log {
 	display: none;
 }
