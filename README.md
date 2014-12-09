@@ -71,7 +71,5 @@ MLitB is a collaborative effort between researchers at the University of Amsterd
 * Max Welling `welling.max@gmail.com`
 
 ### MLitB Reference
-Please cite MLitB whenever possible:
-
-arXiv bibtex
+Please cite MLitB whenever possible <http://arxiv.org/abs/1412.2432v1>.
 
