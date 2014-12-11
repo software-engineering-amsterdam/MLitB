@@ -68,9 +68,11 @@ var NeuralNetwork = function(data, master) {
 
     this.Net = new mlitb.Net();
     this.Net.setConfigsAndParams(this.configuration);
+    var newParams = this.Net.getParams();
     
     this.SGD = new SGDTrainer(this, {});
     this.SGD.set_parameters(this.hyperparameters);
+    this.SGD.resize_param(newParams);
 }
 
 NeuralNetwork.prototype = {
@@ -517,7 +519,7 @@ NeuralNetwork.prototype = {
 
         this.allocate();
         
-        this.initiate();
+        // this.initiate();
 
     },
 
@@ -591,6 +593,10 @@ NeuralNetwork.prototype = {
                 }
             }
 
+        }
+
+        filter_slaves = function(a) {
+            return a.assigned_power >= 10; // at least 10 points, or too slow.
         }
 
         // in_cache = function(point, slave) {
@@ -675,23 +681,50 @@ NeuralNetwork.prototype = {
             point.process = [];
             point.selected = false;
 
+            // var k = point.assigned.length;
+
+            // while(k--) {
+
+            //     var cache_slave = point.assigned[k];
+
+            //     if(!cache_slave.saturated() ) {
+            //         cache_slave.assigned_cache.push(point);
+            //         point.process.push(cache_slave);
+
+            //         break;
+            //     }
+
+            // }
+
+            var k = point.cache.length;
+            if (k){
+                var cache_slave = point.cache[k-1];
+                if(!cache_slave.saturated() ) {
+                    cache_slave.assigned_cache.push(point);
+                    point.process.push(cache_slave);
+                    cache_slave.process.push(point.id);
+                    point.assigned_ctr+=1
+                    continue;
+                }
+            }
+
+            un_cached +=1;
+
             var k = point.assigned.length;
-
-            while(k--) {
-
-                var cache_slave = point.assigned[k];
-
+            if (k){
+                var cache_slave = point.assigned[k-1];
                 if(!cache_slave.saturated() ) {
                     cache_slave.assigned_cache.push(point);
                     point.process.push(cache_slave);
 
-                    break;
+                    continue;
                 }
-
             }
 
+
+
             if (! point.process.length){
-                un_cached +=1;
+                // un_cached +=1;
                 uncached_list.push(point); //now the remaining list become ascending
             }
 
@@ -758,6 +791,47 @@ NeuralNetwork.prototype = {
         // while(i--) {
             this.slaves[i].process_cache(this);
         }
+
+
+
+
+        if(this.data.length-un_cached==0) {
+            console.log('> 1 (NN) cannot initiate: data not available on slaves (yet)', this.id);
+            this.running = false;
+            return
+        }
+
+        // sort on slave cache size
+        // var slaves = this.slaves.filter(filter_slaves).sort(sort_slaves);
+        var slaves = this.slaves.filter(filter_slaves)
+        //var slaves = this.slaves.sort(sort_slaves);
+
+        if(!slaves.length) {
+            // should not be possible because datamap checks this aswell above.
+            console.log('> 2 (NN) cannot initiate: data not available on slaves (yet)', this.id);
+            this.running = false;
+            return
+        }
+
+        var slaves_to_work = 0;
+
+        var i = slaves.length;
+        while (i--){
+            var slave = slaves[i];
+            if(slave.process.length > 0) {
+
+                this.slaves_operating.push(slave);
+                slave.work(this);
+
+                slaves_to_work += 1;
+
+            }
+        }
+
+
+        // Test.dataset_should_be_fully_allocated(this);
+
+        console.log('(NN) sent', slaves_to_work, 'slaves to work:', this.id);
 
     },
 
