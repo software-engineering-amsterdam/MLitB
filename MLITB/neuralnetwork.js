@@ -30,6 +30,9 @@ var NeuralNetwork = function(data, master) {
     this.slaves_operating = []; // slaves currently at work
     this.slaves_tracking = []; // slaves tracking parameters
     this.operation_results = [];
+    this.allocation={};
+
+    this.slaves_reduction = []; //slaves buffer in reduction
     
     this.configuration = data.nn; // NN configuration
 
@@ -41,6 +44,8 @@ var NeuralNetwork = function(data, master) {
     this.realtime_elapsed = 0; // real time elapsed
     this.step = 0; // nn step
     this.data_seen = 0; // data points seen
+    this.is_reducing = false;
+    this.start_reduce_time;
 
     this.SGD; // well, the SGD
 
@@ -203,6 +208,7 @@ NeuralNetwork.prototype = {
                 if(this.data[j].id == ids[i]) {
 
                     this.data[j].cache.push(slave);
+                    slave.cache.push(this.data[j])
 
                 }
 
@@ -439,6 +445,7 @@ NeuralNetwork.prototype = {
 
         this.run();
 
+
     },
 
     pause: function() {
@@ -518,9 +525,17 @@ NeuralNetwork.prototype = {
             return
         }
 
-        this.allocate();
+        console.log('call allocate from run');
+        this.allocate2();
+        console.log('call slave work');
+        var i = this.slaves.length;
+        while(i--){
+            this.slave_job(this.slaves[i]);
+        }
+
+        // this.allocate();
         
-        this.initiate();
+        // this.initiate();
 
     },
 
@@ -876,14 +891,59 @@ NeuralNetwork.prototype = {
         }
 
 
-        Test.dataset_should_be_fully_allocated(this);
+        // Test.dataset_should_be_fully_allocated(this);
 
         console.log('(NN) sent', slaves_to_work, 'slaves to work:', this.id);
 
     },
 
-    reduction: function(slave, parameters) { //, new_labels) {
+    allocate2 : function(){
+        //call everytime new slave join/remove
+        //or check sometime to do balancing
+        //devide data evenly for now
+        console.log('allocate 2');
+        var i = this.slaves.length;
+        var d = this.data.length;
+        var size = Math.round(d/i);
+        while (i--){
+            var slave = this.slaves[i];
+            var slave_alloc = [];
+            var s = size;
+            while (s--){
+                d--
+                slave_alloc.push(this.data[d]);
+            }
+            this.allocation[slave.socket.id]= slave_alloc;
+        }
+        console.log('finish allocate 2');
+    },
 
+    slave_job : function(slave){
+        console.log(slave.socket.id+' slave job');
+        var slave_alloc = this.allocation[slave.socket.id];
+        var l = slave_alloc.length;
+        //right now just give the allocation, later use this.slave_cache = {}
+        if (l){
+            var p = slave.power;
+            while (p-- && l--){
+                var point = slave_alloc.splice(l,1);
+                slave.uncached.push(point);
+            }
+        }
+        slave.process_cache(this);
+        if (slave.cache.length){
+            slave.work(this);    
+        } else {
+            console.log('no data in slave cache ');
+        }
+        
+    },
+
+    reduction: function(slave, parameters) { //, new_labels) {
+        if (! this.is_reducing){
+            this.is_reducing=true;
+            this.start_reduce_time =new Date().getTime();
+        }
         if(!this.running) {
             console.log("! Cannot reduce (slave) to (NN): NN not running", slave.socket.id, this.id);
             return;
@@ -923,31 +983,44 @@ NeuralNetwork.prototype = {
 
         }
 
-        if(!this.slaves_operating.length) {
-            // was the last one.
-            // do reduction function.
 
-            this.aggregation();
 
-            this.operation_results = [];
+        // if(!this.slaves_operating.length) {
+        //     // was the last one.
+        //     // do reduction function.
+        //     this.is_reducing = false;
 
-            console.log('> Reduce (NN)', this.id);
+        //     var wait_time = new Date().getTime()-this.start_reduce_time;
+        //     // console.log('waiting time '+d-this.start_reduce_time);
+            
+        //     this.aggregation();
 
-            // begin again
+        //     this.operation_results = [];
+        //     console.log('waiting time ', wait_time);
+        //     console.log('> Reduce (NN)', this.id);
 
-            this.realtime_elapsed += parseInt(this.iteration_time);
+        //     // begin again
 
-            this.run();
-        }
+        //     this.realtime_elapsed += parseInt(this.iteration_time);
+
+        //     this.run();
+
+        // }
+
+        this.slaves_reduction.push(slave);
+        this.aggregation();
+        this.operation_results=[];
+        this.slaves_reduction =[];
+        this.slave_job(slave);
 
     },
 
     aggregation: function() {
 
-        if(!this.operation_results.length) {
-            console.log("! Cannot aggregate (NN): No operation results.", this.id);
-            return;
-        }
+        // if(!this.operation_results.length) {
+        //     console.log("! Cannot aggregate (NN): No operation results.", this.id);
+        //     return;
+        // }
 
         if(this.hyperparameters_changed) {
             console.log('Updated (NN) with new hyperparameters.', this.id);
@@ -958,8 +1031,17 @@ NeuralNetwork.prototype = {
         this.SGD.reduce(this);
 
         this.step++;
+        
+        var o = this.slaves_reduction.length;
+        while (o--){
+            var slave = this.slaves_reduction[o];
+            slave.send('parameters', {
+                type: 'parameters'
+            });    
+        }
+        
 
-        this.notify_bosses();
+        // this.notify_bosses();
         this.master.broadcast_nns();
 
         /*

@@ -129,7 +129,7 @@ SGDTrainer.prototype = {
   },
 
   reduce : function(nn){
-
+    start_reduce = new Date().getTime();
     old_parameters = nn.configuration.parameters;
     new_parameters = nn.operation_results;
     step = nn.step;
@@ -313,8 +313,10 @@ SGDTrainer.prototype = {
 
     nn.parameters = this.last_params;
     nn.error = totalError/totalVector;
+    rtime = new Date().getTime() - start_reduce;
+    console.log('SGD reduce time',rtime);
 
-    console.log(this.last_params[0].length, this.last_params[1].length);
+    // console.log(this.last_params[0].length, this.last_params[1].length);
 
   }
 }

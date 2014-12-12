@@ -96,8 +96,10 @@ Slave.prototype = {
 
         var data = JSON.parse(d);
 
-        var parameters = data.parameters
+        var parameters = data.parameters;
         var new_labels = data.new_labels;
+        this.step = data.step;
+
         var newL = new_labels.length;
         var oldL = Object.keys(this.Net.label2index).length;
         if (newL> oldL){
@@ -116,15 +118,10 @@ Slave.prototype = {
             console.log(' Something is wrong, new labels size is smaller');
         }
 
-        var step = data.step;
-
-        if (step > 0) {
+        if (this.step > 0) {
             this.Net.setParams(parameters);
 
         }
-
-        // set step now. If worker was waiting, signal to go.
-        this.step = data.step;
 
         console.log(' $$ parameters set.');
 
@@ -136,44 +133,20 @@ Slave.prototype = {
             return this.stats(step);
         }
 
-        if(this.waiting_for_parameters == true) {
+        this.work(this.wait_parameters);
 
-            this.waiting_for_parameters = false;
+        // if(this.waiting_for_parameters == true) {
 
-            console.log(' $$ release to work');
+        //     this.waiting_for_parameters = false;
 
-            this.work(this.wait_parameters);
+        //     console.log(' $$ release to work');
 
-        }
+        //     this.work(this.wait_parameters);
+
+        // }
         
     },
 
-    // add_new_labels: function(new_labels) {
-    //     //console.log(this.id+' '+JSON.stringify(new_labels));
-    //     if(new_labels.length) {
-
-    //         var i = new_labels.length;
-    //         while(i--) {
-    //             var label = new_labels[i];
-    //             // new label does not exist in new_labels or existing labels.
-    //             if(this.labels.indexOf(label) == -1 && this.new_labels.indexOf(label) == -1) {
-    //                 this.labels.push(label);
-    //                 this.new_labels.push(label);
-    //             }
-    //         }
-
-    //     }
-    //     // console.log(this.id+' '+JSON.stringify(this.new_labels));
-    //     if(this.new_labels.length) {
-
-    //         this.Net.addLabel(this.new_labels);
-
-    //     }
-    //     //console.log(this.id + ': ' + JSON.stringify(this.Net.label2index));
-
-    //     this.new_labels = [];
-
-    // },
 
     classify: function(data) {
 
@@ -288,7 +261,7 @@ Slave.prototype = {
 
         console.log(' $$ parameters on time for work');
 
-        this.work(d);
+        // this.work(d);
 
     },
 
@@ -297,7 +270,8 @@ Slave.prototype = {
         var that = this;
 
 
-        var data = d.data;
+        // var data = d.data;
+        var data = Object.keys(this.data);
         var idx;
         // if (that.step>100&& this.step%10==0)
         //     console.log(that.id+' point '+JSON.stringify(data));
@@ -380,13 +354,13 @@ Slave.prototype = {
                 current_time = (new Date).getTime();
 
                 if(current_time > (that.start_time + iteration_time)) {
-                    var pp=Object.keys(that.point_list);
+                    // var pp=Object.keys(that.point_list);
                     // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
                     return;
                 }
 
             }
-            var pp=Object.keys(that.point_list);
+            // var pp=Object.keys(that.point_list);
             // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
 
         }
@@ -483,6 +457,34 @@ Slave.prototype = {
 
     },
 
+    download_new_parameters: function() {
+        // download NN parameters by XHR
+
+        var that = this;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', this.host + '/nn-parameters/' + this.nn_id + '/', true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        // xhr.setRequestHeader("Connection", "keep-alive");
+
+        console.log( ' $$ slave downloading new parameters');
+
+        xhr.onload = function () {
+
+            console.log( ' $$ parameter download done');
+
+            var response = this.response;
+            that.new_parameters(response);
+            // send to all associated workers for this nns
+
+            
+
+        }
+            
+        xhr.send();
+
+    },
+
     disconnect: function() {
 
         this.logger('Worker terminated');
@@ -526,6 +528,8 @@ Slave.prototype = {
             this.job(data.data);
         } else if(data.type == 'ping') {
             this.send_message_to_master('pong');
+        } else if (data.type =='parameters'){
+            this.download_new_parameters();
         }
 
     },

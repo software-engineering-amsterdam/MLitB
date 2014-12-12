@@ -305,6 +305,7 @@ Boss.prototype = {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', this.host + '/nn-parameters/' + nn_id + '/', true);
         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        // xhr.setRequestHeader("Connection", "keep-alive");
 
         console.log( ' $$ downloading new parameters');
 

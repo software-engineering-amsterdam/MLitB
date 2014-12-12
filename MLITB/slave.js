@@ -54,6 +54,8 @@ Slave.prototype.process_cache = function(nn) {
     while(i--) {
         ids.push(this.uncached[i].id);
     }
+
+    console.log('process cache '+ids.length);
     
     this.uncached = [];
 
