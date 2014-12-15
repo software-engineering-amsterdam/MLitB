@@ -36,6 +36,9 @@ var Slave = function() {
     this.stats_running = false;
     this.point_list = {};
     this.prev_data = {};
+    this.iteration_time;
+
+    this.chunk = [];
 
 }
 
@@ -98,7 +101,7 @@ Slave.prototype = {
 
         var parameters = data.parameters;
         var new_labels = data.new_labels;
-        this.step = data.step;
+        // this.step = data.step;
 
         var newL = new_labels.length;
         var oldL = Object.keys(this.Net.label2index).length;
@@ -260,8 +263,8 @@ Slave.prototype = {
         }
 
         console.log(' $$ parameters on time for work');
-
-        // this.work(d);
+        if (step==0)
+            this.work(d);
 
     },
 
@@ -269,9 +272,12 @@ Slave.prototype = {
 
         var that = this;
 
+        that.start_time = (new Date).getTime();
+
 
         // var data = d.data;
         var data = Object.keys(this.data);
+        console.log('data : '+JSON.stringify(data));
         var idx;
         // if (that.step>100&& this.step%10==0)
         //     console.log(that.id+' point '+JSON.stringify(data));
@@ -290,13 +296,17 @@ Slave.prototype = {
         
         // var new_labels = d.new_labels;
         // console.log('point d.new_labels '+JSON.stringify(new_labels));
-        var iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
-
+        if (!this.iteration_time && d.iteration_time){
+            this.iteration_time = parseInt(d.iteration_time);
+        }
+        // var iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
+        var iteration_time = this.iteration_time;// + Math.floor(Math.random() * 2000) + 1000;
+        // console.log('iteration time '+parseInt(iteration_time));
         var time = (new Date).getTime();
 
-        console.log(' $$ time loss due to parameter download delay:', time - this.start_time, 'MS');
+        // console.log(' $$ time loss due to parameter download delay:'+ (time - this.start_time)+ 'MS');
 
-        this.send_message_to_boss('workingset', d.data.length);
+        this.send_message_to_boss('workingset', data.length);
         that.status('working');
         
         var workingset = [];
@@ -313,22 +323,13 @@ Slave.prototype = {
 
         shuffle_data = function() {
             
-            console.log('shuffle');
+            // console.log('shuffle');
 
             workingset = shuffle(data.slice());
 
         }
 
 
-        initialise = function() {
-
-            //console.log(that.id+' before add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
-            
-            //no need to do this anymore
-            // that.add_new_labels(new_labels);
-
-            //console.log(that.id+' after add labels '+JSON.stringify(Object.keys(that.Net.label2index)));
-        }
 
         learn = function() {
 
@@ -353,9 +354,12 @@ Slave.prototype = {
 
                 current_time = (new Date).getTime();
 
+                // console.log('time ' + current_time > (that.start_time + iteration_time));
+
                 if(current_time > (that.start_time + iteration_time)) {
                     // var pp=Object.keys(that.point_list);
                     // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
+                    // console.log('return');
                     return;
                 }
 
@@ -366,32 +370,30 @@ Slave.prototype = {
         }
 
         reduction = function() {
-            
-            // PROBLEM parameters never null
-            // if (parameters == null){
-            // let's use step=0, is that correct ?
 
+            param = that.Net.getGrads();
+            // console.log('before chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             
-            // if (step == 0){
-            //     param = [that.Net.getParams(), that.Net.getGrads()];
-            //     param_type = 'params_and_grads';
-            // } else if (that.new_labels.length){
-            //     //meaning that we just added some labels in the middle of trainig (not in step 0)
-            //     //we need to tell param server and send the initial value for newly added params
-            //     param = [that.Net.getParams(), that.Net.getGrads()];
-            //     param_type = 'new_labels';
-            // } else {
-                param = that.Net.getGrads();
-                param_type = 'grads';
+            // var cl = that.chunk.length;
+            // if (cl){
+            //     param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
             // }
+            // console.log(param.length);
+            // console.log('after chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
+            // param_type = 'grads';
 
             parameters = {
                 parameters : param,
-                parameters_type : param_type,
+                // parameters_type : param_type,
                 error : error,
                 nVector : nVector,
-                proceeded_data : proceeded_data
+                proceeded_data : proceeded_data,
+                step : that.step,
+                slave_id : that.id,
+                chunk : that.chunk
             };
+
+            
 
             console.log(that.id+' $ error: ' + error+' vector '+nVector);
 
@@ -408,7 +410,6 @@ Slave.prototype = {
 
         console.log('step '+ this.step);
 
-        initialise();
         learn();
         reduction();
 
@@ -445,6 +446,8 @@ Slave.prototype = {
             that.logger('Downloading NN configuration done.');
             that.status('waiting for task');
 
+            // that.new_parameters(JSON.stringify({step: 0, parameters : [], new_labels :[]}));
+
             //console.log(that.Net);
 
         }
@@ -457,9 +460,10 @@ Slave.prototype = {
 
     },
 
-    download_new_parameters: function() {
+    download_new_parameters: function(d) {
         // download NN parameters by XHR
-
+        this.chunk = d.chunk;
+        this.step = d.step;
         var that = this;
 
         var xhr = new XMLHttpRequest();
@@ -529,7 +533,7 @@ Slave.prototype = {
         } else if(data.type == 'ping') {
             this.send_message_to_master('pong');
         } else if (data.type =='parameters'){
-            this.download_new_parameters();
+            this.download_new_parameters(data.data);
         }
 
     },

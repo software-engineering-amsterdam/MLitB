@@ -942,11 +942,11 @@ Boss.prototype = {
         }
 
         var slave_jobs = this.process_shards[key];
-
         if(slave_jobs.length == 0) {
             delete this.process_shards[key];
             return this.process_data();
         }
+
 
         var job = slave_jobs.pop();
 
@@ -1121,7 +1121,6 @@ Boss.prototype = {
         new_zip.load(data);
 
         var shards = shard_files(this.obj_to_list(new_zip.files));
-
         if(this.process_shards[slave_id] === undefined) {
             this.process_shards[slave_id] = [];
         }

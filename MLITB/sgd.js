@@ -34,6 +34,7 @@ var SGDTrainer = function (nn, net) {
   this.is_initialized = false;
   this.last_pred_loss = {}; // data_id : [loss, discrete_loss]. discrete loss = 0 if y=y', 1 otherwise
   this.proceeded_data = {};
+  this.chunk = []; //index of parameter filters specified for this sgd
 
 };
     
@@ -130,7 +131,7 @@ SGDTrainer.prototype = {
 
   reduce : function(nn){
     start_reduce = new Date().getTime();
-    old_parameters = nn.configuration.parameters;
+    // old_parameters = nn.configuration.parameters;
     new_parameters = nn.operation_results;
     step = nn.step;
 
@@ -138,60 +139,22 @@ SGDTrainer.prototype = {
     var totalError=0.0;
     var totalVector=0;
 
-    //for the first time, get parameter from any client
-    //assume that in this situation, all client will send both param and grad
-    //==========================MOVE TO INITIALISE===========================
-    // if (!this.is_initialized){
-
-    //   if (new_parameters[0].parameters_type === 'params_and_grads'){
-        
-    //     this.last_params = new_parameters[0].parameters[0];
-
-    //   } else if (new_parameters[0].parameters_type === 'grads'){
-
-    //     // this.last_params = new_parameters[0].parameters;
-
-    //   } else {
-
-    //     console.log('THERE IS SOMETHING WRONG');
-    //     return;
-        
-    //   }
-
-    //   for (var i = 0; i < this.last_params.length; i++) {
-    //     this.last_grads.push(zeros(this.last_params[i].length));
-    //     this.sum_square_gads.push(zeros(this.last_params[i].length));
-    //   }
-
-    //   this.is_initialized = true;
-
-    // } else {
-    //=================================================
-
-      //there's possibility to have new labels, so we need to extend
-      //this.last_params, this.last_grads, this.sum_square_grads
-      //there may be 2 kinds of extension :
-      //filter extension, or element extension
 
       for (var mr = 0; mr < new_parameters.length; mr++) {
       
         var markovParam = new_parameters[mr];
-        //ignore new client
 
-        if (markovParam.parameters_type == 'grads'){
+        totalError+=markovParam.error;
+        totalVector+=markovParam.nVector;
 
-          totalError+=markovParam.error;
-          totalVector+=markovParam.nVector;
-
-          //compute data statistics
-          var l = markovParam.proceeded_data.length;
-          while(l--){
-            data_id = markovParam.proceeded_data[l][0];
-            var new_val = (this.proceeded_data[data_id]||0)+1;
-            this.proceeded_data[data_id] = new_val;
-            this.last_pred_loss[data_id] = [markovParam.proceeded_data[l][1],markovParam.proceeded_data[l][2]];
-          }
-        }
+        //compute data statistics
+        // var l = markovParam.proceeded_data.length;
+        // while(l--){
+        //   data_id = markovParam.proceeded_data[l][0];
+        //   var new_val = (this.proceeded_data[data_id]||0)+1;
+        //   this.proceeded_data[data_id] = new_val;
+        //   this.last_pred_loss[data_id] = [markovParam.proceeded_data[l][1],markovParam.proceeded_data[l][2]];
+        // }
       };
 
       this.total_data_seen+=totalVector;
@@ -216,9 +179,7 @@ SGDTrainer.prototype = {
           total_gi = 0.0;
           for (var k = 0; k < new_parameters.length; k++) {
             //again ignore grads from new client
-            if (new_parameters[k].parameters_type == 'grads'){
-              total_gi += new_parameters[k].parameters[i][gi];
-            }
+            total_gi += new_parameters[k].parameters[i][gi];
           }
           g.push(total_gi);
         };
@@ -265,53 +226,19 @@ SGDTrainer.prototype = {
     }
     if (this.iteration%5==0){
       
-      // USE CODE BELOW TO DECREASE LR OR INCREASE MOMENTUM
-      // this.momentum = this.momentum+0.05 <=0.9 ? this.momentum+0.05 : 0.9;
-      // this.learning_rate = this.learning_rate*this.lr_decay > 0.001 ? this.learning_rate*this.lr_decay : 0.01;
-      // ======================================
-
-      // var max,min,l = 0;
-      // for( var key in this.proceeded_data ) {
-      //   if ( this.proceeded_data.hasOwnProperty(key) ) {
-      //     var val = this.proceeded_data[key];
-      //     if (l==0){
-      //       max = val;
-      //       min = val;
-      //     }
-      //     if (val > max){max = val;}
-      //     if (val < min){min = val;}
-      //     l++;
-      //   }
-      // }
-      // console.log('Data statistics :');
-      // console.log('Total : '+l);
-      // console.log('Max   : '+max);
-      // console.log('Min   : '+min);
-
-      // //
-      // var RMS = 0.0;
-      // var discrete_RMS = 0.0;
-      // var NData = 0;
-      // for (key in this.last_pred_loss){
-      //   if (this.last_pred_loss.hasOwnProperty(key)){
-      //     diff = 1-this.last_pred_loss[key][0];
-      //     RMS+= diff;
-      //     discrete_RMS+=this.last_pred_loss[key][1];
-      //     NData++;
-      //   }
-      // }
-      // // RMS = Math.sqrt(RMS)/NData;
-      // RMS = RMS/NData;
-      // // discrete_RMS = discrete_RMS/NData;
-      // //RMS all training data that has ever been proceeded by clients
-      // console.log('RMS all training data '+RMS);
-      // console.log('discrete RMS all training data '+discrete_RMS+'/'+NData+' = '+discrete_RMS/NData);
 
     }
 
     // set 'new' parameters.
-
-    nn.parameters = this.last_params;
+    var cl = this.chunk.length;
+    if (cl){
+      while (cl--){
+        nn.parameters[this.chunk[cl]]=this.last_params[cl];  
+      }  
+    } else { //if empty chunk, assume for whole params
+      nn.parameters = this.last_params;
+    }
+    
     nn.error = totalError/totalVector;
     rtime = new Date().getTime() - start_reduce;
     console.log('SGD reduce time',rtime);

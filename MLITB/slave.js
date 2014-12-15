@@ -56,7 +56,7 @@ Slave.prototype.process_cache = function(nn) {
     }
 
     console.log('process cache '+ids.length);
-    
+    // console.log(JSON.stringify(ids));
     this.uncached = [];
 
     this.boss.send('data_assignment', {
