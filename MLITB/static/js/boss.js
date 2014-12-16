@@ -408,6 +408,7 @@ Boss.prototype = {
         this.id = id;
 
         this.logger('Boss connected');
+        this.logger('Remember the decoding return only Red, specified for MNIST data');
 
         this.socket.emit('message', {
             type: 'register_boss',
@@ -918,7 +919,8 @@ Boss.prototype = {
 
         }
 
-        return new Uint8ClampedArray(new_image.concat(r).concat(g).concat(b));
+        // return new Uint8ClampedArray(new_image.concat(r).concat(g).concat(b));
+        return new Uint8ClampedArray(new_image.concat(r));
 
     },
 

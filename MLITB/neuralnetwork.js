@@ -187,7 +187,7 @@ NeuralNetwork.prototype = {
             //tell SGD to accomodate this new labels
             // console.log('sent to server '+newParams.length);
             // no new label for now
-            this.SGD.resize_param(newParams);    
+            // this.SGD.resize_param(newParams);    
         }
         
 
@@ -1117,7 +1117,7 @@ NeuralNetwork.prototype = {
         //     this.hyperparameters_changed = false;
         // }
 
-        this.SGD.reduce(this);
+        // this.SGD.reduce(this);
         var or = this.operation_results.length; //for now this will always have length 1
         console.log('or length '+or);
         while (or--){
@@ -1132,9 +1132,9 @@ NeuralNetwork.prototype = {
             if (!param.chunk.length){
                 continue;
             }
-            // var slave_position = this.param_permutation[param.step].indexOf(param.slave_id);
-            // var SGD = this.SGDs[slave_position];
-            // SGD.reduce(this); // operation result should be consistent with SGD
+            var slave_position = this.param_permutation[param.step].indexOf(param.slave_id);
+            var SGD = this.SGDs[slave_position];
+            SGD.reduce(this); // operation result should be consistent with SGD
             
         }
         

@@ -11,11 +11,11 @@ function Slave(socket, boss) {
 
     this.nn = null;
 
-    this.power = 100;
+    this.power = 1000;
     this.latency = 10;
     this.linkspeed = 10;
 
-    this.max_power = 10000;
+    this.max_power = 50000;
 
     this.assigned_power;
 

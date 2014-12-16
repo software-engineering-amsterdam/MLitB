@@ -374,10 +374,10 @@ Slave.prototype = {
             param = that.Net.getGrads();
             // console.log('before chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             
-            // var cl = that.chunk.length;
-            // if (cl){
-            //     param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
-            // }
+            var cl = that.chunk.length;
+            if (cl){
+                param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
+            }
             // console.log(param.length);
             // console.log('after chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             // param_type = 'grads';
