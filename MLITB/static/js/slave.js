@@ -40,6 +40,12 @@ var Slave = function() {
 
     this.chunk = [];
 
+    this.working_time = 0;
+    this.total_working_time = 0;
+    this.working_power = 0;
+    this.total_working_power = 0;
+    this.working_data = [];
+
 }
 
 Slave.prototype = {
@@ -273,12 +279,18 @@ Slave.prototype = {
         var that = this;
 
         that.start_time = (new Date).getTime();
+        if (d.working_data.length){
+            that.working_data = d.working_data;
+        }
 
+        that.working_power = d.working_power||100;
+        var delay = d.delay||0;
+        that.total_working_power += that.working_power;
 
         // var data = d.data;
         var data = Object.keys(this.data);
         console.log('data : '+JSON.stringify(data));
-        var idx;
+        // var idx;
         // if (that.step>100&& this.step%10==0)
         //     console.log(that.id+' point '+JSON.stringify(data));
         // var s = {};
@@ -302,7 +314,7 @@ Slave.prototype = {
         // var iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
         var iteration_time = this.iteration_time;// + Math.floor(Math.random() * 2000) + 1000;
         // console.log('iteration time '+parseInt(iteration_time));
-        var time = (new Date).getTime();
+        // var time = (new Date).getTime();
 
         // console.log(' $$ time loss due to parameter download delay:'+ (time - this.start_time)+ 'MS');
 
@@ -314,7 +326,7 @@ Slave.prototype = {
         var vol_input = that.Net.conf[0];
         var error = 0.0;
         var nVector = 0;
-        var proceeded_data = [];
+        // var proceeded_data = [];
 
         shuffle = function(o){
             for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
@@ -323,17 +335,20 @@ Slave.prototype = {
 
         shuffle_data = function() {
             
-            // console.log('shuffle');
-
             workingset = shuffle(data.slice());
 
+        }
+
+        sleepFor = function( sleepDuration ){
+            var now = new Date().getTime();
+            while(new Date().getTime() < now + sleepDuration){ /* do nothing */ } 
         }
 
 
 
         learn = function() {
-
-            while(true) {
+            var time = (new Date).getTime();
+            while(that.working_power--) {
 
                 if(!workingset.length) {
                     shuffle_data();
@@ -350,20 +365,29 @@ Slave.prototype = {
 
                 error += newerr;
                 
-                nVector++;
+                // nVector++;
 
-                current_time = (new Date).getTime();
+                sleepFor(delay);
+
+
+
+                // current_time = (new Date).getTime();
 
                 // console.log('time ' + current_time > (that.start_time + iteration_time));
 
-                if(current_time > (that.start_time + iteration_time)) {
-                    // var pp=Object.keys(that.point_list);
-                    // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
-                    // console.log('return');
-                    return;
-                }
+                // if(current_time > (that.start_time + iteration_time)) {
+                //     // var pp=Object.keys(that.point_list);
+                //     // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
+                //     // console.log('return');
+                //     return;
+                // }
 
             }
+
+            that.working_time = (new Date).getTime() - time;
+            that.total_working_time+=that.working_time;
+
+
             // var pp=Object.keys(that.point_list);
             // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
 
@@ -381,15 +405,13 @@ Slave.prototype = {
             // console.log(param.length);
             // console.log('after chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             // param_type = 'grads';
-
             parameters = {
                 parameters : param,
-                // parameters_type : param_type,
                 error : error,
-                nVector : nVector,
-                proceeded_data : proceeded_data,
+                // nVector : nVector,
                 step : that.step,
                 slave_id : that.id,
+                working_time : that.working_time,
                 chunk : that.chunk
             };
 

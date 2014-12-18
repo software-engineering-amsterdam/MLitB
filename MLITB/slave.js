@@ -11,53 +11,60 @@ function Slave(socket, boss) {
 
     this.nn = null;
 
-    this.power = 1000;
+    // this.power = 1000;
     this.latency = 10;
     this.linkspeed = 10;
 
-    this.max_power = 50000;
+    // this.max_power = 10000;
 
-    this.assigned_power;
+    this.max_storage = 10000;
 
-    this.cache = []; // real data
+    this.delay = 0;
+    this.working_power = 100; //number of data to be processed in this step
+
+    this.limit_working_data; //will be assigned evenly for the first time
+    this.working_data = [];  //save the working ids for this slave
+    this.working_powers = []; // save the last n working power
+
+    this.cache = []; // real data in cache
     this.uncached = []; // data to obtain
-
-    this.assigned_cache = []; // real data + data to obtain
-
-    this.process = []; // data assigned for processing
-
-    this.labels = []; // current list of known labels
+    this.caching = []; //data id that are being cached
 
 };
 
 Slave.prototype.saturated = function() {
-    return (this.assigned_power - this.assigned_cache.length) == 0
+    return (this.limit_working_data - this.working_data.length) == 0
 },
 
 Slave.prototype.cache_left = function() {
-    return this.max_power - this.assigned_cache.length;
+    return this.max_storage - (this.cache.length+this.uncached.length+this.caching.length);
 }
 
-Slave.prototype.process_cache = function(nn) {
+Slave.prototype.process_cache = function() {
     // manages uncached to cache
 
     data = {};
 
-    var i = this.uncached.length;
+    var UL = this.uncached.length;
 
-    if(!this.uncached.length) {
+    if(!UL) {
         return;
     }
 
     var ids = [];
 
-    while(i--) {
+    i=0;
+    var TP = this.power; //transfer power
+    while (i<UL && TP--)
         ids.push(this.uncached[i].id);
+        i++;
     }
+
+    this.caching = this.uncached.splice(0,i);
 
     console.log('process cache '+ids.length);
     // console.log(JSON.stringify(ids));
-    this.uncached = [];
+    // this.uncached = [];
 
     this.boss.send('data_assignment', {
         slave_id: this.socket.id,
@@ -69,85 +76,30 @@ Slave.prototype.process_cache = function(nn) {
 
 Slave.prototype.work = function(nn) {
 
-    // var new_labels = [];
-
-    // // find intersection of labels.
-    // var i = nn.labels.length;
-    // while(i--) {
-    //     var label = nn.labels[i];
-    //     if(this.labels.indexOf(label) == -1) {
-    //         new_labels.push(label);
-    //         this.labels.push(label);
-    //     }
-
-    // }
-
-    /*
-
-    var parameters = nn.parameters;
-    if(!parameters) {
-        parameters = nn.configuration.params;
-    }
-
-    */
-
     var work_data = {
         
         data: this.process,
-        iteration_time: nn.iteration_time, // fix for lag etc.
+        // iteration_time: nn.iteration_time, // fix for lag etc.
         step: nn.step,
-        assigned_power: this.assigned_power,
-        power: this.power
-        /*
-        parameters: parameters,
-        step: nn.step
-        */
-
+        // assigned_power: this.assigned_power,
+        // power: this.power,
+        delay : this.delay,
+        working_power : this.working_power,
+        working_data : this.working_data
     }
+
+    this.working_powers.push(this.working_power);
+    if (this.working_powers.length>5){
+        this.working_powers.splice(0,1);    
+    }
+    
 
     console.log(' $$ slave', this.socket.id, 'works on', this.process.length, 'data points');
 
     this.send('job', work_data);
 
-}
-
-/*
-
-Slave.prototype.track = function(nn) {
-
-    var new_labels = [];
-
-    // find intersection of labels.
-    var i = nn.labels.length;
-    while(i--) {
-        var label = nn.labels[i];
-        if(this.labels.indexOf(label) == -1) {
-            new_labels.push(label);
-            this.labels.push(label);
-        }
-
-    }
-
-    var parameters = nn.parameters;
-    if(!parameters) {
-        parameters = nn.configuration.params;
-    }
-
-    var tracking_data = {
-
-        type: 'track',
-        parameters: parameters,
-        step: nn.step,
-        new_labels: new_labels
-
-    }
-
-    this.send('track', tracking_data);
-
-    this.process = [];
+    this.working_data = []; //empty working data
 
 }
-
-*/
 
 module.exports = Slave;
