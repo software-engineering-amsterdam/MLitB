@@ -90,6 +90,13 @@ SGDTrainer.prototype = {
 
   //   this.is_initialized = true;
   // },
+  clone_parameter: function(param){
+        var newParam = [];
+        for (var i=0;i<param.length;i++){
+            newParam.push(param[i].slice(0));
+        }
+        return newParam;
+    },
 
   resize_param : function(newParams){
     if (newParams.length==0){
@@ -123,7 +130,7 @@ SGDTrainer.prototype = {
     }
 
     //assume we always update NN in neuralnetworks.js, so we can just assige newParams to this.last_params
-    this.last_params = newParams;
+    this.last_params = this.clone_parameter(newParams);
     console.log('length last param '+this.last_params.length);
     console.log('length last grad '+this.last_grads.length);
 
@@ -230,19 +237,19 @@ SGDTrainer.prototype = {
     }
 
     // set 'new' parameters.
-    var cl = this.chunk.length;
-    if (cl){
-      while (cl--){
-        nn.parameters[this.chunk[cl]]=this.last_params[cl];  
-      }  
-    } else { //if empty chunk, assume for whole params
-      nn.parameters = this.last_params;
-    }
+    // var cl = this.chunk.length;
+    // if (cl){
+    //   while (cl--){
+    //     nn.parameters[this.chunk[cl]]=this.last_params[cl];  
+    //   }  
+    // } else { //if empty chunk, assume for whole params
+    //   nn.parameters = this.last_params;
+    // }
     
     nn.error = totalError/totalVector;
     rtime = new Date().getTime() - start_reduce;
     console.log('SGD reduce time',rtime);
-
+    return this.last_params;
     // console.log(this.last_params[0].length, this.last_params[1].length);
 
   }

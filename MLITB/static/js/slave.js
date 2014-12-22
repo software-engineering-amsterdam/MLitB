@@ -127,7 +127,9 @@ Slave.prototype = {
             console.log(' Something is wrong, new labels size is smaller');
         }
 
+        // this.logger('parameters[0][0] '+parameters.length+' '+parameters[parameters.length-1].length);
         if (this.step > 0) {
+
             this.Net.setParams(parameters);
 
         }
@@ -279,7 +281,7 @@ Slave.prototype = {
         var that = this;
 
         that.start_time = (new Date).getTime();
-        if (d.working_data.length){
+        if (d.working_data){ //if working_data is not undefined
             that.working_data = d.working_data;
         }
 
@@ -354,9 +356,19 @@ Slave.prototype = {
                     shuffle_data();
                 }
 
-                point_id = workingset.pop()
-                // that.point_list[ddd]=(that.point_list[point_id]||0)+1;
-                point = that.data[point_id];
+                while(workingset.length){
+                    point_id = workingset.pop()
+                    point = that.data[point_id];
+                    if (point){
+                        break;
+                    }    
+                }
+
+                if (!point){
+                    that.working_power++;
+                    continue;
+                }
+                
 
                 Input = new that.mlitb.Vol(vol_input.sx, vol_input.sy, vol_input.depth, 0.0);
                 Input.data = point.data;
@@ -365,7 +377,7 @@ Slave.prototype = {
 
                 error += newerr;
                 
-                // nVector++;
+                nVector++;
 
                 sleepFor(delay);
 
@@ -408,7 +420,7 @@ Slave.prototype = {
             parameters = {
                 parameters : param,
                 error : error,
-                // nVector : nVector,
+                nVector : nVector,
                 step : that.step,
                 slave_id : that.id,
                 working_time : that.working_time,
@@ -455,13 +467,15 @@ Slave.prototype = {
             // i.e. layer conf, params, labels, etc. etc.
             // is only once.
             that.Net.setConfigsAndParams(response.net);
+            var par=that.Net.getParams();
+            // that.logger('param [0][0] '+par.length+' '+par[par.length-1].length);
             console.log(JSON.stringify(response.net.configs));
             // console.log('just after set nn'+that.Net.layers[that.Net.layers.length-2].layer_type+' '+that.Net.layers[that.Net.layers.length-2].filters.data.length);
 
 
             // set initial this.labels
             that.labels = Object.keys(that.Net.index2label);
-            console.log('labels after set '+JSON.stringify(that.labels));
+            // console.log('labels after set '+JSON.stringify(that.labels));
 
             that.step = response.step;
 
