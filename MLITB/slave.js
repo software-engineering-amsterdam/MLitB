@@ -28,9 +28,15 @@ function Slave(socket, boss) {
     this.working_times = []; // save the last n working time
     this.change_working_data = false;
 
-    this.cache = []; // real data in cache
+    // this.cache = []; // real data in cache
+    this.cache_count = 0;
     this.uncached = []; // data to obtain
-    this.caching = []; //data id that are being cached
+    this.uncached_count = 0;
+    // this.caching = []; //data id that are being cached
+    this.caching_count = 0;
+
+    this.thrown_param_count = 0;
+    this.total_real_processed_data = 0;
 
 };
 
@@ -48,11 +54,11 @@ Slave.prototype.set_total_working_data = function(v){
 }
 
 Slave.prototype.cache_left = function() {
-    return this.max_storage - (this.cache.length+this.uncached.length+this.caching.length);
+    return this.max_storage - (this.cache_count+this.uncached_count+this.caching_count);
 }
 
 Slave.prototype.total_cache = function(){
-    return this.cache.length+this.uncached.length+this.caching.length;
+    return this.cache_count+this.uncached_count+this.caching_count;
 }
 
 Slave.prototype.avg_working_speed = function(){
@@ -80,12 +86,14 @@ Slave.prototype.add_working_time = function(v){
     }
 }
 
-Slave.prototype.process_cache = function() {
+Slave.prototype.process_cache = function(nn) {
     // manages uncached to cache
     // console.log('process cache ');
     data = {};
 
-    var UL = this.uncached.length;
+    // var UL = this.uncached.length;
+    var uncached = nn.slaves_uncached_data[this.socket.id];
+    var UL = uncached.length;
 
     if(!UL) {
         return;
@@ -96,13 +104,15 @@ Slave.prototype.process_cache = function() {
     i=0;
     var TP = this.transfer_power; //transfer power
     while (i<UL && TP--){
-        var data = this.uncached[i];
+        var data = uncached[i];
         ids.push(data.id);
         data.caching.push(this);
         i++;
     }
 
-    this.caching = this.uncached.splice(0,i);
+    uncached.splice(0,i);
+    this.uncached_count = uncached.length;
+    this.caching_count+=i;
 
     // console.log(this.socket.id+' caching '+ids.length+' points');
     // console.log(JSON.stringify(ids));
@@ -119,7 +129,12 @@ Slave.prototype.process_cache = function() {
 Slave.prototype.work = function(nn) {
     var wd;
     if (this.change_working_data){
-        wd = this.working_data;
+        wd = []
+        var wl = this.working_data.length;
+        while (wl--){
+            wd.push(this.working_data[wl].id)
+        }
+        this.change_working_data = false;
     }
 
     var work_data = {
@@ -142,9 +157,14 @@ Slave.prototype.work = function(nn) {
     } else {
         nn.active_slaves_per_step[nn.step]=1;
     }
+
+    // if (this.delay==0){
+    //     console.log(JSON.stringify(this.working_data));
+    //     console.log(this.total_working_data);
+    // }
     
 
-    console.log(' $$ slave', this.socket.id, 'works on', this.working_power, 'data points');
+    console.log(' $$', this.socket.id, 'works on', this.working_power, 'data, '+this.thrown_param_count+' thrown, '+(this.total_real_processed_data/nn.total_real_processed_data*100).toFixed(2)+' % real processed data, '+(this.working_data.length/nn.data.length*100).toFixed(2)+' % working data');
 
     this.send('job', work_data);
 

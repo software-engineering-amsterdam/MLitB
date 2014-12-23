@@ -59,6 +59,10 @@ var NeuralNetwork = function(data, master) {
     // this.fastest_working_time;
     // this.fastest_start_time;
     this.total_working_speed;
+    this.delayed_slaves = [];
+    this.reallocation_interval = 20;
+    this.total_real_processed_data = 0;
+    this.slaves_uncached_data = {};
 
     
 
@@ -73,9 +77,9 @@ var NeuralNetwork = function(data, master) {
     this.hyperparameters_changed = false; // needed for signaling, else continous overwrite.
     this.hyperparameters = {
 
-        learning_rate : 0.01, //starting value of learning rate
+        learning_rate : 0.1, //starting value of learning rate
         lr_decay : 0.999, //multiplication factor
-        lr_decay_interval : 2, //iteration interval of learning rate decay
+        lr_decay_interval : 5, //iteration interval of learning rate decay
         lr_threshold : 0.00001, //0.001, //lower bound of learning rate
         momentum : 0.9,
         batch_size : 16, 
@@ -194,14 +198,14 @@ NeuralNetwork.prototype = {
         }
 
         if (new_labels.length){
-            console.log('add new labels, resize param '+JSON.stringify(new_labels));
+            // console.log('add new labels, resize param '+JSON.stringify(new_labels));
             //add new label to our copy nn
             this.Net.addLabel(new_labels);
 
             var newParams = this.Net.getParams();
-            console.log('##set final param for step '+this.step+', last length '+newParams.length+' '+newParams[newParams.length-1].length);
+            // console.log('##set final param for step '+this.step+', last length '+newParams.length+' '+newParams[newParams.length-1].length);
             var clonedParam = this.clone_parameter(newParams);
-            console.log('##set final param for step '+this.step+', last length '+clonedParam.length+' '+clonedParam[clonedParam.length-1].length);
+            // console.log('##set final param for step '+this.step+', last length '+clonedParam.length+' '+clonedParam[clonedParam.length-1].length);
             this.parameters[this.step] = clonedParam;
             // this.parameters = newParams;
             //tell SGD to accomodate this new labels
@@ -227,6 +231,8 @@ NeuralNetwork.prototype = {
             return
         }
 
+        slave.cache_count+=ids.length;
+
         var i = ids.length;
         while(i--) {
             var j = this.data.length;
@@ -235,19 +241,18 @@ NeuralNetwork.prototype = {
                 var data = this.data[j];
                 if(data.id == ids[i]) {
                     data.cache.push(slave);
-                    slave.cache.push(data);
                     point = data;
                     break;
                 }
             }
             //remove from slave.caching
-            var C = slave.caching.length;
-            for (var k=0;k<C;k++){
-                if (slave.caching[k].id == ids[i]){
-                    slave.caching.splice(k,1);
-                    break;
-                }
-            }
+            // var C = slave.caching.length;
+            // for (var k=0;k<C;k++){
+            //     if (slave.caching[k].id == ids[i]){
+            //         slave.caching.splice(k,1);
+            //         break;
+            //     }
+            // }
             //remove from data.caching
             var s = point.caching.length;
             while (s--){
@@ -577,7 +582,10 @@ NeuralNetwork.prototype = {
         }
 
         var i = this.slaves.length;
+        var delay = 0
         while(i--){
+            this.slaves[i].delay = delay;
+            delay++;
             this.slave_job(this.slaves[i],this.initial_batch_size);
         }
         
@@ -606,6 +614,11 @@ NeuralNetwork.prototype = {
         while (s--){
             var slave = this.slaves[s];
             var n = Math.round((slave.avg_working_speed()/total)*u);
+            if (s==1){
+                //the last slave
+                if (u-assigned < n)
+                    n = u-assigned;
+            }
             n = slave.set_total_working_data(n);
             assigned += n;
         }
@@ -626,7 +639,7 @@ NeuralNetwork.prototype = {
             }
         }
         //remaining point = u-assigned
-        var r = u-assigned;
+        var r = Math.max(u-assigned,0); //to be safe
         var i=0;
         while (r--){
             var idx = i % unfilled_slaves.length; 
@@ -673,8 +686,13 @@ NeuralNetwork.prototype = {
             for (var s=0;s<ns;s++){
                 var slave = this.slaves[s];
                 var data = this.unassigned_data.splice(0,slave.total_working_data);
-                slave.uncached = data;
+                // slave.uncached = data;
+                this.slaves_uncached_data[slave.socket.id] = data.slice(0);
                 slave.working_data = data;
+                // var dl = data.length;
+                // for (var i=0;i<dl;i++){
+                //     slave.working_data.push(data[i].id);
+                // }
             }
 
         } else {
@@ -686,50 +704,102 @@ NeuralNetwork.prototype = {
                 if (r>0){
                     var over = slave.working_data.splice(slave.total_working_data,r);
                     this.unassigned_data = over.concat(this.unassigned_data);
-                }
-            }
-
-            sort_slaves = function(a,b){
-                return a.cache.length-b.cache.length;
-            }
-
-            //distribute the data, by prioritizing cache
-            var nu = this.unassigned_data.length;
-            for (var u=0;u<nu;u++){
-                var data = this.unassigned_data;
-                var cache_slaves = data.cache.slice(0);
-                var caching_slaves = data.caching.slice(0);
-                if (cache_slaves.length){
-                    cache_slaves.sort(sort_slaves);
-                    var slave = cache_slaves[0];
-                    slave.working_data.push(data);
-                }
-                else if (caching_slaves.length){
-                    caching_slaves.sort(sort_slaves);
-                    var slave = caching_slaves[0];
-                    slave.working_data.push(data);
-                } else {
-                    //fill until full
-                    var s =this.slaves.length;
-                    while (s--){
-                        var slave = this.slaves[s];
-                        if (slave.working_data.length<slave.total_working_data){
-                            slave.working_data.push(data);
-                            slave.uncached.push(data);
-                            break;
+                    //remove from uncached
+                    var ol = over.length;
+                    while(ol--){
+                        var point = over[ol];
+                        var uncached = this.slaves_uncached_data[slave.socket.id];
+                        var ul = uncached.length;
+                        while(ul--){
+                            if (uncached[ul].id === point.id){
+                                uncached.splice(ul,1);
+                            }
                         }
                     }
                 }
             }
 
+            console.log('after cutting overworking data');
+            var s=this.slaves.length;
+            while (s--){
+                var slave = this.slaves[s];
+                slave.change_working_data = true;
+                console.log('$$ '+slave.socket.id+' has '+slave.working_data.length+' data in working data, '+this.slaves_uncached_data[slave.socket.id].length+' in uncached');
+            }
+
+            sort_slaves = function(a,b){
+                var c =  a.cache_count-b.cache_count;
+                if (c==0){
+                    c = a.caching_count - b.caching_count;
+                }
+                return c;
+            }
+
+            //distribute the data, by prioritizing cache
+            // var nu = this.unassigned_data.length;
+            var u = this.unassigned_data.length;
+            console.log('nu : '+u);
+            // console.log(JSON.stringify(this.unassigned_data));
+            // for (var u=0;u<nu;u++){
+            while(u--){
+                var data = this.unassigned_data[u];
+                var cache_slaves = data.cache.slice(0);
+                var caching_slaves = data.caching.slice(0);
+                var assigned = false;
+                if (cache_slaves.length){
+                    cache_slaves.sort(sort_slaves);
+                    for (var i=0;i<cache_slaves.length;i++){
+                        var slave = cache_slaves[i];
+                        if (!slave.saturated()){
+                            slave.working_data.push(data);
+                            assigned = true;
+                            break;
+                        }        
+                    }
+                }
+                if (! assigned && caching_slaves.length){
+                    // caching_slaves.sort(sort_slaves);
+                    // var slave = caching_slaves[0];
+                    // slave.working_data.push(data);
+                    caching_slaves.sort(sort_slaves);
+                    for (var i=0;i<caching_slaves.length;i++){
+                        var slave = caching_slaves[i];
+                        if (!slave.saturated()){
+                            slave.working_data.push(data);
+                            assigned = true;
+                            break;
+                        }        
+                    }
+                } 
+                if (! assigned) {
+                    //fill until full
+                    var s =this.slaves.length;
+                    while (s--){
+                        var slave = this.slaves[s];
+                        if (slave.working_data.length<slave.total_working_data){
+                            assigned = true
+                            slave.working_data.push(data);
+                            // slave.uncached.push(data);
+                            this.slaves_uncached_data[slave.socket.id].push(data);
+                            break;
+                        }
+                    }
+                }
+                if (assigned){
+                    this.unassigned_data.splice(u,1);
+                }
+            }
+
         }
+
+        console.log('un assigned data : '+this.unassigned_data.length);
 
 
         var s=this.slaves.length;
         while (s--){
             var slave = this.slaves[s];
             slave.change_working_data = true;
-            console.log('$$ '+slave.socket.id+' has '+slave.working_data.length+' data in working data, '+slave.uncached.length+' in uncached');
+            console.log('$$ '+slave.socket.id+' has '+slave.working_data.length+' data in working data, '+this.slaves_uncached_data[slave.socket.id].length+' in uncached');
         }
     },
 
@@ -743,30 +813,32 @@ NeuralNetwork.prototype = {
         var max = slaves[--s];
         var min = slaves[s];
         while (s--){
-            var slave = slave;
-            var r = slave.avg_working_speed/slave.working_data.length;
-            var rmax = max.avg_working_speed/max.working_data.length;
-            var rmin = min.avg_working_speed/min.working_data.length;
+            var slave = slaves[s];
+            var r = slave.avg_working_speed()/slave.working_data.length;
+            var rmax = max.avg_working_speed()/max.working_data.length;
+            var rmin = min.avg_working_speed()/min.working_data.length;
             if (r > rmax){
                 max = slave;
             } else if (r < rmin){
                 min = slave;
             }
-            if (min < 0.75*max){
+            rmax = max.avg_working_speed()/max.working_data.length;
+            rmin = min.avg_working_speed()/min.working_data.length;
+            if (rmin < 0.85*rmax){
                 console.log('Need to reallocate data !!');
                 this.assign_slaves_limit_working_data();
                 this.allocate_data();
-                break;
+                return;
             }
         }
-
+        console.log('No need for reallocation');
 
     },
 
     slave_job : function(slave, working_power){
         slave.working_power = working_power;
-        slave.process_cache();
-        if (slave.cache.length){
+        slave.process_cache(this);
+        if (slave.cache_count){
             slave.work(this);    
             return true;
         } else {
@@ -780,7 +852,7 @@ NeuralNetwork.prototype = {
         //step is increased everytime all clients that pickup parameter at time t have returned their gradients
         //or the fastest client has return
         var clonedParam = this.clone_parameter(this.parameters[this.step]);
-        console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
+        // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
         this.final_parameters[this.step] = clonedParam;
         //set param to the dummy NN
         this.Net.setParams(clonedParam);
@@ -801,19 +873,26 @@ NeuralNetwork.prototype = {
         var total = 0;
         while (s--){
             var slave = this.slaves[s];
-            total+= slave.last_working_speed();
+            total+= slave.avg_working_speed();
         }
         console.log('total working speed '+total);
         this.total_working_speed = total;
 
 
+
         this.step++;
+
+        if (this.step%this.reallocation_interval==0){
+            this.reallocate_data();
+        }
 
     },
 
     reduction: function(slave, parameters) { //, new_labels) {
 
-        console.log('reduction');
+        // console.log('reduction');
+        console.log('');
+        console.log('');
 
         if(!this.running) {
             console.log("! Cannot reduce (slave) to (NN): NN not running", slave.socket.id, this.id);
@@ -885,12 +964,13 @@ NeuralNetwork.prototype = {
 
         this.slaves_reduction.push(slave);
         
-
+        var fastest = false;
         var or = this.operation_results.length; //for now this will always have length 1
         while (or--){
             var param = this.operation_results[or];
-            console.log('param.step '+param.step+' this.step '+this.step);
+            // console.log('param.step '+param.step+' this.step '+this.step);
             if (param.step== this.step){
+                fastest = true;
                 this.next_step();
                 // this.step++;   
                 // this.permute_param();
@@ -903,12 +983,19 @@ NeuralNetwork.prototype = {
             
             //write to param.step+1
             // if parameter t+1 has not been sealed
+            var thrown=false;
             if (!this.final_parameters[param.step+1]){
                 this.parameters[param.step+1]=this.SGD.reduce(this);
+                slave.total_real_processed_data += param.nVector;
+                this.total_real_processed_data += param.nVector;
             } 
-            // else {
-            //     // throw the parameters because it's too old.
-            // }
+            else {
+                thrown=true;
+                // console.log('throw parameters from '+slave.socket.id);
+                this.delayed_slaves.push(slave);
+                slave.thrown_param_count+=1;
+                // throw the parameters because it's too old.
+            }
             
             
         }
@@ -935,30 +1022,45 @@ NeuralNetwork.prototype = {
         // }
         
 
-        var wp = Math.round((slave.last_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
+        var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
 
         console.log('working power : '+wp);
 
         slave.add_working_time(parseInt(parameters.working_time));
 
-        console.log('finish reduction');
+        // console.log('finish reduction');
         // this.notify_bosses();
         this.master.broadcast_nns();
 
         this.operation_results=[];
         this.slaves_reduction =[];
 
-        this.slave_job(slave, wp);
+        if (!thrown){
+            var release_slaves = [slave];
+            if (fastest){
+                console.log(this.delayed_slaves.length+' slaves in delayed_slaves');
+                release_slaves = release_slaves.concat(this.delayed_slaves);
+                this.delayed_slaves = [];
+            }
 
-        // find parameter chunk for this slave
-        // var slave_chunk = this.param_chunk[slave_position];
-        // console.log('save chunk '+JSON.stringify(slave_chunk));
-        slave.send('parameters', {
-            // type: 'parameters',
-            chunk: [],
-            step : this.step
+            var r = release_slaves.length;
+            while (r--){
+                var slave = release_slaves[r];
+                this.slave_job(slave, wp);
 
-        });   
+                // find parameter chunk for this slave
+                // var slave_chunk = this.param_chunk[slave_position];
+                // console.log('save chunk '+JSON.stringify(slave_chunk));
+                slave.send('parameters', {
+                    // type: 'parameters',
+                    chunk: [],
+                    step : this.step
+
+                });    
+            }
+                
+        }
+           
         
         // var o = this.slaves_reduction.length;
         // while (o--){

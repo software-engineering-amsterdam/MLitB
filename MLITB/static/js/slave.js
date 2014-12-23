@@ -46,6 +46,8 @@ var Slave = function() {
     this.total_working_power = 0;
     this.working_data = [];
 
+    this.point_list = {};
+
 }
 
 Slave.prototype = {
@@ -290,8 +292,20 @@ Slave.prototype = {
         that.total_working_power += that.working_power;
 
         // var data = d.data;
-        var data = Object.keys(this.data);
-        console.log('data : '+JSON.stringify(data));
+        var data = [];
+        if (that.working_data.length>Object.keys(that.data).length){
+            var wl = that.working_data.length;
+            for (var w=0;w<wl;w++){
+                if (that.data[that.working_data[w]]){
+                    data.push(that.working_data[w]);
+                }
+            }
+        } else {
+            data = that.working_data;
+        }
+        
+        // console.log('data : '+JSON.stringify(data));
+
         // var idx;
         // if (that.step>100&& this.step%10==0)
         //     console.log(that.id+' point '+JSON.stringify(data));
@@ -381,6 +395,8 @@ Slave.prototype = {
 
                 sleepFor(delay);
 
+                that.point_list[point_id] = 1;
+
 
 
                 // current_time = (new Date).getTime();
@@ -431,7 +447,7 @@ Slave.prototype = {
 
             console.log(that.id+' $ error: ' + error+' vector '+nVector);
 
-            that.logger(nVector.toString() + ' points processed');
+            that.logger(nVector.toString() + ' points processed, '+that.working_data.length.toString()+' working data, '+Object.keys(that.point_list).length.toString()+' unique data');
 
             that.send_message_to_master('reduction', {
                 slave: that.id,
