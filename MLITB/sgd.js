@@ -140,6 +140,7 @@ SGDTrainer.prototype = {
     start_reduce = new Date().getTime();
     // old_parameters = nn.configuration.parameters;
     new_parameters = nn.operation_results;
+
     step = nn.step;
 
 
@@ -218,10 +219,11 @@ SGDTrainer.prototype = {
             tess=1;
           }
           // tess=1;
-          var dw = (1.0-this.momentum)*(this.learning_rate/tess)*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lg[j];
+          // var dw = (1.0-this.momentum)*(this.learning_rate/tess)*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lg[j];
+          var dw = this.learning_rate/tess*((l1_grad+l2_grad+g[j])/totalVector);
           p[j] -= dw; //x = x - gradient
-          lg[j] = dw; //save the last gradient values
-          g[j] = 0.0;
+          // lg[j] = dw; //save the last gradient values
+          // g[j] = 0.0;
         }
       }
     // }
@@ -250,6 +252,7 @@ SGDTrainer.prototype = {
     rtime = new Date().getTime() - start_reduce;
     console.log('SGD reduce time',rtime);
     console.log('last gradient '+this.last_grads[0][0]);
+    console.log('gradient '+new_parameters[0].parameters[0][0]);
     return this.last_params;
     // console.log(this.last_params[0].length, this.last_params[1].length);
 

@@ -79,7 +79,7 @@ var NeuralNetwork = function(data, master) {
     this.hyperparameters_changed = false; // needed for signaling, else continous overwrite.
     this.hyperparameters = {
 
-        learning_rate : 0.1, //starting value of learning rate
+        learning_rate : 0.01, //starting value of learning rate
         lr_decay : 0.999, //multiplication factor
         lr_decay_interval : 5, //iteration interval of learning rate decay
         lr_threshold : 0.00001, //0.001, //lower bound of learning rate
