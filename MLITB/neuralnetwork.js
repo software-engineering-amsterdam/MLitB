@@ -63,6 +63,8 @@ var NeuralNetwork = function(data, master) {
     this.reallocation_interval = 20;
     this.total_real_processed_data = 0;
     this.slaves_uncached_data = {};
+    this.total_error = {0:0};
+    this.total_vector = {0:0};
 
     
 
@@ -851,6 +853,9 @@ NeuralNetwork.prototype = {
     next_step : function(){
         //step is increased everytime all clients that pickup parameter at time t have returned their gradients
         //or the fastest client has return
+
+        this.error = this.total_error[this.step]/this.total_vector[this.step];
+
         var clonedParam = this.clone_parameter(this.parameters[this.step]);
         // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
         this.final_parameters[this.step] = clonedParam;
@@ -869,6 +874,14 @@ NeuralNetwork.prototype = {
             delete this.active_slaves_per_step[this.step-4];
         }
 
+        if (typeof this.total_error[this.step-4] !== 'undefined'){
+            delete this.total_error[this.step-4];
+        }
+
+        if (typeof this.total_vector[this.step-4] !== 'undefined'){
+            delete this.total_vector[this.step-4];
+        }
+
         var s =this.slaves.length;
         var total = 0;
         while (s--){
@@ -881,6 +894,9 @@ NeuralNetwork.prototype = {
 
 
         this.step++;
+
+        this.total_error[this.step] = 0;
+        this.total_vector[this.step] = 0;
 
         if (this.step%this.reallocation_interval==0){
             this.reallocate_data();
@@ -975,6 +991,9 @@ NeuralNetwork.prototype = {
                 // this.step++;   
                 // this.permute_param();
             }
+
+            this.total_error[param.step+1]+= param.error;
+            this.total_vector[param.step+1]+=param.nVector;
             // if (!param.chunk.length){
             //     continue;
             // }

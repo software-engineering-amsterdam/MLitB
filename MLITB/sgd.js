@@ -246,7 +246,7 @@ SGDTrainer.prototype = {
     //   nn.parameters = this.last_params;
     // }
     
-    nn.error = totalError/totalVector;
+    // nn.error = totalError/totalVector;
     rtime = new Date().getTime() - start_reduce;
     console.log('SGD reduce time',rtime);
     return this.last_params;
