@@ -207,7 +207,7 @@ SGDTrainer.prototype = {
           if (typeof lg[j]==='undefined'){
             lg.push(0.0);
           }
-          var lgj = lg[j];
+          // var lgj = lg[j];
           // add new gradient element for new added neuron
           if (typeof ssg[j]==='undefined'){
             ssg.push(0.0);
@@ -218,9 +218,9 @@ SGDTrainer.prototype = {
             tess=1;
           }
           // tess=1;
-          var dw = (1.0-this.momentum)*(this.learning_rate/tess)*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lgj;
+          var dw = (1.0-this.momentum)*(this.learning_rate/tess)*((l1_grad+l2_grad+g[j])/totalVector)+this.momentum*lg[j];
           p[j] -= dw; //x = x - gradient
-          lgj = dw; //save the last gradient values
+          lg[j] = dw; //save the last gradient values
           g[j] = 0.0;
         }
       }
@@ -249,6 +249,7 @@ SGDTrainer.prototype = {
     // nn.error = totalError/totalVector;
     rtime = new Date().getTime() - start_reduce;
     console.log('SGD reduce time',rtime);
+    console.log('last gradient '+this.last_grads[0][0]);
     return this.last_params;
     // console.log(this.last_params[0].length, this.last_params[1].length);
 
