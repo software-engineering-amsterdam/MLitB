@@ -142,6 +142,7 @@ Slave.prototype.work = function(nn) {
         data: this.process,
         step: nn.step,
         delay : this.delay,
+        iteration_time : nn.iteration_time,
         working_power : this.working_power,
         working_data : wd
     }

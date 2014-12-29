@@ -328,7 +328,7 @@ Slave.prototype = {
             this.iteration_time = parseInt(d.iteration_time);
         }
         // var iteration_time = d.iteration_time - 10; // subtract 10MS for spare time, to do reduction step.
-        var iteration_time = this.iteration_time;// + Math.floor(Math.random() * 2000) + 1000;
+        var iteration_time = this.iteration_time - 10;// + Math.floor(Math.random() * 2000) + 1000;
         // console.log('iteration time '+parseInt(iteration_time));
         // var time = (new Date).getTime();
 
@@ -364,7 +364,7 @@ Slave.prototype = {
 
         learn = function() {
             var time = (new Date).getTime();
-            while(that.working_power--) {
+            while(true) {
 
                 if(!workingset.length) {
                     shuffle_data();
@@ -399,21 +399,22 @@ Slave.prototype = {
 
 
 
-                // current_time = (new Date).getTime();
+                current_time = (new Date).getTime();
 
                 // console.log('time ' + current_time > (that.start_time + iteration_time));
 
-                // if(current_time > (that.start_time + iteration_time)) {
-                //     // var pp=Object.keys(that.point_list);
-                //     // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
-                //     // console.log('return');
-                //     return;
-                // }
+                if(current_time > (that.start_time + iteration_time)) {
+                    // var pp=Object.keys(that.point_list);
+                    // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
+                    // console.log('return');
+                    that.working_time = (new Date).getTime() - time;
+                    that.total_working_time+=that.working_time;
+                    return;
+                }
 
             }
 
-            that.working_time = (new Date).getTime() - time;
-            that.total_working_time+=that.working_time;
+            
 
 
             // var pp=Object.keys(that.point_list);
@@ -426,10 +427,10 @@ Slave.prototype = {
             param = that.Net.getGrads();
             // console.log('before chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             
-            var cl = that.chunk.length;
-            if (cl){
-                param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
-            }
+            // var cl = that.chunk.length;
+            // if (cl){
+            //     param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
+            // }
             // console.log(param.length);
             // console.log('after chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             // param_type = 'grads';

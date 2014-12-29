@@ -137,6 +137,7 @@ SGDTrainer.prototype = {
   },
 
   reduce : function(nn){
+    console.log('sgd reducing');
     start_reduce = new Date().getTime();
     // old_parameters = nn.configuration.parameters;
     new_parameters = nn.operation_results;
