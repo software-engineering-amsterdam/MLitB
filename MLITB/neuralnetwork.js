@@ -642,20 +642,23 @@ NeuralNetwork.prototype = {
         }
         //remaining point = u-assigned
         var r = Math.max(u-assigned,0); //to be safe
-        var i=0;
-        while (r--){
-            var idx = i % unfilled_slaves.length; 
-            var slave = unfilled_slaves[idx];
-            slave.total_working_data+=1;
-            if (slave.max_storage - slave.total_working_data == 0){
-                unfilled_slaves.splice(idx,1);
-            }   
-            i++;
+        if (r>0){
+            var i=0;
+            while (r--){
+                var idx = i % unfilled_slaves.length; 
+                var slave = unfilled_slaves[idx];
+                slave.total_working_data+=1;
+                if (slave.max_storage - slave.total_working_data == 0){
+                    unfilled_slaves.splice(idx,1);
+                }   
+                i++;
 
-            if (!unfilled_slaves.length){
-                break;
-            }
+                if (!unfilled_slaves.length){
+                    break;
+                }
+            }    
         }
+        
 
         var s=this.slaves.length;
         while (s--){
