@@ -108,6 +108,8 @@ Slave.prototype = {
         var data = JSON.parse(d);
 
         var parameters = data.parameters;
+
+        console.log(this.id+'sample parameters '+parameters[0][0]);
         var new_labels = data.new_labels;
         // this.step = data.step;
 
@@ -519,16 +521,21 @@ Slave.prototype = {
         this.step = d.step;
         var that = this;
 
+        // sleepFor = function( sleepDuration ){
+        //     var now = new Date().getTime();
+        //     while(new Date().getTime() < now + sleepDuration){ /* do nothing */ } 
+        // }
+        // var rand = Math.floor(Math.random() * 1000) + 1;
+        // sleepFor(rand);
+
         var xhr = new XMLHttpRequest();
         xhr.open('GET', this.host + '/nn-parameters/' + this.nn_id + '/', true);
         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         // xhr.setRequestHeader("Connection", "keep-alive");
 
-        console.log( ' $$ slave downloading new parameters');
 
         xhr.onload = function () {
 
-            console.log( ' $$ parameter download done');
 
             var response = this.response;
             that.new_parameters(response);

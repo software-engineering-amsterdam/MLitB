@@ -62,6 +62,7 @@ var NeuralNetwork = function(data, master) {
     this.delayed_slaves = [];
     this.reallocation_interval = 20;
     this.total_real_processed_data = 0;
+    this.total_real_working_time =0;
     this.slaves_uncached_data = {};
     this.total_error = {0:0};
     this.total_vector = {0:0};
@@ -190,6 +191,13 @@ NeuralNetwork.prototype = {
 
         }
 
+        shuffle = function(o){
+            for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+            return o;
+        };
+
+        this.unassigned_data = shuffle(this.unassigned_data)
+
         var i = labels.length;
         var new_labels = [];
 
@@ -199,6 +207,8 @@ NeuralNetwork.prototype = {
                 new_labels.push(labels[i])
             }
         }
+
+
 
         if (new_labels.length){
             // console.log('add new labels, resize param '+JSON.stringify(new_labels));
@@ -962,6 +972,7 @@ NeuralNetwork.prototype = {
         slave.total_real_processed_data += parameters.nVector;
         this.total_real_processed_data += parameters.nVector;
 
+        this.total_real_working_time +=parseInt(parameters.working_time);
         slave.add_working_time(parseInt(parameters.working_time));
 
 
@@ -994,8 +1005,6 @@ NeuralNetwork.prototype = {
         // console.log('reduction length '+this.slaves.reduction.length);
 
         if (!this.slaves_operating.length){
-
-            console.log('empty slave operating');
 
             var new_params =this.SGD.reduce(this);
 

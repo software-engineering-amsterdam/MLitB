@@ -138,6 +138,8 @@ Master.prototype = {
 
     nn_parameters: function(nn_id) {
 
+        console.log('download download');
+
         var nn = this.nn_by_id(nn_id);
 
         if(!nn) {
