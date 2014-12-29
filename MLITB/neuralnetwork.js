@@ -3,7 +3,8 @@ var Client     = require('./client'),
     master     = require('./master'),
     SGDTrainer = require('./sgd'),
     Test = require('./tests'),
-    mlitb = require('./static/js/mlitb');
+    mlitb = require('./static/js/mlitb'),
+    fs = require('fs');
 
 var Test = new Test();
 
@@ -850,6 +851,18 @@ NeuralNetwork.prototype = {
         
     },
 
+
+    logger : function(filename, string){
+        fs.writeFile(filename, string, function(err) {
+            if(err) {
+                console.log(err);
+            } else {
+                console.log("The file was saved!");
+            }
+        });
+    },
+     
+
     next_step : function(){
         //step is increased everytime all clients that pickup parameter at time t have returned their gradients
         //or the fastest client has return
@@ -1004,7 +1017,7 @@ NeuralNetwork.prototype = {
             // if parameter t+1 has not been sealed
             var thrown=false;
             if (!this.final_parameters[param.step+1]){
-                this.parameters[param.step+1]=this.SGD.reduce(this);
+                this.parameters[param.step+1]=this.SGD.reduce(this,param);
                 slave.total_real_processed_data += param.nVector;
                 this.total_real_processed_data += param.nVector;
             } 

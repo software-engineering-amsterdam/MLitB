@@ -421,15 +421,141 @@ Slave.prototype = {
 
         }
 
+        partial_param = function(param, indexing, method, how_many){
+            //method  : sort/random
+            //indexing : local/global
+            local_indexing = function(param){
+                var indexed_param = [];
+                for (var i=0, len=param.length;i<len;i++){
+                    var row = param[i];
+                    var new_row = [];
+                    for (var j=0;j<row.length;j++){
+                        new_row.push([j,row[j]]);
+                    }
+                    indexed_param.push(new_row);
+                }
+                
+                return indexed_param;
+            }
+
+            global_indexing = function(param){
+                var indexed_param = [];
+                var idx = 0;
+                for (var i=0, len=param.length;i<len;i++){
+                    var row = param[i];
+                    for (var j=0, rlen=row.length;j<rlen;j++){
+                        indexed_param.push([idx,row[j]]);
+                        idx++;
+                    }
+                }
+                
+                return indexed_param;   
+            }
+
+            param_sort = function(a,b){
+                return Math.abs(b[1])-Math.abs(a[1]);
+            }
+
+            sort_param = function(param){
+                for (var i=0;i<param.length;i++){
+                    param[i].sort(param_sort);    
+                }
+                return param;
+            }
+
+            shuffle_param = function(param){
+                shuffled = [];
+                for (var i=0;i<param.length;i++){
+                    shuffled.push(shuffle(param[i]));    
+                }
+                return shuffled;
+            }
+
+            cut_param = function(param, how_many, indexing){
+                //if how_many is integer, than it's top n
+                //if it's float, then it's top n%
+
+                var cut_param = [];
+
+                if (indexing == 'global'){
+                    var th = how_many;
+                    if (how_many %1 != 0){
+                        th = Math.round(how_many*param.length);
+                    } 
+                    cut_param = param.slice(0,th);
+                } else {
+                    for (var i=0, len=param.length;i<len;i++){
+                        var th = how_many;
+                        if (how_many %1 != 0){
+                            th = Math.round(how_many*param[i].length);
+                        } 
+                        cut_param.push(param[i].slice(0,th));
+                    } 
+                }
+                
+                return cut_param;
+            }
+
+            if (indexing=='global'){
+                param = global_indexing(param);
+                that.logger('param length '+param.length);
+                // that.logger('global indexing length '+param.length+' value '+JSON.stringify(param.slice(param.length-10,param.length)));
+            } else {
+                //default
+                param = local_indexing(param);
+                // that.logger('local indexing length '+param[param.length-1].length+' value '+JSON.stringify(param[param.length-1].slice(param[param.length-1].length-10,param[param.length-1].length)));
+            }
+
+            // if (method=='sort'){
+            //     if (indexing=='local')
+            //         param = sort_param(param);
+            //     else
+            //         param.sort(param_sort);
+            // } else {
+            //     //default
+            //     if (indexing=='local')
+            //         param = shuffle_param(param);
+            //     else
+            //         param = shuffle(param);
+            // }
+            // if (indexing=='global'){
+            //     that.logger('sort/shuffle length '+param.length+' value '+JSON.stringify(param.slice(0,10)));
+            // } else {
+            //     that.logger('sort/shuffle length '+param[param.length-1].length+' value '+JSON.stringify(param[param.length-1]));    
+            // }
+            
+            
+            // param = cut_param(param, how_many,indexing);
+            // if (indexing=='global'){
+            //     that.logger('cut length '+param.length+' value '+JSON.stringify(param.slice(0,6)));
+            // } else {
+            //     that.logger('cut length '+param[param.length-1].length+' value '+JSON.stringify(param[param.length-1].slice(0,6)));    
+            // }
+            return param;
+            
+        }
+
+        clone_parameter= function(param){
+            var newParam = [];
+            for (var i=0;i<param.length;i++){
+                newParam.push(param[i].slice(0));
+            }
+            return newParam;
+        }
+
         reduction = function() {
 
             param = that.Net.getGrads();
             // console.log('before chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             
-            var cl = that.chunk.length;
-            if (cl){
-                param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
-            }
+            // var cl = that.chunk.length;
+            // if (cl){
+            //     param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
+            // }
+
+            param = partial_param(param,'global','sort',0.60);
+            // console.log(JSON.stringify(param));
+
             // console.log(param.length);
             // console.log('after chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             // param_type = 'grads';
