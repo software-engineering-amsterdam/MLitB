@@ -102,12 +102,12 @@ var NeuralNetwork = function(data, master) {
     this.Net.setConfigsAndParams(this.configuration);
     var newParams = this.Net.getParams();
 
-    // var clonedParam = this.clone_parameter(newParams);
-    // this.parameters[this.step] = clonedParam;
+    var clonedParam = this.clone_parameter(newParams);
+    this.parameters[this.step] = clonedParam;
 
     this.SGD = new SGDTrainer(this, {});
     this.SGD.set_parameters(this.hyperparameters);
-    // this.SGD.resize_param(clonedParam); 
+    this.SGD.resize_param(clonedParam); 
 }
 
 NeuralNetwork.prototype = {
