@@ -926,7 +926,7 @@ NeuralNetwork.prototype = {
         //     this.reallocate_data();
         // }
 
-        if (this.step % 10 ==0){
+        if (this.step % 50 ==0){
             
             for (var i=0,slen=this.slaves.length;i<slen;i++){
                 var slave = this.slaves[i];
