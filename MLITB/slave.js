@@ -41,6 +41,7 @@ function Slave(socket, boss) {
     this.thrown_param_count = 0;
     this.total_real_processed_data = 0;
     this.latencies = [];
+    this.wait_time_record = [];
 
 };
 

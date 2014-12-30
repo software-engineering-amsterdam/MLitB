@@ -926,7 +926,7 @@ NeuralNetwork.prototype = {
         //     this.reallocate_data();
         // }
 
-        if (this.step % 50 ==0){
+        if (this.step % 10 ==0){
             
             for (var i=0,slen=this.slaves.length;i<slen;i++){
                 var slave = this.slaves[i];
@@ -943,6 +943,9 @@ NeuralNetwork.prototype = {
                 var tname = 'time_'+slave.socket.id;
                 this.logger(tname, JSON.stringify(slave.time_record));
                 
+                //print total workingtime
+                var wname = 'wait_time_'+slave.socket.id;
+                this.logger(wname, JSON.stringify(slave.wait_time_record));
             }
 
             //print partial error
@@ -979,6 +982,7 @@ NeuralNetwork.prototype = {
         slave.latencies.push(latency);
         slave.vector_record.push(parseInt(parameters.nVector));
         slave.time_record.push(parseInt(parameters.working_time));
+        slave.wait_time_record.push(parseInt(parameters.wait_time));
 
         // console.log('reduction');
         console.log('');
