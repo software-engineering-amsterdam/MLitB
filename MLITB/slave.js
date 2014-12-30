@@ -38,6 +38,11 @@ function Slave(socket, boss) {
     this.thrown_param_count = 0;
     this.total_real_processed_data = 0;
 
+    this.vector_record = [];
+    this.time_record = [];
+    this.latencies = [];
+    this.wait_time_record = [];
+
 };
 
 Slave.prototype.saturated = function() {

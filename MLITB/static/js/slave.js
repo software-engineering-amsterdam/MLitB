@@ -48,6 +48,9 @@ var Slave = function() {
 
     this.point_list = {};
 
+    this.receive_param_time =0;
+    this.send_param_time =0;
+
 }
 
 Slave.prototype = {
@@ -104,6 +107,8 @@ Slave.prototype = {
     new_parameters: function(d) {
 
         console.log(' $$ slave got new parameters');
+
+        this.receive_param_time = new Date().getTime();
 
         var data = JSON.parse(d);
 
@@ -506,18 +511,18 @@ Slave.prototype = {
                 // that.logger('local indexing length '+param[param.length-1].length+' value '+JSON.stringify(param[param.length-1].slice(param[param.length-1].length-10,param[param.length-1].length)));
             }
 
-            // if (method=='sort'){
-            //     if (indexing=='local')
-            //         param = sort_param(param);
-            //     else
-            //         param.sort(param_sort);
-            // } else {
-            //     //default
-            //     if (indexing=='local')
-            //         param = shuffle_param(param);
-            //     else
-            //         param = shuffle(param);
-            // }
+            if (method=='sort'){
+                if (indexing=='local')
+                    param = sort_param(param);
+                else
+                    param.sort(param_sort);
+            } else {
+                //default
+                if (indexing=='local')
+                    param = shuffle_param(param);
+                else
+                    param = shuffle(param);
+            }
             // if (indexing=='global'){
             //     that.logger('sort/shuffle length '+param.length+' value '+JSON.stringify(param.slice(0,10)));
             // } else {
@@ -525,7 +530,7 @@ Slave.prototype = {
             // }
             
             
-            // param = cut_param(param, how_many,indexing);
+            param = cut_param(param, how_many,indexing);
             // if (indexing=='global'){
             //     that.logger('cut length '+param.length+' value '+JSON.stringify(param.slice(0,6)));
             // } else {
@@ -546,19 +551,9 @@ Slave.prototype = {
         reduction = function() {
 
             param = that.Net.getGrads();
-            // console.log('before chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
             
-            // var cl = that.chunk.length;
-            // if (cl){
-            //     param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
-            // }
-
             param = partial_param(param,'global','sort',0.60);
-            // console.log(JSON.stringify(param));
-
-            // console.log(param.length);
-            // console.log('after chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
-            // param_type = 'grads';
+            var wait_time = that.receive_param_time - that.send_param_time;
             parameters = {
                 parameters : param,
                 error : error,
@@ -566,10 +561,11 @@ Slave.prototype = {
                 step : that.step,
                 slave_id : that.id,
                 working_time : that.working_time,
-                chunk : that.chunk
+                timestamp : new Date().getTime(),
+                wait_time : wait_time
             };
 
-            
+            that.send_param_time = new Date().getTime();
 
             console.log(that.id+' $ error: ' + error+' vector '+nVector);
 
