@@ -365,7 +365,7 @@ Slave.prototype = {
 
         learn = function() {
             var time = (new Date).getTime();
-            while(true) {
+            while(that.working_power--) {
 
                 if(!workingset.length) {
                     shuffle_data();
@@ -400,20 +400,22 @@ Slave.prototype = {
 
 
 
-                current_time = (new Date).getTime();
+                // current_time = (new Date).getTime();
 
-                // console.log('time ' + current_time > (that.start_time + iteration_time));
+                // // console.log('time ' + current_time > (that.start_time + iteration_time));
 
-                if(current_time > (that.start_time + iteration_time)) {
-                    // var pp=Object.keys(that.point_list);
-                    // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
-                    // console.log('return');
-                    that.working_time = (new Date).getTime() - time;
-                    that.total_working_time+=that.working_time;
-                    return;
-                }
+                // if(current_time > (that.start_time + iteration_time)) {
+                //     // var pp=Object.keys(that.point_list);
+                //     // console.log(that.id+' point list total '+JSON.stringify(pp)+' -- '+pp.length+'/'+data.length);
+                //     // console.log('return');
+                    
+                //     return;
+                // }
 
             }
+
+            that.working_time = (new Date).getTime() - time;
+            that.total_working_time+=that.working_time;
 
             
 
