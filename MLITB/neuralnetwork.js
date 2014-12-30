@@ -3,7 +3,8 @@ var Client     = require('./client'),
     master     = require('./master'),
     SGDTrainer = require('./sgd'),
     Test = require('./tests'),
-    mlitb = require('./static/js/mlitb');
+    mlitb = require('./static/js/mlitb'),
+    fs = require('fs');
 
 var Test = new Test();
 
@@ -65,11 +66,13 @@ var NeuralNetwork = function(data, master) {
     this.slaves_uncached_data = {};
     this.total_error = {0:0};
     this.total_vector = {0:0};
+    this.partial_error = [];
+    this.start_working_time = 0;
+    this.working_time_per_step = [];
 
     
 
     this.param_permutation = {};  //store the last n param permutation index for each machine
-    this.param_chunk = [];
     // this.SGDs = []; //sgd for the last n step
 
     this.SGD; // well, the SGD
@@ -188,6 +191,13 @@ NeuralNetwork.prototype = {
             this.unassigned_data.push(new_point);
 
         }
+
+        shuffle = function(o){
+            for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+            return o;
+        };
+
+        this.unassigned_data = shuffle(this.unassigned_data);
 
         var i = labels.length;
         var new_labels = [];
@@ -583,6 +593,8 @@ NeuralNetwork.prototype = {
             this.allocate_data();    
         }
 
+        this.start_working_time = new Date().getTime();
+
         var i = this.slaves.length;
         var delay = 0
         while(i--){
@@ -596,6 +608,16 @@ NeuralNetwork.prototype = {
         // }
         
 
+    },
+
+    logger : function(filename,data){
+        fs.writeFile(filename, data, function(err) {
+            if(err) {
+                console.log(err);
+            } else {
+                console.log("Save to "+filename);
+            }
+        });        
     },
 
     assign_slaves_limit_working_data : function(){
@@ -858,6 +880,10 @@ NeuralNetwork.prototype = {
         //or the fastest client has return
 
         this.error = this.total_error[this.step]/this.total_vector[this.step];
+        
+        this.partial_error.push(this.error);
+
+        this.working_time_per_step.push(new Date().getTime() - this.start_working_time);
 
         var clonedParam = this.clone_parameter(this.parameters[this.step]);
         // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
@@ -905,9 +931,52 @@ NeuralNetwork.prototype = {
             this.reallocate_data();
         }
 
+        if (this.step % 50 ==0){
+            
+            for (var i=0,slen=this.slaves.length;i<slen;i++){
+                var slave = this.slaves[i];
+
+                //print latency from each slave to file
+                var lname = 'latency_'+slave.socket.id;
+                this.logger(lname, JSON.stringify(slave.latencies));
+                
+                //print total processed vector
+                var vname = 'vector_'+slave.socket.id;
+                this.logger(vname, JSON.stringify(slave.vector_record)); 
+                
+                //print total workingtime
+                var tname = 'time_'+slave.socket.id;
+                this.logger(tname, JSON.stringify(slave.time_record));
+
+                //print total workingtime
+                var wname = 'wait_time_'+slave.socket.id;
+                this.logger(wname, JSON.stringify(slave.wait_time_record));
+                
+            }
+
+            //print partial error
+            var ename = 'partial_error';
+            this.logger(ename, JSON.stringify(this.partial_error));
+            var wname = 'working_time_to_step';
+            this.logger(wname, JSON.stringify(this.working_time_per_step));
+            
+        }
+
+        if (this.step % 5 ==0){
+            var conf = this.Net.getConfigsAndParams();
+            var cname = 'conf_'+this.step;
+            this.logger(cname, JSON.stringify(conf));
+        }
+
     },
 
     reduction: function(slave, parameters) { //, new_labels) {
+
+        var latency = new Date().getTime() - parseInt(parameters.timestamp);
+        slave.latencies.push(latency);
+        slave.vector_record.push(parseInt(parameters.nVector));
+        slave.time_record.push(parseInt(parameters.working_time));
+        slave.wait_time_record.push(parseInt(parameters.wait_time));
 
         // console.log('reduction');
         console.log('');
@@ -1075,7 +1144,6 @@ NeuralNetwork.prototype = {
                 // console.log('save chunk '+JSON.stringify(slave_chunk));
                 slave.send('parameters', {
                     // type: 'parameters',
-                    chunk: [],
                     step : this.step
 
                 });    
