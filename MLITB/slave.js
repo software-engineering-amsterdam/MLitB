@@ -28,6 +28,9 @@ function Slave(socket, boss) {
     this.working_times = []; // save the last n working time
     this.change_working_data = false;
 
+    this.vector_record = [];
+    this.time_record = [];
+
     // this.cache = []; // real data in cache
     this.cache_count = 0;
     this.uncached = []; // data to obtain
@@ -37,6 +40,7 @@ function Slave(socket, boss) {
 
     this.thrown_param_count = 0;
     this.total_real_processed_data = 0;
+    this.latencies = [];
 
 };
 

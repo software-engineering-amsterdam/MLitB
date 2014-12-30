@@ -38,7 +38,6 @@ var Slave = function() {
     this.prev_data = {};
     this.iteration_time;
 
-    this.chunk = [];
 
     this.working_time = 0;
     this.total_working_time = 0;
@@ -427,15 +426,6 @@ Slave.prototype = {
         reduction = function() {
 
             param = that.Net.getGrads();
-            // console.log('before chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
-            
-            // var cl = that.chunk.length;
-            // if (cl){
-            //     param = param.slice(that.chunk[0], that.chunk[cl-1]+1);
-            // }
-            // console.log(param.length);
-            // console.log('after chunk '+that.chunk+' grad length '+param.length+' grad 0 length '+param[0].length);
-            // param_type = 'grads';
             parameters = {
                 parameters : param,
                 error : error,
@@ -443,7 +433,7 @@ Slave.prototype = {
                 step : that.step,
                 slave_id : that.id,
                 working_time : that.working_time,
-                chunk : that.chunk
+                timestamp : new Date().getTime()
             };
 
             
@@ -517,7 +507,6 @@ Slave.prototype = {
 
     download_new_parameters: function(d) {
         // download NN parameters by XHR
-        this.chunk = d.chunk;
         this.step = d.step;
         var that = this;
 
