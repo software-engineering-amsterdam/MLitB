@@ -47,6 +47,9 @@ var Slave = function() {
 
     this.point_list = {};
 
+    this.receive_param_time =0;
+    this.send_param_time =
+
 }
 
 Slave.prototype = {
@@ -103,6 +106,8 @@ Slave.prototype = {
     new_parameters: function(d) {
 
         console.log(' $$ slave got new parameters');
+
+        this.receive_param_time = new Date().getTime();
 
         var data = JSON.parse(d);
 
@@ -428,6 +433,7 @@ Slave.prototype = {
         reduction = function() {
 
             param = that.Net.getGrads();
+            var wait_time = that.receive_param_time - that.send_param_time;
             parameters = {
                 parameters : param,
                 error : error,
@@ -435,10 +441,11 @@ Slave.prototype = {
                 step : that.step,
                 slave_id : that.id,
                 working_time : that.working_time,
-                timestamp : new Date().getTime()
+                timestamp : new Date().getTime(),
+                wait_time : wait_time
             };
 
-            
+            that.send_param_time = new Date().getTime();
 
             console.log(that.id+' $ error: ' + error+' vector '+nVector);
 
