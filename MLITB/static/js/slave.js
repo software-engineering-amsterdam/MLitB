@@ -566,21 +566,41 @@ Slave.prototype = {
             var param = that.SGD.reduce(nVector);
             console.log('first '+JSON.stringify(param[0]));
             var grads = that.Net.getGrads();
-            grads = partial_param(grads,'local','sort',0.60);
+
+            var indexing = 'global';
+            var method = 'sort';
+            var threshold = 0.60;
+            grads = partial_param(grads,indexing,method,threshold);
 
             var cut_param = [];
             var idx;
-            for (var i=0,len=grads.length;i<len;i++){
+            if (indexing=='local'){
                 
-                var row_grad = grads[i];
-                var row_par = param[i];
-                var temp_row = [];
-                for (var j=0,jlen=row_grad.length;j<jlen;j++){
-                    idx = row_grad[j][0];
-                    temp_row.push([idx,row_par[idx]])
+                for (var i=0,len=grads.length;i<len;i++){
+                    
+                    var row_grad = grads[i];
+                    var row_par = param[i];
+                    var temp_row = [];
+                    for (var j=0,jlen=row_grad.length;j<jlen;j++){
+                        idx = row_grad[j][0];
+                        temp_row.push([idx,row_par[idx]])
+                    }
+                    cut_param.push(temp_row);
                 }
-                cut_param.push(temp_row);
             }
+            else if (indexing=='global'){
+                var new_param=[];
+                for (var i=0;i<param.length;i++){
+                    new_param = new_param.concat(param[i].slice());
+                }
+                param = new_param;
+
+                for (var i=0,len=grads.length;i<len;i++){
+                    idx = grads[i][0];
+                    cut_param.push([idx,param[idx]]);
+                }
+            }
+            
             // console.log('cut '+JSON.stringify(cut_param));
             // param = that.Net.getGrads();
             var wait_time = that.receive_param_time - that.send_param_time;

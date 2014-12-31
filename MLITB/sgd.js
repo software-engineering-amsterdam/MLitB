@@ -35,6 +35,7 @@ var SGDTrainer = function (nn, net) {
   this.last_pred_loss = {}; // data_id : [loss, discrete_loss]. discrete loss = 0 if y=y', 1 otherwise
   this.proceeded_data = {};
   this.chunk = []; //index of parameter filters specified for this sgd
+  this.updated_indexes=[];
 
 };
     
@@ -115,6 +116,7 @@ SGDTrainer.prototype = {
       for (var i=LL; i< NL;i++){
         this.last_grads.push(zeros(newParams[i].length));
         this.sum_square_gads.push(zeros(newParams[i].length));
+        this.updated_indexes.push(zeros(newParams[i].length));
       }
 
     } else {
@@ -131,6 +133,14 @@ SGDTrainer.prototype = {
 
     //assume we always update NN in neuralnetworks.js, so we can just assige newParams to this.last_params
     this.last_params = this.clone_parameter(newParams);
+
+    this.empty_parameters = [];
+    this.param_length = [0];
+    for (var i=0;i<this.last_params.length;i++){
+      this.empty_parameters.push([]);
+      this.param_length.push(this.param_length[i]+this.last_params[i].length);
+    }
+
     console.log('length last param '+this.last_params.length);
     console.log('length last grad '+this.last_grads.length);
 
@@ -188,6 +198,7 @@ SGDTrainer.prototype = {
     for (var i = 0; i < this.last_params.length; i++) {
       var p = this.last_params[i];
       var g = new_parameters.parameters[i];
+      var u = this.updated_indexes[i];
 
       // for (var j=0,len=p.length;j<len;j++){
       //   p[j]=(p[j]+g[j])/2;
@@ -196,6 +207,7 @@ SGDTrainer.prototype = {
       for (var j=0,len=g.length;j<len;j++){
         var k = g[j][0];
         p[k]=(p[k]+g[j][1])/2;
+        u[k]+=1;
       }
 
     }
