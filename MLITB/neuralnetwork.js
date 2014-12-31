@@ -600,7 +600,7 @@ NeuralNetwork.prototype = {
         var delay = 0
         while(i--){
             this.slaves[i].delay = delay;
-            delay++;
+            delay+=10;
             this.slave_job(this.slaves[i],this.initial_batch_size);
         }
         
@@ -988,27 +988,8 @@ NeuralNetwork.prototype = {
             return;
         }
 
-        // removed = false;
-
-        // var i = this.slaves_operating.length;
-        // while(i--) {
-        //     if(this.slaves_operating[i].socket.id == slave.socket.id) {
-        //         this.slaves_operating.splice(i, 1);
-        //         removed = true;
-        //     }
-        // }
 
         this.active_slaves_per_step[parameters.step]--;
-
-        // if(!removed) {
-        //     console.log("! Cannot reduce (slave) to (NN): Slave not active in this NN.", slave.socket.id, this.id);
-        //     return;
-        // }
-
-        
-        
-
-        // d = new Date().getTime();
 
         this.operation_results.push(parameters);
 
@@ -1029,93 +1010,38 @@ NeuralNetwork.prototype = {
 
 
 
-        // if(!this.slaves_operating.length) {
-        //     // was the last one.
-        //     // do reduction function.
-        //     this.is_reducing = false;
-
-        //     var wait_time = new Date().getTime()-this.start_reduce_time;
-        //     // console.log('waiting time '+d-this.start_reduce_time);
-            
-        //     this.aggregation();
-
-        //     this.operation_results = [];
-        //     console.log('waiting time ', wait_time);
-        //     console.log('> Reduce (NN)', this.id);
-
-        //     // begin again
-
-        //     this.realtime_elapsed += parseInt(this.iteration_time);
-
-        //     this.run();
-
-        // }
-
-
         this.slaves_reduction.push(slave);
         
         var fastest = false;
-        var or = this.operation_results.length; //for now this will always have length 1
-        while (or--){
-            var param = this.operation_results[or];
-            // console.log('param.step '+param.step+' this.step '+this.step);
-            if (param.step== this.step){
-                fastest = true;
-                this.next_step();
-                // this.step++;   
-                // this.permute_param();
-            }
-
-            this.total_error[param.step+1]+= param.error;
-            this.total_vector[param.step+1]+=param.nVector;
-            // if (!param.chunk.length){
-            //     continue;
-            // }
-            // var slave_position = this.param_permutation[param.step].indexOf(param.slave_id);
-            // var SGD = this.SGDs[slave_position];
-            
-            //write to param.step+1
-            // if parameter t+1 has not been sealed
-            var thrown=false;
-            // if (!this.final_parameters[param.step+1]){
-            if (true){
-                this.parameters[param.step+1]=this.SGD.reduce(param);
-                this.Net.setParams(this.parameters[param.step+1]);
-                slave.total_real_processed_data += param.nVector;
-                this.total_real_processed_data += param.nVector;
-            } 
-            else {
-                thrown=true;
-                // console.log('throw parameters from '+slave.socket.id);
-                this.delayed_slaves.push(slave);
-                slave.thrown_param_count+=1;
-                // throw the parameters because it's too old.
-            }
-            
-            
+        // var parameters = this.operation_results[or];
+        // console.log('parameters.step '+parameters.step+' this.step '+this.step);
+        if (parameters.step == this.step){
+            fastest = true;
+            this.next_step();
         }
 
-        // //set new batch size for this slave
-        // console.log(JSON.stringify(this.active_slaves_per_step));
-        // //for the fastest slave
-        // var wp;
-        // if (!this.active_slaves_per_step[this.step]){
-        //     //the fastest step
-        //     console.log('the fastest');
-        //     wp = this.initial_batch_size;
-        //     this.fastest_working_time = parameters.working_time;
-        //     this.fastest_start_time =  new Date().getTime();
-            
-        // } else {
-        //     var remaining_time = this.fastest_working_time - (new Date().getTime() - this.fastest_start_time);
-        //     if (remaining_time>500){
-        //         console.log('higher than 500');
-        //         wp = Math.round((parameters.nVector/parameters.working_time)*remaining_time);
-        //     } else {
-        //         wp = Math.round((parameters.nVector/parameters.working_time)*this.fastest_working_time);
-        //     }
-        // }
+        this.total_error[parameters.step+1]+= parameters.error;
+        this.total_vector[parameters.step+1]+=parameters.nVector;
         
+        //write to param.step+1
+        // if parameter t+1 has not been sealed
+        // var thrown=false;
+        // if (!this.final_parameters[param.step+1]){
+        this.parameters[parameters.step+1]=this.SGD.reduce(parameters);
+        this.Net.setParams(this.parameters[parameters.step+1]);
+        slave.total_real_processed_data += parameters.nVector;
+        this.total_real_processed_data += parameters.nVector;
+        // } 
+        // else {
+        //     thrown=true;
+        //     // console.log('throw parameters from '+slave.socket.id);
+        //     this.delayed_slaves.push(slave);
+        //     slave.thrown_param_count+=1;
+        //     // throw the parameters because it's too old.
+        // }
+            
+            
+
 
         var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
 
@@ -1130,536 +1056,40 @@ NeuralNetwork.prototype = {
         this.operation_results=[];
         this.slaves_reduction =[];
 
-        if (!thrown){
-            var release_slaves = [slave];
-            if (fastest){
-                console.log(this.delayed_slaves.length+' slaves in delayed_slaves');
-                release_slaves = release_slaves.concat(this.delayed_slaves);
-                this.delayed_slaves = [];
-            }
+        // var slave = release_slaves[r];
+        this.slave_job(slave, wp);
 
-            var r = release_slaves.length;
-            while (r--){
-                var slave = release_slaves[r];
-                this.slave_job(slave, wp);
+        // find parameter chunk for this slave
+        slave.send('parameters', {
+            step : this.step
 
-                // find parameter chunk for this slave
-                // var slave_chunk = this.param_chunk[slave_position];
-                // console.log('save chunk '+JSON.stringify(slave_chunk));
-                slave.send('parameters', {
-                    // type: 'parameters',
-                    step : this.step
+        });    
 
-                });    
-            }
+        // if (!thrown){
+        //     var release_slaves = [slave];
+        //     if (fastest){
+        //         console.log(this.delayed_slaves.length+' slaves in delayed_slaves');
+        //         release_slaves = release_slaves.concat(this.delayed_slaves);
+        //         this.delayed_slaves = [];
+        //     }
+
+        //     var r = release_slaves.length;
+        //     while (r--){
+        //         var slave = release_slaves[r];
+        //         this.slave_job(slave, wp);
+
+        //         // find parameter chunk for this slave
+        //         slave.send('parameters', {
+        //             step : this.step
+
+        //         });    
+        //     }
                 
-        }
+        // }
            
         
-        // var o = this.slaves_reduction.length;
-        // while (o--){
-        //     var slave = this.slaves_reduction[o];
-        //     // console.log(JSON.stringify(this.param_permutation));
-        //     // var slave_position = this.param_permutation[this.step].indexOf(slave.socket.id);
-        //     this.slave_job(slave, wp);
-
-        //     // find parameter chunk for this slave
-        //     // var slave_chunk = this.param_chunk[slave_position];
-        //     // console.log('save chunk '+JSON.stringify(slave_chunk));
-        //     slave.send('parameters', {
-        //         // type: 'parameters',
-        //         chunk: [],
-        //         step : this.step
-
-        //     });    
-        // }
-
-        
-
-        
-
-        
-
     }
 
-    // aggregation: function() {
-
-        // if(!this.operation_results.length) {
-        //     console.log("! Cannot aggregate (NN): No operation results.", this.id);
-        //     return;
-        // }
-
-        // console.log('aggregation');
-
-        // if(this.hyperparameters_changed) {
-        //     console.log('Updated (NN) with new hyperparameters.', this.id);
-        //     this.SGD.set_parameters(this.hyperparameters);
-        //     this.hyperparameters_changed = false;
-        // }
-
-        // this.SGD.reduce(this);
-        // var or = this.operation_results.length; //for now this will always have length 1
-        // while (or--){
-        //     var param = this.operation_results[or];
-        //     if (param.step== this.step){
-        //         this.step++;   
-        //         this.permute_param();
-        //     }
-        //     if (!param.chunk.length){
-        //         continue;
-        //     }
-        //     var slave_position = this.param_permutation[param.step].indexOf(param.slave_id);
-        //     var SGD = this.SGDs[slave_position];
-        //     SGD.reduce(this); // operation result should be consistent with SGD
-            
-        // }
-        
-        // var o = this.slaves_reduction.length;
-        // while (o--){
-        //     var slave = this.slaves_reduction[o];
-        //     console.log(JSON.stringify(this.param_permutation));
-        //     var slave_position = this.param_permutation[this.step].indexOf(slave.socket.id);
-        //     this.slave_job(slave);
-
-        //     // find parameter chunk for this slave
-        //     var slave_chunk = this.param_chunk[slave_position];
-        //     console.log('save chunk '+JSON.stringify(slave_chunk));
-        //     slave.send('parameters', {
-        //         // type: 'parameters',
-        //         chunk: slave_chunk,
-        //         step : this.step
-
-        //     });    
-        // }
-
-        // console.log('finish aggregation');
-        
-
-        // // this.notify_bosses();
-        // this.master.broadcast_nns();
-
-    // }
-
-    // chunk_param : function() {
-    //     this.param_chunk = [];
-    //     var params=this.Net.getParams();
-    //     var p=params.length; //for now don't consider length of filter
-    //     var s=this.slaves.length;
-    //     var chunk = Math.ceil(p/s);
-    //     var pi=0;
-    //     while (s--){
-    //         var idxes = [];
-    //         var param_chunk = [];
-    //         var c = chunk;
-    //         while (c-- && pi < p){
-    //             idxes.push(pi);
-    //             param_chunk.push(params[pi]);
-    //             pi++;
-    //         }
-    //         this.param_chunk.push(idxes);
-    //         var SGD = new SGDTrainer(this, {});
-    //         SGD.set_parameters(this.hyperparameters);
-    //         SGD.resize_param(param_chunk);
-    //         SGD.chunk = idxes;
-    //         this.SGDs.push(SGD);
-    //     }
-    // },
-
-
-    // permute_param : function(){
-    //     //do this after we know how many slaves connected
-    //     //probably when click run ? & everytime this.step increase
-    //     if (this.param_permutation[this.step]){
-    //         //permutation already exist
-    //         console.log('permutation for step '+this.step+ 'alread exist');
-    //         return;
-    //     }
-
-    //     shuffle = function(o){
-    //         for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
-    //         return o;
-    //     };
-
-    //     sortNumber = function(a,b) {
-    //         return a - b;
-    //     }
-    //     var s = this.slaves.length;
-    //     var permutation=[];
-    //     while (s--){
-    //         permutation.push(this.slaves[s].socket.id);
-    //     }
-    //     permutation = shuffle(permutation);
-
-    //     this.param_permutation[this.step]=permutation;
-        
-    //     //remove old history
-    //     var keys = Object.keys(this.param_permutation);
-    //     if (keys.length>5){
-    //         delete this.param_permutation[keys.map(Number).sort(sortNumber)[0]];
-    //     }
-        
-        
-    // },
-
-    // ,
-
-    // allocate: function() {
-
-    //     sort_data = function(a,b) {
-    //         //prioritize less assigned data
-    //         // sort hight assigned to low, but process from the end of list
-    //         // cache = a.cache.length - b.cache.length; 
-    //         cache = b.assigned_ctr - a.assigned_ctr;
-    //         if(cache == 0) {
-    //             return a.cache.length - b.cache.length;
-    //         }
-    //         return cache;
-    //     }
-
-    //     // sort_slaves = function(a, b) {
-    //     //     // low to high
-    //     //     cache = b.assigned_cache.length - a.assigned_cache.length;
-    //     //     if(cache == 0) {
-    //     //         return a.assigned_power.length - b.assigned_power.length;
-    //     //     }
-    //     //     return cache;
-    //     // }
-
-    //     filter_unfilled_slaves = function(a) {
-    //         return !a.saturated()
-    //     }
-
-    //     filter_cache_slaves = function(a) {
-    //         return a.cache_left() > 0
-    //     }
-
-    //     in_slave_cache = function(point, slave) {
-    //         //in cache or on the way
-            
-    //         var m = point.assigned.length;
-    //         while(m--) {
-    //             if(point.assigned[m].socket.id == slave.socket.id) {
-    //                 return true;
-    //             }
-    //         }
-    //         // return false;
-
-    //         var m = point.cache.length;
-    //         while(m--) {
-    //             if(point.cache[m].socket.id == slave.socket.id) {
-    //                 return true;
-    //             }
-    //         }
-    //         return false;
-
-            
-    //     }
-
-    //     rm_assigned = function(point, slave) {
-    //         //on the way
-    //         // var m = point.assigned.length;
-    //         // while(m--) {
-    //         //     if(point.assigned[m].socket.id == slave.socket.id) {
-    //         //         return true;
-    //         //     }
-    //         // }
-    //         // return false;
-
-    //         var j = point.assigned.length;
-
-    //         while(j--) {
-    //             if(point.assigned[j].socket.id == slave.socket.id) {
-    //                 point.assigned.splice(j, 1);
-    //             }
-    //         }
-
-    //     }
-
-    //     // in_cache = function(point, slave) {
-
-    //     //     // check on BOSS, not on CLIENT.
-    //     //     // if a BOSS drops, many CLIENTS drop.
-    //     //     // else fake data coverage.
-
-    //     //     var m = point.cache.length;
-    //     //     while(m--) {
-    //     //         if(point.cache[m].boss.socket.id == slave.boss.socket.id) {
-    //     //             return true;
-    //     //         }
-    //     //     }
-
-    //     //     // var m = point.assigned.length;
-    //     //     // while(m--) {
-    //     //     //     if(point.assigned[m].boss.socket.id == slave.boss.socket.id) {
-    //     //     //         return true;
-    //     //     //     }
-    //     //     // }
-    //     //     return false;
-
-    //     // }
-
-    //     // in_cache = function(point, slave) {
-
-    //     //     var m = point.cache.length;
-    //     //     while(m--) {
-    //     //         if(point.cache[m].socket.id == slave.socket.id) {
-    //     //             return true;
-    //     //         }
-    //     //     }
-    //     //     return false;
-
-    //     // }
-
-    //     total_power = this.total_power()
-
-    //     normalize_factor = total_power / this.data.length;
-
-    //     console.log("> (NN) allocates (power) with (factor):", this.id, total_power, normalize_factor);
-
-    //     fraction_difference = 0;
-
-    //     var i = this.slaves.length;
-
-    //     // assign all slaves their power
-
-    //     while(i--) {
-    //         slave = this.slaves[i];
-
-    //         power_float = slave.power / normalize_factor;
-    //         power_int = Math.ceil(power_float);
-
-    //         if(power_int > slave.max_power) {
-    //             power_int = slave.max_power;
-    //         }
-
-    //         slave.assigned_power = power_int
-
-    //         // dump assigned cache
-    //         slave.assigned_cache = [];
-    //         slave.process = [];
-
-    //     }
-
-
-    //     // sort data descending by #allocated/processed
-    //     this.data = this.data.sort(sort_data);
-
-    //     var un_cached =0;
-    //     var uncached_list = [];
-
-
-    //     // assign data points to slaves having it already in cache or on the way/assigned
-    //     var j = this.data.length;
-    //     while(j--) {
-
-    //         point = this.data[j];
-
-    //         point.process = [];
-    //         point.selected = false;
-
-    //         var k = point.assigned.length;
-
-    //         while(k--) {
-
-    //             var cache_slave = point.assigned[k];
-
-    //             if(!cache_slave.saturated() ) {
-    //                 cache_slave.assigned_cache.push(point);
-    //                 point.process.push(cache_slave);
-
-    //                 break;
-    //             }
-
-    //         }
-
-    //         if (! point.process.length){
-    //             un_cached +=1;
-    //             uncached_list.push(point); //now the remaining list become ascending
-    //         }
-
-    //     }
-
-    //     console.log('uncached  data '+un_cached);
-    //     var U = uncached_list.length; //here the list is ascending
-    //     var slaves = this.slaves;
-
-
-
-    //     // console.log('AFTER ASSIGN CACHE');
-    //     // var ll = this.slaves.length;
-    //     // while(ll--){
-    //     //     if (!this.slaves[ll].saturated()){
-    //     //         console.log('#### '+this.slaves[ll].socket.id+' NOT SATURATED');    
-    //     //     }
-    //     // }
-
-    //     // var UA = un_assigned.length;
-    //     var un_processed = [];
-    //     for (var u=0;u<U;u++){
-
-    //         var point = uncached_list[u];
-    //         //point is not in anybody cache, and not being transferred
-    //         //to preserve consistent order of traversing slaves, start from the first
-    //         var L = slaves.length;
-    //         var l = slaves.length;
-
-    //         while (l--){
-    //             var slave = slaves[l];
-    //             if ( (!slave.saturated()) && (slave.uncached.length < slave.power)){
-    //                 slave.assigned_cache.push(point);
-                
-    //                 if(!in_slave_cache(point, slave)) {
-    //                     // slave.uncached.push(point);
-                         
-                        
-    //                 }
-    //                 rm_assigned(point,slave);
-    //                 point.assigned.push(slave);    
-                    
-    //                 point.process.push(slave);
-                    
-    //                 break;
-    //             }
-
-    //         }
-    //         if (!point.process.length){
-    //             un_processed.push(point);
-    //         }
-    //     }
-
-    //     console.log('unproccessed data '+un_processed.length);
-
-        
-        
-        
-
-        
-
-    //     var I = this.slaves.length;
-    //     for (var i=0;i<I;i++){
-    //     // while(i--) {
-    //         // this.slaves[i].process_cache(this);
-    //     }
-
-    // },
-
-    // initiate: function() {
-
-    //     sort_data = function(a,b) {
-    //         //prioritize less assigned data
-    //         // low to high
-    //         // cache = a.cache.length - b.cache.length; 
-    //         cache = b.assigned_ctr - a.assigned_ctr;
-    //         if(cache == 0) {
-    //             return b.cache.length - a.cache.length;
-    //         }
-    //         return cache;
-    //     }
-
-    //     filter_data = function(a) {
-    //         return a.cache.length
-    //     }
-
-    //     sort_slaves = function(a, b) {
-    //         // low to high
-    //         return a.assigned_power.length - b.assigned_power.length;
-    //     }
-
-    //     filter_slaves = function(a) {
-    //         return a.assigned_power >= 10; // at least 10 points, or too slow.
-    //     }
-
-    //     in_cache = function(point, slave) {
-
-    //         var m = point.cache.length;
-    //         while(m--) {
-    //             if(point.cache[m].socket.id == slave.socket.id) {
-    //                 return true;
-    //             }
-    //         }
-    //         return false;
-
-    //     }
-
-    //     console.log("Initiating (NN)", this.id);
-
-    //     var datamap = this.data.filter(filter_data)//sort(sort_data);
-
-    //     if(!datamap.length) {
-    //         console.log('> 1 (NN) cannot initiate: data not available on slaves (yet)', this.id);
-    //         this.running = false;
-    //         return
-    //     }
-
-    //     // sort on slave cache size
-    //     // var slaves = this.slaves.filter(filter_slaves).sort(sort_slaves);
-    //     var slaves = this.slaves.filter(filter_slaves)
-    //     //var slaves = this.slaves.sort(sort_slaves);
-
-    //     if(!slaves.length) {
-    //         // should not be possible because datamap checks this aswell above.
-    //         console.log('> 2 (NN) cannot initiate: data not available on slaves (yet)', this.id);
-    //         this.running = false;
-    //         return
-    //     }
-
-        
-
-    //     var slaves_to_work = 0;
-
-    //     var j = datamap.length;
-
-    //     console.log('datamap length '+datamap.length);
-    //     var notincache=0;
-    //     while (j--){
-    //         var point = datamap[j]
-    //         var slave = point.process[0]; //data has been filtered, so there's must be at least one (or exactly one) slave
-
-    //         if (!point.process.length){
-    //             continue;
-    //             //not assigned, but in cache
-    //             //what to do?
-    //         }
-            
-    //         if(in_cache(point,slave)) {
-    //             // assign
-    //             if (slave.process.length< slave.assigned_power){
-    //                 slave.process.push(point.id);
-
-    //                 point.selected = true;
-    //                 point.assigned_ctr+=1
-    //             }
-    //             // else if(slave.process.length == slave.assigned_power) {
-    //             //     console.log('THIS SHOULD HAPPEN ONCE OR NEVER');
-    //             // }
-
-    //         } else {
-    //             //weird sometime this happen
-    //             notincache +=1
-    //         }
-    //     }
-    //     //weird sometime this appear
-    //     console.log('not in cache '+notincache);
-
-    //     var i = slaves.length;
-    //     while (i--){
-    //         var slave = slaves[i];
-    //         if(slave.process.length > 0) {
-
-    //             this.slaves_operating.push(slave);
-    //             slave.work(this);
-
-    //             slaves_to_work += 1;
-
-    //         }
-    //     }
-
-
-    //     // Test.dataset_should_be_fully_allocated(this);
-
-    //     console.log('(NN) sent', slaves_to_work, 'slaves to work:', this.id);
-
-    // },
 
 }
 
