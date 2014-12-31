@@ -1904,33 +1904,30 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
       }
 
     },
-    reduce : function(markovResults){
+    reduce : function(totalVector){
       //for the first time, get parameter from Net
-      if (this.last_params.length == 0){
-        var pgs = this.net.getParamsAndGrads();
-        this.last_params =  pgs;
-      }
+      // if (this.last_params.length == 0){
+      //   var pgs = this.net.getParamsAndGrads();
+      //   this.last_params =  pgs;
+      // }
+      var lp = this.net.getParams();
+      this.last_params = lp;
+
+      var grad = this.net.getGrads();
       
       //only the first time to initialize the last grad
-      if (this.last_grads.length == 0 && this.momentum > 0.0){
-        for (var i = 0; i < this.last_params.length; i++) {
-          this.last_grads.push(global.zeros(pgs[i].grads.length));
+      if (this.sum_square_gads.length == 0){
+        for (var i=0,len=lp.length; i<len; i++) {
+          this.last_grads.push(global.zeros(lp[i].length));
+          this.sum_square_gads.push(global.zeros(lp[i].length));
         };
       }
 
       //iterate over each param and grad vector
       for (var i = 0; i < this.last_params.length; i++) {
-        var pg =this.last_params[i];
-        var p = pg.params;
-        var g = pg.grads;
-        for (var gi = 0; gi < g.length; i++) {
-          total_gi = 0.0;
-          for (var k = 0; k < markovResults.length; k++) {
-            console.log('could be problem at below');
-            total_gi+=markovResults[k].parameters[i].grads[gi];
-          };
-          g[gi] = total_gi;
-        };
+        var p = lp[i];
+        var g = grad[i];
+        var ssg = this.sum_square_gads[i];
         
         var plen = p.length;
         var lg = this.last_grads[i];
@@ -1939,17 +1936,30 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           this.l1_loss += this.l1_decay*Math.abs(p[j]);
           var l2_grad = this.l2_decay*p[j];
           var l1_grad = this.l1_decay*(p[j]>0 ? 1 : -1);
-          var lgj = lg[j];
-          var dw = (1.0-this.momentum)*this.learning_rate*((l1_grad+l2_grad+g[j])/this.batch_size)+this.momentum*lgj;
+
+          // add new gradient element for new added neuron
+          if (typeof lg[j]==='undefined'){
+            lg.push(0.0);
+          }
+          // var lgj = lg[j];
+          // add new gradient element for new added neuron
+          if (typeof ssg[j]==='undefined'){
+            ssg.push(0.0);
+          }
+          ssg[j] += ((g[j]/totalVector) *(g[j]/totalVector));
+          var tess = Math.sqrt(ssg[j]);
+          if (tess<=1){
+            tess=1;
+          }
+
+          // var dw = (1.0-this.momentum)*this.learning_rate*((l1_grad+l2_grad+g[j])/this.batch_size)+this.momentum*lg[j];
+          var dw = this.learning_rate/tess*((l1_grad+l2_grad+g[j])/totalVector);
           p[j] -= dw;
-          lgj = dw;
+          // lgj = dw;
           g[j] = 0.0;
         };
       };
-      //set the new parameter to the markovResults
-      for (var i = 0; i < markovResults.length; i++) {
-        markovResults[i].parameters = this.last_params;
-      };
+      return this.last_params;
     }
   };
   global.SGDTrainer = SGDTrainer;

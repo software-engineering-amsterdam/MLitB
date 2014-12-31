@@ -425,8 +425,8 @@ Slave.prototype = {
         }
 
         reduction = function() {
-
-            param = that.Net.getGrads();
+            param = that.SGD.reduce(nVector);
+            // param = that.Net.getGrads();
             var wait_time = that.receive_param_time - that.send_param_time;
             parameters = {
                 parameters : param,
@@ -553,6 +553,7 @@ Slave.prototype = {
 
         // start empty Net
         this.Net = new mlitb.Net();
+        this.SGD = new mlitb.SGDTrainer(this.Net, {});
 
         this.download_configuration();
 

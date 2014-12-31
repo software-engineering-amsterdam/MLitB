@@ -162,7 +162,8 @@ NeuralNetwork.prototype = {
     download_parameters: function() {
 
         console.log('nn download_parameters');
-        var parameters = this.final_parameters[this.step-1];
+        // var parameters = this.final_parameters[this.step-1];
+        var parameters = this.Net.getParams();
         if(!parameters) {
             parameters = this.configuration.params;
         }
@@ -1050,6 +1051,7 @@ NeuralNetwork.prototype = {
 
         // }
 
+
         this.slaves_reduction.push(slave);
         
         var fastest = false;
@@ -1075,8 +1077,10 @@ NeuralNetwork.prototype = {
             //write to param.step+1
             // if parameter t+1 has not been sealed
             var thrown=false;
-            if (!this.final_parameters[param.step+1]){
-                this.parameters[param.step+1]=this.SGD.reduce(this);
+            // if (!this.final_parameters[param.step+1]){
+            if (true){
+                this.parameters[param.step+1]=this.SGD.reduce(param);
+                this.Net.setParams(this.parameters[param.step+1]);
                 slave.total_real_processed_data += param.nVector;
                 this.total_real_processed_data += param.nVector;
             } 
