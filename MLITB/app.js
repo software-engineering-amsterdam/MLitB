@@ -105,11 +105,12 @@ app.get('/download-nn/:nn_id', function(req, res) {
 
 });
 
-app.get('/nn-parameters/:nn_id', function(req, res) {
+app.get('/nn-parameters/:nn_id/:sl_id', function(req, res) {
 
     var nn_id = req.param('nn_id');
+    var sl_id = req.param('sl_id');
 
-    var r = master.nn_parameters(nn_id);
+    var r = master.nn_parameters(nn_id,sl_id);
 
     if(!r) {
         res.status(404).send('Not found');

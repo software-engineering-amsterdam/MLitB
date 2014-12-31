@@ -112,7 +112,15 @@ Slave.prototype = {
 
         var parameters = data.parameters;
         var new_labels = data.new_labels;
-        // this.step = data.step;
+        var job = data.job;
+
+        console.log(this.id+' '+JSON.stringify(job));
+        this.step = Math.max(this.step,data.step);
+
+        this.send_message_to_boss('worker_stats', {
+            worker_power: job.power,
+        });
+        
 
         var newL = new_labels.length;
         var oldL = Object.keys(this.Net.label2index).length;
@@ -149,7 +157,14 @@ Slave.prototype = {
             return this.stats(step);
         }
 
-        this.work(this.wait_parameters);
+        if (job){
+            this.work(job);    
+        } else {
+            //no job because there's no data in here
+            this.status('waiting for data to arrive');
+            return;
+        }
+        
 
         // if(this.waiting_for_parameters == true) {
 
@@ -253,33 +268,33 @@ Slave.prototype = {
 
     },    
 
-    job: function(d) {
+    // job: function(d) {
 
-        this.send_message_to_boss('worker_stats', {
-            worker_power: d.power,
-        });
+    //     this.send_message_to_boss('worker_stats', {
+    //         worker_power: d.power,
+    //     });
 
-        // start time immediately
-        this.start_time = (new Date).getTime();
+    //     // start time immediately
+    //     // this.start_time = (new Date).getTime();
 
-        var step = d.step;
+    //     var step = d.step;
 
-        // IMPORTANT: it CANNOT work when the parameters are not downloaded yet by XHR!
-        if(this.step < step) {
-            this.waiting_for_parameters = true;
-            this.wait_parameters = d;
-            this.status('waiting for parameters');
+    //     // IMPORTANT: it CANNOT work when the parameters are not downloaded yet by XHR!
+    //     if(this.step < step) {
+    //         this.waiting_for_parameters = true;
+    //         this.wait_parameters = d;
+    //         this.status('waiting for parameters');
 
-            console.log(' $$ parameters NOT on time for work');
+    //         console.log(' $$ parameters NOT on time for work');
 
-            return;
-        }
+    //         return;
+    //     }
 
-        console.log(' $$ parameters on time for work');
-        if (step==0)
-            this.work(d);
+    //     console.log(' $$ parameters on time for work');
+    //     if (step==0)
+    //         this.work(d);
 
-    },
+    // },
 
     work: function(d) {
 
@@ -425,6 +440,7 @@ Slave.prototype = {
         }
 
         reduction = function() {
+            
             param = that.SGD.reduce(nVector);
             // param = that.Net.getGrads();
             var wait_time = that.receive_param_time - that.send_param_time;
@@ -451,6 +467,8 @@ Slave.prototype = {
                 parameters: parameters //,
                 //new_labels: that.new_labels
             }); 
+            this.step++;
+            that.download_new_parameters();
 
             
 
@@ -512,12 +530,12 @@ Slave.prototype = {
 
     download_new_parameters: function(d) {
         // download NN parameters by XHR
-        this.chunk = d.chunk;
-        this.step = d.step;
+        // this.chunk = d.chunk;
+        // this.step = d.step;
         var that = this;
 
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', this.host + '/nn-parameters/' + this.nn_id + '/', true);
+        xhr.open('GET', this.host + '/nn-parameters/' + this.nn_id + '/'+this.id, true);
         xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         // xhr.setRequestHeader("Connection", "keep-alive");
 
@@ -584,7 +602,7 @@ Slave.prototype = {
         } else if(data.type == 'ping') {
             this.send_message_to_master('pong');
         } else if (data.type =='parameters'){
-            this.download_new_parameters(data.data);
+            this.download_new_parameters();
         }
 
     },

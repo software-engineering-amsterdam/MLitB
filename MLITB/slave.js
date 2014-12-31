@@ -143,9 +143,6 @@ Slave.prototype.work = function(nn) {
     }
 
     var work_data = {
-        
-        data: this.process,
-        step: nn.step,
         delay : this.delay,
         working_power : this.working_power,
         working_data : wd
@@ -171,7 +168,8 @@ Slave.prototype.work = function(nn) {
 
     console.log(' $$', this.socket.id, 'works on', this.working_power, 'data, '+this.thrown_param_count+' thrown, '+(this.total_real_processed_data/nn.total_real_processed_data*100).toFixed(2)+' % real processed data, '+(this.working_data.length/nn.data.length*100).toFixed(2)+' % working data');
 
-    this.send('job', work_data);
+    // this.send('job', work_data);
+    return work_data;
 
     // this.working_data = []; //empty working data
 

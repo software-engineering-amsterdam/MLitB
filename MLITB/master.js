@@ -136,16 +136,17 @@ Master.prototype = {
 
     },
 
-    nn_parameters: function(nn_id) {
+    nn_parameters: function(nn_id,sl_id) {
 
         var nn = this.nn_by_id(nn_id);
+        var slave = this.slave_by_id(sl_id);
 
         if(!nn) {
             console.log("! Could not download NN parameters: NN not found (NN id): ", nn_id);
             return false;
         }
 
-        return nn.download_parameters();
+        return nn.download_parameters(slave);
 
     },
 

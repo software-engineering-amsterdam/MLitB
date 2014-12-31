@@ -159,19 +159,22 @@ NeuralNetwork.prototype = {
 
     },
 
-    download_parameters: function() {
+    download_parameters: function(slave) {
 
         console.log('nn download_parameters');
         // var parameters = this.final_parameters[this.step-1];
         var parameters = this.Net.getParams();
-        if(!parameters) {
-            parameters = this.configuration.params;
+        var job = false;
+        if (this.running){
+            job = this.slave_job(slave);    
         }
+        
 
         return {
             parameters: parameters,
             step: this.step,
-            new_labels : this.Net.getLabel()
+            new_labels : this.Net.getLabel(),
+            job : job
         }
 
     },
@@ -599,10 +602,17 @@ NeuralNetwork.prototype = {
         var i = this.slaves.length;
         var delay = 0
         while(i--){
-            this.slaves[i].delay = delay;
+            var slave = this.slaves[i];
+            slave.delay = delay;
             delay+=10;
-            this.slave_job(this.slaves[i],this.initial_batch_size);
+            // this.slave_job(this.slaves[i],this.initial_batch_size);
+
+            slave.send('parameters', {
+                step : this.step
+            }); 
         }
+
+
         
         // if (!this.param_chunk.length){
         //     this.chunk_param();
@@ -863,12 +873,16 @@ NeuralNetwork.prototype = {
 
     },
 
-    slave_job : function(slave, working_power){
-        slave.working_power = working_power;
+    slave_job : function(slave){
+        var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
+        if (!wp || wp==0){
+            wp = this.initial_batch_size;
+        }
+        slave.working_power = wp;
         slave.process_cache(this);
         if (slave.cache_count){
-            slave.work(this);    
-            return true;
+            return slave.work(this);    
+            // return true;
         } else {
             console.log('no data in slave cache ');
             return false;
@@ -1043,9 +1057,9 @@ NeuralNetwork.prototype = {
             
 
 
-        var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
+        // var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
 
-        console.log('working power : '+wp);
+        // console.log('working power : '+wp);
 
         slave.add_working_time(parseInt(parameters.working_time));
 
@@ -1057,13 +1071,12 @@ NeuralNetwork.prototype = {
         this.slaves_reduction =[];
 
         // var slave = release_slaves[r];
-        this.slave_job(slave, wp);
+        // this.slave_job(slave, wp);
 
-        // find parameter chunk for this slave
-        slave.send('parameters', {
-            step : this.step
+        // slave.send('parameters', {
+        //     step : this.step
 
-        });    
+        // });    
 
         // if (!thrown){
         //     var release_slaves = [slave];
