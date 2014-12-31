@@ -141,8 +141,27 @@ SGDTrainer.prototype = {
     // old_parameters = nn.configuration.parameters;
     new_parameters = param;
 
-    // step = nn.step;
+    var temp_parameters;
+    if (param.parameters.length !=this.last_params.length){
+      // last_params = [[1,2],[3,4,5],[6,7,8,9],[10]];
+      console.log('global indexing');
+      // temp_parameters = [];
 
+      
+      var temp_parameters=this.clone_parameter(this.empty_parameters);
+      for (var i=0,plen=param.parameters.length;i<plen;i++){
+        var p = param.parameters[i];
+        for (var j=1;j<this.param_length.length;j++){
+          if (p[0]<this.param_length[j]){
+            p[0]=p[0]-this.param_length[j-1];
+            temp_parameters[j-1].push(p);
+            break;
+          }
+        }
+      }
+
+      new_parameters.parameters = temp_parameters;
+    }
 
     var totalError=0.0;
     var totalVector=0;
@@ -165,12 +184,18 @@ SGDTrainer.prototype = {
     //e.g there are two conv layers, each has 2 and 3 filters, 
     //then last_params will store [conv1_filter1,conv1_filter2,conv1_bias,conv2_filter1,...] total 7 parameter vectors.
     //thus, i is index to the parameter/bias vector.
+    // console.log(new_parameters.parameters[0]);
     for (var i = 0; i < this.last_params.length; i++) {
       var p = this.last_params[i];
       var g = new_parameters.parameters[i];
 
-      for (var j=0,len=p.length;j<len;j++){
-        p[j]=(p[j]+g[j])/2;
+      // for (var j=0,len=p.length;j<len;j++){
+      //   p[j]=(p[j]+g[j])/2;
+      // }
+
+      for (var j=0,len=g.length;j<len;j++){
+        var k = g[j][0];
+        p[k]=(p[k]+g[j][1])/2;
       }
 
     }
