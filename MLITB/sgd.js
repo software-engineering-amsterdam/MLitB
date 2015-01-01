@@ -36,6 +36,8 @@ var SGDTrainer = function (nn, net) {
   this.proceeded_data = {};
   this.chunk = []; //index of parameter filters specified for this sgd
   this.updated_indexes=[];
+  this.slaves_updated_indexes = {};
+  this.is_replicated = false;
 
 };
     
@@ -92,12 +94,19 @@ SGDTrainer.prototype = {
   //   this.is_initialized = true;
   // },
   clone_parameter: function(param){
-        var newParam = [];
-        for (var i=0;i<param.length;i++){
-            newParam.push(param[i].slice(0));
-        }
-        return newParam;
-    },
+      var newParam = [];
+      for (var i=0;i<param.length;i++){
+          newParam.push(param[i].slice(0));
+      }
+      return newParam;
+  },
+
+  replicate_updated_indexes : function(slaves){
+    this.is_replicated = true;
+    for (var i=0;i<slaves.length;i++){
+      this.slaves_updated_indexes[slaves[i].socket.id]=this.clone_parameter(this.updated_indexes);
+    }
+  },
 
   resize_param : function(newParams){
     if (newParams.length==0){
@@ -127,6 +136,8 @@ SGDTrainer.prototype = {
         this.last_grads[i]=temp;
         var temp = this.sum_square_gads[i].concat(zeros(newParams[i].length-this.sum_square_gads[i].length))
         this.sum_square_gads[i]=temp;
+        var temp = this.updated_indexes[i].concat(zeros(newParams[i].length-this.updated_indexes[i].length))
+        this.updated_indexes[i]=temp;
       }
 
     }
@@ -146,7 +157,7 @@ SGDTrainer.prototype = {
 
   },
 
-  reduce : function(param){
+  reduce : function(param,slave_id){
     start_reduce = new Date().getTime();
     // old_parameters = nn.configuration.parameters;
     new_parameters = param;
@@ -195,10 +206,11 @@ SGDTrainer.prototype = {
     //then last_params will store [conv1_filter1,conv1_filter2,conv1_bias,conv2_filter1,...] total 7 parameter vectors.
     //thus, i is index to the parameter/bias vector.
     // console.log(new_parameters.parameters[0]);
+    var updated_indexes = this.slaves_updated_indexes[slave_id];
     for (var i = 0; i < this.last_params.length; i++) {
       var p = this.last_params[i];
       var g = new_parameters.parameters[i];
-      var u = this.updated_indexes[i];
+      var u = updated_indexes[i];
 
       // for (var j=0,len=p.length;j<len;j++){
       //   p[j]=(p[j]+g[j])/2;
@@ -211,7 +223,6 @@ SGDTrainer.prototype = {
       }
 
     }
-
     return this.last_params;
 
   }

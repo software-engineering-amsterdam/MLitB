@@ -1956,7 +1956,7 @@ var mlitb = mlitb || { REVISION: 'ALPHA' };
           var dw = this.learning_rate/tess*((l1_grad+l2_grad+g[j])/totalVector);
           p[j] -= dw;
           // lgj = dw;
-          g[j] = 0.0;
+          // g[j] = 0.0;
         };
       };
       return this.last_params;

@@ -612,6 +612,10 @@ NeuralNetwork.prototype = {
             }); 
         }
 
+        if (!this.SGD.is_replicated){
+            this.SGD.replicate_updated_indexes(this.slaves);
+        }
+
 
         
         // if (!this.param_chunk.length){
@@ -893,6 +897,7 @@ NeuralNetwork.prototype = {
     next_step : function(){
         //step is increased everytime all clients that pickup parameter at time t have returned their gradients
         //or the fastest client has return
+        // console.log(this.SGD.slaves_updated_indexes[this.slaves[0].socket.id]);
 
         this.error = this.total_error[this.step]/this.total_vector[this.step];
         
@@ -966,6 +971,10 @@ NeuralNetwork.prototype = {
                 //print total workingtime
                 var wname = 'wait_time_'+slave.socket.id;
                 this.logger(wname, JSON.stringify(slave.wait_time_record));
+
+                //print updated indexes distribution
+                var dname = 'index_dist_'+slave.socket.id;
+                this.logger(dname, JSON.stringify(this.SGD.slaves_updated_indexes[slave.socket.id]));
                 
             }
 
@@ -1041,7 +1050,7 @@ NeuralNetwork.prototype = {
         // if parameter t+1 has not been sealed
         // var thrown=false;
         // if (!this.final_parameters[param.step+1]){
-        this.parameters[parameters.step+1]=this.SGD.reduce(parameters);
+        this.parameters[parameters.step+1]=this.SGD.reduce(parameters,slave.socket.id);
         this.Net.setParams(this.parameters[parameters.step+1]);
         slave.total_real_processed_data += parameters.nVector;
         this.total_real_processed_data += parameters.nVector;

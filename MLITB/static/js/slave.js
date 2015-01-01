@@ -564,13 +564,14 @@ Slave.prototype = {
         reduction = function() {
             
             var param = that.SGD.reduce(nVector);
-            console.log('first '+JSON.stringify(param[0]));
+            // var param = that.Net.getParams();
             var grads = that.Net.getGrads();
 
-            var indexing = 'global';
+            var indexing = 'local';
             var method = 'sort';
             var threshold = 0.60;
             grads = partial_param(grads,indexing,method,threshold);
+
 
             var cut_param = [];
             var idx;
@@ -601,6 +602,7 @@ Slave.prototype = {
                 }
             }
             
+            console.log('cut param '+JSON.stringify(cut_param));
             // console.log('cut '+JSON.stringify(cut_param));
             // param = that.Net.getGrads();
             var wait_time = that.receive_param_time - that.send_param_time;
