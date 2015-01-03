@@ -877,9 +877,9 @@ NeuralNetwork.prototype = {
         }
         
         this.partial_error.push(this.error);
-
-        this.working_time_per_step.push(new Date().getTime() - this.start_working_time);
-
+        var runtime = new Date().getTime() - this.start_working_time;
+        this.working_time_per_step.push(runtime);
+        this.runtime_elapsed = runtime;
         // var clonedParam = this.clone_parameter(this.parameters[this.step]);
         // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
         // this.final_parameters[this.step] = clonedParam;
