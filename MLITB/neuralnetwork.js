@@ -43,7 +43,7 @@ var NeuralNetwork = function(data, master) {
     this.slaves_reduction = []; //slaves buffer in reduction
     
     this.configuration = data.nn; // NN configuration
-    this.initial_batch_size = 200;
+    this.initial_batch_size = 100;
 
     this.parameters = {};  //actively updated parameters for the last n step
     this.final_parameters = {}; //the synchronized parameters
