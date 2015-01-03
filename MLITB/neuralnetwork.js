@@ -43,7 +43,7 @@ var NeuralNetwork = function(data, master) {
     this.slaves_reduction = []; //slaves buffer in reduction
     
     this.configuration = data.nn; // NN configuration
-    this.initial_batch_size = 200;
+    this.initial_batch_size = 100;
 
     this.parameters = {};  //actively updated parameters for the last n step
     this.final_parameters = {}; //the synchronized parameters
@@ -597,14 +597,17 @@ NeuralNetwork.prototype = {
             this.allocate_data();    
         }
 
-        this.start_working_time = new Date().getTime();
+        if (!this.start_working_time){
+            this.start_working_time = new Date().getTime();    
+        }
+        
 
         var i = this.slaves.length;
         var delay = 0
         while(i--){
             var slave = this.slaves[i];
             slave.delay = delay;
-            delay+=10;
+            delay++;
             // this.slave_job(this.slaves[i],this.initial_batch_size);
 
             slave.send('parameters', {
@@ -898,7 +901,8 @@ NeuralNetwork.prototype = {
         
         this.partial_error.push(this.error);
 
-        this.working_time_per_step.push(new Date().getTime() - this.start_working_time);
+        this.runtime_elapsed = new Date().getTime() - this.start_working_time;
+        this.working_time_per_step.push(this.runtime_elapsed);
 
         var clonedParam = this.clone_parameter(this.parameters[this.step]);
         // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
@@ -1007,7 +1011,7 @@ NeuralNetwork.prototype = {
 
         this.operation_results.push(parameters);
 
-        this.runtime_elapsed += parseInt(this.iteration_time);
+        // this.runtime_elapsed += parseInt(this.iteration_time);
         this.data_seen += slave.working_power;
 
         // slave.power = parameters.nVector;
