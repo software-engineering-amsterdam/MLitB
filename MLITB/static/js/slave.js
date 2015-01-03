@@ -48,7 +48,7 @@ var Slave = function() {
     this.point_list = {};
 
     this.receive_param_time =0;
-    this.send_param_time =
+    this.send_param_time = 0;
 
 }
 

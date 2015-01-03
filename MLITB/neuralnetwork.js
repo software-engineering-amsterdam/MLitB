@@ -43,7 +43,7 @@ var NeuralNetwork = function(data, master) {
     this.slaves_reduction = []; //slaves buffer in reduction
     
     this.configuration = data.nn; // NN configuration
-    this.initial_batch_size = 200;
+    this.initial_batch_size = 100;
 
     this.parameters = {};  //actively updated parameters for the last n step
     this.final_parameters = {}; //the synchronized parameters
@@ -873,9 +873,9 @@ NeuralNetwork.prototype = {
 
         this.error = this.total_error[this.step]/this.total_vector[this.step];
         this.partial_error.push(this.error);
-
-        this.working_time_per_step.push(new Date().getTime() - this.start_working_time);
-
+        var runtime = new Date().getTime() - this.start_working_time;
+        this.working_time_per_step.push(runtime);
+        this.runtime_elapsed = runtime;
         // var clonedParam = this.clone_parameter(this.parameters[this.step]);
         // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
         // this.final_parameters[this.step] = clonedParam;
