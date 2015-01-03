@@ -1017,7 +1017,7 @@ NeuralNetwork.prototype = {
 
         this.operation_results.push(parameters);
 
-        this.runtime_elapsed += parseInt(this.iteration_time);
+        // this.runtime_elapsed += parseInt(this.iteration_time);
         this.data_seen += parameters.nVector;
 
         // slave.power = parameters.nVector;
