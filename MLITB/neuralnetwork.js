@@ -604,7 +604,7 @@ NeuralNetwork.prototype = {
         while(i--){
             var slave = this.slaves[i];
             slave.delay = delay;
-            delay++;
+            // delay++;
             // this.slave_job(this.slaves[i],this.initial_batch_size);
 
             slave.send('parameters', {
@@ -990,6 +990,10 @@ NeuralNetwork.prototype = {
             var conf = this.Net.getConfigsAndParams();
             var cname = 'conf_'+this.step;
             this.logger(cname, JSON.stringify(conf));
+        }
+
+        if ((this.runtime_elapsed>3600000)&&(this.step%50==0)){
+            this.running = false;
         }
 
     },
