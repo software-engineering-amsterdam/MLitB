@@ -597,9 +597,7 @@ NeuralNetwork.prototype = {
             this.allocate_data();    
         }
 
-        if (!this.start_working_time){
-            this.start_working_time = new Date().getTime();    
-        }
+        this.start_working_time = new Date().getTime();    
         
 
         var i = this.slaves.length;
