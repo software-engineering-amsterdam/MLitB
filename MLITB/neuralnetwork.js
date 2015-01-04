@@ -944,9 +944,9 @@ NeuralNetwork.prototype = {
         this.total_error[this.step] = 0;
         this.total_vector[this.step] = 0;
 
-        if (this.step%this.reallocation_interval==0){
-            this.reallocate_data();
-        }
+        // if (this.step%this.reallocation_interval==0){
+        //     this.reallocate_data();
+        // }
 
         if (this.step % 50 ==0){
             
