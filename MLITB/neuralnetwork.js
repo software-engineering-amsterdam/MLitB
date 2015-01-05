@@ -928,19 +928,19 @@ NeuralNetwork.prototype = {
                 var slave = this.slaves[i];
 
                 //print latency from each slave to file
-                var lname = 'latency_'+slave.socket.id+'.txt';
+                var lname = 'latency_slave'+i+'.txt';
                 this.logger(lname, JSON.stringify(slave.latencies));
                 
                 //print total processed vector
-                var vname = 'vector_'+slave.socket.id+'.txt';
+                var vname = 'vector_slave'+i+'.txt';
                 this.logger(vname, JSON.stringify(slave.vector_record)); 
                 
                 //print total workingtime
-                var tname = 'time_'+slave.socket.id+'.txt';
+                var tname = 'time_slave'+i+'.txt';
                 this.logger(tname, JSON.stringify(slave.time_record));
                 
                 //print total workingtime
-                var wname = 'wait_time_'+slave.socket.id+'.txt';
+                var wname = 'wait_time_slave'+i+'.txt';
                 this.logger(wname, JSON.stringify(slave.wait_time_record));
             }
 
