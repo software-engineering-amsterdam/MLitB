@@ -164,7 +164,8 @@ NeuralNetwork.prototype = {
 
         console.log('nn download_parameters');
         // var parameters = this.final_parameters[this.step-1];
-        var parameters = this.Net.getParams();
+        // var parameters = this.Net.getParams();
+        var parameters = this.parameters[Math.max(this.step-2,0)];
         if(!parameters) {
             parameters = this.configuration.params;
         }
@@ -189,11 +190,11 @@ NeuralNetwork.prototype = {
                 caching : []
             }
 
-            try{
-                this.datalabel[labels[0]].push(new_point);    
-            } catch (e){
-                this.datalabel[labels[0]] = [new_point];    
-            }
+            // try{
+            //     this.datalabel[labels[0]].push(new_point);    
+            // } catch (e){
+            //     this.datalabel[labels[0]] = [new_point];    
+            // }
 
             this.data.push(new_point);
             this.unassigned_data.push(new_point);
@@ -632,16 +633,16 @@ NeuralNetwork.prototype = {
         console.log('assign number of working data');
         this.is_allocated = true;
 
-        //--------------
-        for (var s=0;s<this.slaves.length;s++){
-            this.slaves[s].total_working_data = this.datalabel[s].length;
-            console.log(this.slaves[s].socket.id+" works on "+this.datalabel[s].length);
+        // //--------------
+        // for (var s=0;s<this.slaves.length;s++){
+        //     this.slaves[s].total_working_data = this.datalabel[s].length;
+        //     console.log(this.slaves[s].socket.id+" works on "+this.datalabel[s].length);
 
-        }
-        return;
+        // }
+        // return;
 
 
-        //---------------
+        // //---------------
 
         var s = this.slaves.length;
         var total = 0;
@@ -718,25 +719,25 @@ NeuralNetwork.prototype = {
         //priority to assign cached data as working data
 
         console.log('allocate data to slaves');
-        //----------------------------
+        // //----------------------------
 
-        for (var s=0;s<this.slaves.length;s++){
-            this.slaves_uncached_data[this.slaves[s].socket.id] = this.datalabel[s].slice();
-            this.slaves[s].working_data = this.datalabel[s].slice();
-        }
+        // for (var s=0;s<this.slaves.length;s++){
+        //     this.slaves_uncached_data[this.slaves[s].socket.id] = this.datalabel[s].slice();
+        //     this.slaves[s].working_data = this.datalabel[s].slice();
+        // }
 
-        var s=this.slaves.length;
-        while (s--){
-            var slave = this.slaves[s];
-            slave.change_working_data = true;
-            console.log('$$ '+slave.socket.id+' has '+slave.working_data.length+' data in working data, '+this.slaves_uncached_data[slave.socket.id].length+' in uncached');
-        }
+        // var s=this.slaves.length;
+        // while (s--){
+        //     var slave = this.slaves[s];
+        //     slave.change_working_data = true;
+        //     console.log('$$ '+slave.socket.id+' has '+slave.working_data.length+' data in working data, '+this.slaves_uncached_data[slave.socket.id].length+' in uncached');
+        // }
 
-        return;
+        // return;
 
 
 
-        //------------------------------------
+        // //------------------------------------
 
         var ns = this.slaves.length;
         var empty = true;
@@ -924,16 +925,14 @@ NeuralNetwork.prototype = {
 
         this.working_time_per_step.push(new Date().getTime() - this.start_working_time);
 
-        var clonedParam = this.clone_parameter(this.parameters[this.step]);
-        // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
-        this.final_parameters[this.step] = clonedParam;
-        //set param to the dummy NN
-        this.Net.setParams(clonedParam);
+        // var clonedParam = this.clone_parameter(this.parameters[this.step]);
+        // this.final_parameters[this.step] = clonedParam;
+        // this.Net.setParams(clonedParam);
 
         //remove old parameters
-        if (this.final_parameters[this.step-4]){
-            delete this.final_parameters[this.step-4];
-        }
+        // if (this.final_parameters[this.step-4]){
+        //     delete this.final_parameters[this.step-4];
+        // }
         if (this.parameters[this.step-4]){
             delete this.parameters[this.step-4];
         }
@@ -976,36 +975,36 @@ NeuralNetwork.prototype = {
                 var slave = this.slaves[i];
 
                 //print latency from each slave to file
-                var lname = 'latency_'+slave.socket.id;
+                var lname = 'latency_slave'+i+'.txt';
                 this.logger(lname, JSON.stringify(slave.latencies));
                 
                 //print total processed vector
-                var vname = 'vector_'+slave.socket.id;
+                var vname = 'vector_slave'+i+'.txt';
                 this.logger(vname, JSON.stringify(slave.vector_record)); 
                 
                 //print total workingtime
-                var tname = 'time_'+slave.socket.id;
+                var tname = 'time_slave'+i+'.txt';
                 this.logger(tname, JSON.stringify(slave.time_record));
 
                 //print total workingtime
-                var wname = 'wait_time_'+slave.socket.id;
+                var wname = 'wait_time_slave'+i+'.txt';
                 this.logger(wname, JSON.stringify(slave.wait_time_record));
                 
             }
 
             //print partial error
-            var ename = 'partial_error';
+            var ename = 'partial_error.txt';
             this.logger(ename, JSON.stringify(this.partial_error));
-            var wname = 'working_time_to_step';
+            var wname = 'working_time_to_step.txt';
             this.logger(wname, JSON.stringify(this.working_time_per_step));
             
         }
 
-        if (this.step % 5 ==0){
-            var conf = this.Net.getConfigsAndParams();
-            var cname = 'conf_'+this.step;
-            this.logger(cname, JSON.stringify(conf));
-        }
+        // if (this.step % 5 ==0){
+        //     var conf = this.Net.getConfigsAndParams();
+        //     var cname = 'conf_'+this.step+'.txt';
+        //     this.logger(cname, JSON.stringify(conf));
+        // }
 
     },
 
@@ -1065,8 +1064,9 @@ NeuralNetwork.prototype = {
         // if parameter t+1 has not been sealed
         // var thrown=false;
         // if (!this.final_parameters[param.step+1]){
-        this.parameters[parameters.step+1]=this.SGD.reduce(parameters);
-        this.Net.setParams(this.parameters[parameters.step+1]);
+        // this.parameters[parameters.step+1]=this.SGD.reduce(parameters);
+        this.parameters[this.step]=this.SGD.reduce(parameters);
+        this.Net.setParams(this.parameters[this.step]);
         slave.total_real_processed_data += parameters.nVector;
         this.total_real_processed_data += parameters.nVector;
         // } 
@@ -1080,8 +1080,8 @@ NeuralNetwork.prototype = {
             
             
 
-
-        var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
+        var wp = this.initial_batch_size;
+        // var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
 
         console.log('working power : '+wp);
 

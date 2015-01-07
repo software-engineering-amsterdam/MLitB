@@ -111,6 +111,7 @@ Slave.prototype = {
         var data = JSON.parse(d);
 
         var parameters = data.parameters;
+        console.log('ppp '+JSON.stringify(parameters[parameters.length-1]));
         var new_labels = data.new_labels;
         // this.step = data.step;
 
