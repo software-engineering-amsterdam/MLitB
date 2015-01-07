@@ -70,6 +70,7 @@ var NeuralNetwork = function(data, master) {
     this.partial_error = [];
     this.start_working_time = 0;
     this.working_time_per_step = [];
+    this.datalabel = {};
     
 
     this.param_permutation = {};  //store the last n param permutation index for each machine
@@ -186,6 +187,12 @@ NeuralNetwork.prototype = {
                 id: ids[i],
                 cache: [],
                 caching : []
+            }
+
+            try{
+                this.datalabel[labels[0]].push(new_point);    
+            } catch (e){
+                this.datalabel[labels[0]] = [new_point];    
             }
 
             this.data.push(new_point);
@@ -618,6 +625,17 @@ NeuralNetwork.prototype = {
     assign_slaves_limit_working_data : function(){
         console.log('assign number of working data');
         this.is_allocated = true;
+
+        //--------------
+        for (var s=0;s<this.slaves.length;s++){
+            this.slaves[s].total_working_data = this.datalabel[s].length;
+            console.log(this.slaves[s].socket.id+" works on "+this.datalabel[s].length);
+
+        }
+        return;
+
+
+        //---------------
         var s = this.slaves.length;
         var total = 0;
         while (s--){
@@ -690,7 +708,25 @@ NeuralNetwork.prototype = {
         //priority to assign cached data as working data
 
         console.log('allocate data to slaves');
+        //----------------------------
 
+        for (var s=0;s<this.slaves.length;s++){
+            this.slaves_uncached_data[this.slaves[s].socket.id] = this.datalabel[s].slice();
+            this.slaves[s].working_data = this.datalabel[s].slice();
+        }
+
+        var s=this.slaves.length;
+        while (s--){
+            var slave = this.slaves[s];
+            slave.change_working_data = true;
+            console.log('$$ '+slave.socket.id+' has '+slave.working_data.length+' data in working data, '+this.slaves_uncached_data[slave.socket.id].length+' in uncached');
+        }
+
+        return;
+
+
+
+        //------------------------------------
         var ns = this.slaves.length;
         var empty = true;
         for (var s=0;s<ns;s++){
