@@ -166,7 +166,7 @@ NeuralNetwork.prototype = {
         console.log('nn download_parameters');
         // var parameters = this.final_parameters[this.step-1];
         // var parameters = this.Net.getParams();
-        var parameters = this.parameters[this.step-2];
+        var parameters = this.parameters[Math.max(this.step-2,0)];
 
         if(!parameters) {
             parameters = this.configuration.params;
@@ -1115,14 +1115,16 @@ NeuralNetwork.prototype = {
 
         // if (!this.slaves_operating.length){
 
+        
+        if (parameters.step == this.step){
+            this.next_step();    
+        }
+
         var new_params =this.SGD.reduce(this);
         this.parameters[this.step] = new_params;
 
         this.Net.setParams(new_params);
 
-        if (parameters.step == this.step){
-            this.next_step();    
-        }
 
         
         
