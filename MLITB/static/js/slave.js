@@ -262,25 +262,31 @@ Slave.prototype = {
             worker_power: d.power,
         });
 
+        this.wait_parameters = d;
+
+        if (this.step==0)
+            this.work(d);
+        else
+            this.download_new_parameters();
+
         // start time immediately
         this.start_time = (new Date).getTime();
 
-        var step = d.step;
+        // var step = d.step;
 
-        // IMPORTANT: it CANNOT work when the parameters are not downloaded yet by XHR!
-        if(this.step < step) {
-            this.waiting_for_parameters = true;
-            this.wait_parameters = d;
-            this.status('waiting for parameters');
+        // // IMPORTANT: it CANNOT work when the parameters are not downloaded yet by XHR!
+        // if(this.step < step) {
+        //     this.waiting_for_parameters = true;
+        //     this.wait_parameters = d;
+        //     this.status('waiting for parameters');
 
-            console.log(' $$ parameters NOT on time for work');
+        //     console.log(' $$ parameters NOT on time for work');
 
-            return;
-        }
+        //     return;
+        // }
 
-        console.log(' $$ parameters on time for work');
-        if (step==0)
-            this.work(d);
+        // console.log(' $$ parameters on time for work');
+        
 
     },
 
@@ -431,7 +437,7 @@ Slave.prototype = {
         }
 
         reduction = function() {
-
+            that.step++;
             param = that.Net.getGrads();
             var wait_time = that.receive_param_time - that.send_param_time;
             parameters = {
@@ -516,7 +522,7 @@ Slave.prototype = {
 
     download_new_parameters: function(d) {
         // download NN parameters by XHR
-        this.step = d.step;
+        // this.step = d.step;
         var that = this;
 
         // sleepFor = function( sleepDuration ){
