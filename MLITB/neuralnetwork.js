@@ -71,7 +71,7 @@ var NeuralNetwork = function(data, master) {
     this.start_working_time = 0;
     this.working_time_per_step = [];
     this.datalabel = {};
-    this.total_vector = [];
+    this.total_data_to_step = [];
 
 
     this.param_permutation = {};  //store the last n param permutation index for each machine
@@ -912,7 +912,7 @@ NeuralNetwork.prototype = {
         this.partial_error.push(this.error);
         var runtime = new Date().getTime() - this.start_working_time;
         this.working_time_per_step.push(runtime);
-        this.total_vector.push(this.total_real_processed_data);
+        this.total_data_to_step.push(this.total_real_processed_data);
         this.runtime_elapsed = runtime;
         // var clonedParam = this.clone_parameter(this.parameters[this.step]);
         // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
@@ -985,8 +985,8 @@ NeuralNetwork.prototype = {
             //print partial error
             var ename = 'partial_error.txt';
             this.logger(ename, JSON.stringify(this.partial_error));
-            var tvname = 'total_vector.txt';
-            this.logger(tvname, JSON.stringify(this.total_vector));
+            var tvname = 'total_data_seen_to_step.txt';
+            this.logger(tvname, JSON.stringify(this.total_data_to_step));
             var wname = 'working_time_to_step.txt';
             this.logger(wname, JSON.stringify(this.working_time_per_step));
             
