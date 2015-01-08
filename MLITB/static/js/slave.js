@@ -115,7 +115,7 @@ Slave.prototype = {
         var job = data.job;
 
         console.log(this.id+' '+JSON.stringify(job));
-        this.step = Math.max(this.step,data.step);
+        // this.step = Math.max(this.step,data.step);
 
         this.send_message_to_boss('worker_stats', {
             worker_power: job.power,
@@ -440,7 +440,7 @@ Slave.prototype = {
         }
 
         reduction = function() {
-            
+            that.step++;
             param = that.SGD.reduce(nVector);
             // param = that.Net.getGrads();
             var wait_time = that.receive_param_time - that.send_param_time;
@@ -467,7 +467,7 @@ Slave.prototype = {
                 parameters: parameters //,
                 //new_labels: that.new_labels
             }); 
-            this.step++;
+            // this.step++;
             that.download_new_parameters();
 
             

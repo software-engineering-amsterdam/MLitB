@@ -944,11 +944,11 @@ NeuralNetwork.prototype = {
         this.working_time_per_step.push(this.runtime_elapsed);
         this.total_vector_to_step.push(this.total_real_processed_data);
 
-        var clonedParam = this.clone_parameter(this.parameters[this.step]);
+        // var clonedParam = this.clone_parameter(this.parameters[this.step]);
         // console.log('set final param for step '+this.step+', last length '+clonedParam[clonedParam.length-1].length);
         // this.final_parameters[this.step] = clonedParam;
         //set param to the dummy NN
-        this.Net.setParams(clonedParam);
+        // this.Net.setParams(clonedParam);
 
         //remove old parameters
         if (this.final_parameters[this.step-4]){
@@ -1075,24 +1075,25 @@ NeuralNetwork.prototype = {
 
 
         this.slaves_reduction.push(slave);
-        
-        var fastest = false;
+
+
+        // var fastest = false;
         // var parameters = this.operation_results[or];
         // console.log('parameters.step '+parameters.step+' this.step '+this.step);
-        if (parameters.step == this.step){
-            fastest = true;
-            this.next_step();
-        }
+        // if (parameters.step == this.step){
+        //     fastest = true;
+        //     this.next_step();
+        // }
 
-        this.total_error[parameters.step+1]+= parameters.error;
-        this.total_vector[parameters.step+1]+=parameters.nVector;
+        this.total_error[parameters.step]+= parameters.error;
+        this.total_vector[parameters.step]+=parameters.nVector;
         
         //write to param.step+1
         // if parameter t+1 has not been sealed
         // var thrown=false;
         // if (!this.final_parameters[param.step+1]){
-        this.parameters[parameters.step+1]=this.SGD.reduce(parameters);
-        this.Net.setParams(this.parameters[parameters.step+1]);
+        this.parameters[parameters.step]=this.SGD.reduce(parameters);
+        this.Net.setParams(this.parameters[parameters.step]);
         slave.total_real_processed_data += parameters.nVector;
         this.total_real_processed_data += parameters.nVector;
         // } 
@@ -1104,6 +1105,17 @@ NeuralNetwork.prototype = {
         //     // throw the parameters because it's too old.
         // }
             
+        var check = this.slave_return_per_step[parameters.step];
+        if (check){
+            this.slave_return_per_step[parameters.step]=check+1;
+        } else {
+            this.slave_return_per_step[parameters.step]=1;
+        }
+
+        if (this.slave_return_per_step[this.step+1]==this.slaves.length){
+            this.next_step();
+        }
+        
             
 
 
