@@ -916,11 +916,12 @@ NeuralNetwork.prototype = {
     },
 
     slave_job : function(slave){
-        var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
-        if (!wp || wp==0){
-            wp = this.initial_batch_size;
-        }
-        slave.working_power = wp;
+        // var wp = Math.round((slave.avg_working_speed()/this.total_working_speed)*(this.initial_batch_size*this.slaves.length));
+        // if (!wp || wp==0){
+        //     wp = this.initial_batch_size;
+        // }
+        // slave.working_power = wp;
+        slave.working_power - this.initial_batch_size;
         slave.process_cache(this);
         if (slave.cache_count){
             return slave.work(this);    
