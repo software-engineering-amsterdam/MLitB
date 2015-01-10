@@ -170,7 +170,7 @@ SGDTrainer.prototype = {
       var g = new_parameters.parameters[i];
 
       for (var j=0,len=p.length;j<len;j++){
-        p[j]=(0.8*p[j]+0.2*g[j]);
+        p[j]=(0.2*p[j]+0.8*g[j]);
       }
 
     }
