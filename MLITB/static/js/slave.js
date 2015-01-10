@@ -307,6 +307,7 @@ Slave.prototype = {
 
         that.working_power = d.working_power||100;
         var delay = d.delay||0;
+        var delay_factor = Math.min(Math.abs(mlitb.randn(0,1)),3);
         that.total_working_power += that.working_power;
 
         // var data = d.data;
@@ -411,7 +412,7 @@ Slave.prototype = {
                 
                 nVector++;
 
-                sleepFor(delay);
+                // sleepFor(delay);
 
                 that.point_list[point_id] = 1;
 
@@ -429,6 +430,10 @@ Slave.prototype = {
                 // }
 
             }
+
+            var actual_time = (new Date).getTime() - time;
+            var delay_time = delay_factor*actual_time;
+            sleepFor(delay_time);
 
             that.working_time = (new Date).getTime() - time;
             that.total_working_time+=that.working_time;
