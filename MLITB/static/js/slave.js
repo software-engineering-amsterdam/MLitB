@@ -468,7 +468,7 @@ Slave.prototype = {
                 //new_labels: that.new_labels
             }); 
             // this.step++;
-            // that.download_new_parameters();
+            that.download_new_parameters();
 
             
 
