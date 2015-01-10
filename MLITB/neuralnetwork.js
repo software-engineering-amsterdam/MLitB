@@ -921,7 +921,7 @@ NeuralNetwork.prototype = {
         //     wp = this.initial_batch_size;
         // }
         // slave.working_power = wp;
-        slave.working_power - this.initial_batch_size;
+        slave.working_power = this.initial_batch_size;
         slave.process_cache(this);
         if (slave.cache_count){
             return slave.work(this);    
