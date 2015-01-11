@@ -1137,10 +1137,7 @@ NeuralNetwork.prototype = {
         // var slave = release_slaves[r];
         // this.slave_job(slave, wp);
 
-        // slave.send('parameters', {
-        //     step : this.step
-
-        // });    
+        slave.send('parameters');    
 
         // if (!thrown){
         //     var release_slaves = [slave];
