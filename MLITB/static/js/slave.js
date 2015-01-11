@@ -48,6 +48,7 @@ var Slave = function() {
 
     this.send_param_time = 0;
     this.receive_param_time = 0;
+    this.clock = 0;
 
 }
 
@@ -112,6 +113,7 @@ Slave.prototype = {
 
         var parameters = data.parameters;
         var new_labels = data.new_labels;
+        this.clock = data.clock;
         var job = data.job;
 
         console.log(this.id+' '+JSON.stringify(job));
@@ -457,6 +459,7 @@ Slave.prototype = {
                 slave_id : that.id,
                 working_time : that.working_time,
                 timestamp : new Date().getTime(),
+                clock : that.clock,
                 wait_time : wait_time
             };
 

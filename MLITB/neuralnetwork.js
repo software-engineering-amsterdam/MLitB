@@ -74,6 +74,7 @@ var NeuralNetwork = function(data, master) {
     this.slave_return_per_step = {};
     this.total_vector_to_step = [];
     this.slave_return_per_step = {};
+    this.clock = 0
     
 
     this.param_permutation = {};  //store the last n param permutation index for each machine
@@ -168,6 +169,7 @@ NeuralNetwork.prototype = {
         console.log('nn download_parameters');
         // var parameters = this.final_parameters[this.step-1];
         var parameters = this.Net.getParams();
+        var clock = this.clock;
         var job = false;
         if (this.running){
             job = this.slave_job(slave);    
@@ -178,6 +180,7 @@ NeuralNetwork.prototype = {
             parameters: parameters,
             step: this.step,
             new_labels : this.Net.getLabel(),
+            clock :clock,
             job : job
         }
 
@@ -1093,7 +1096,8 @@ NeuralNetwork.prototype = {
         // if parameter t+1 has not been sealed
         // var thrown=false;
         // if (!this.final_parameters[param.step+1]){
-        this.parameters[parameters.step]=this.SGD.reduce(parameters);
+        this.parameters[parameters.step]=this.SGD.reduce(parameters,this.slaves.length,this.clock);
+        this.clock++;
         this.Net.setParams(this.parameters[parameters.step]);
         slave.total_real_processed_data += parameters.nVector;
         this.total_real_processed_data += parameters.nVector;
