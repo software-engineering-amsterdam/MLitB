@@ -562,14 +562,14 @@ Slave.prototype = {
         }
 
         reduction = function() {
-            
+
             var param = that.SGD.reduce(nVector);
             // var param = that.Net.getParams();
             var grads = that.Net.getGrads();
 
             var indexing = 'local';
             var method = 'sort';
-            var threshold = 0.60;
+            var threshold = 0.10;
             grads = partial_param(grads,indexing,method,threshold);
 
 
