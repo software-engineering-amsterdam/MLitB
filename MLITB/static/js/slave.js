@@ -569,7 +569,7 @@ Slave.prototype = {
 
             var indexing = 'local';
             var method = 'sort';
-            var threshold = 0.10;
+            var threshold = 0.30;
             grads = partial_param(grads,indexing,method,threshold);
 
 
