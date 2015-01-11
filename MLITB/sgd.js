@@ -165,7 +165,9 @@ SGDTrainer.prototype = {
     //e.g there are two conv layers, each has 2 and 3 filters, 
     //then last_params will store [conv1_filter1,conv1_filter2,conv1_bias,conv2_filter1,...] total 7 parameter vectors.
     //thus, i is index to the parameter/bias vector.
-    var beta = Math.exp(1.5*(nn_clock-param.clock-1)/nslave);
+    var beta = Math.exp(-1.5*(nn_clock-param.clock-1)/nslave);
+    console.log('delta : ',nn_clock-param.clock);
+    console.log('beta : ',beta );
     for (var i = 0; i < this.last_params.length; i++) {
       var p = this.last_params[i];
       var g = new_parameters.parameters[i];
