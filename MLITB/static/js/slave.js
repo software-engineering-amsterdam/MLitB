@@ -505,7 +505,7 @@ Slave.prototype = {
                     for (var i=0, len=param.length;i<len;i++){
                         var th = how_many;
                         if (how_many %1 != 0){
-                            th = Math.round(how_many*param[i].length);
+                            th = Math.max(1,Math.round(how_many*param[i].length));
                         } 
                         cut_param.push(param[i].slice(0,th));
                     } 
@@ -569,7 +569,7 @@ Slave.prototype = {
 
             var indexing = 'local';
             var method = 'sort';
-            var threshold = 0.30;
+            var threshold = 0.05;
             grads = partial_param(grads,indexing,method,threshold);
 
 
