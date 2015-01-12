@@ -919,8 +919,8 @@ Boss.prototype = {
 
         }
 
-        // return new Uint8ClampedArray(new_image.concat(r).concat(g).concat(b));
-        return new Uint8ClampedArray(new_image.concat(r));
+        return new Uint8ClampedArray(new_image.concat(r).concat(g).concat(b));
+        // return new Uint8ClampedArray(new_image.concat(r));
 
     },
 

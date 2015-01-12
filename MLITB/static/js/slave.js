@@ -422,7 +422,7 @@ Slave.prototype = {
 
             var actual_time = (new Date).getTime() - time;
             var delay_time = delay_factor*actual_time;
-            sleepFor(delay_time);
+            // sleepFor(delay_time);
 
             that.working_time = (new Date).getTime() - time;
             that.total_working_time+=that.working_time;
