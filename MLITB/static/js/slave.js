@@ -567,9 +567,9 @@ Slave.prototype = {
             // var param = that.Net.getParams();
             var grads = that.Net.getGrads();
 
-            var indexing = 'local';
+            var indexing = 'global';
             var method = 'sort';
-            var threshold = 0.05;
+            var threshold = 0.1;
             grads = partial_param(grads,indexing,method,threshold);
 
 
