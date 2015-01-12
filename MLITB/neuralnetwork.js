@@ -1005,7 +1005,7 @@ NeuralNetwork.prototype = {
             this.logger(cname, JSON.stringify(conf));
         // }
 
-        if ((this.runtime_elapsed > 3600000) &&(this.step % 5==0)){
+        if ((this.runtime_elapsed > 10800000) &&(this.step % 5==0)){
             this.running = false;
         }
 
