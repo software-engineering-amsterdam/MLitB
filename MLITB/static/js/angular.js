@@ -33,9 +33,9 @@ app.filter('reverse', function() {
 app.config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
-    when('/nips', {
-        templateUrl: 'static/views/nips.html',
-        controller: 'nips',
+    when('/index', {
+        templateUrl: 'static/views/index.html',
+        controller: 'index',
         css: 'static/css/public.css'
     }).
     when('/home', {
@@ -82,7 +82,7 @@ app.config(['$routeProvider',
     }).
     */
     otherwise({
-        redirectTo: '/nips'
+        redirectTo: '/index'
     });
 }]);
 
@@ -92,7 +92,7 @@ app.controller('navbar', function ($scope, $rootScope) {
 
 });
 
-app.controller('nips', function ($scope, $rootScope, $location) {
+app.controller('index', function ($scope, $rootScope, $location) {
 
     $scope.nn_public = function(nn_id) {
         $location.path('/project-index/' + nn_id + '/public');
