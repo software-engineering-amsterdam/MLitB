@@ -202,6 +202,8 @@ NeuralNetwork.prototype = {
 
                 if(this.data[j].id == ids[i]) {
 
+                    console.log(' $$ registering data,', this.data[j].id);
+
                     this.data[j].cache.push(slave);
 
                 }
@@ -778,7 +780,7 @@ NeuralNetwork.prototype = {
         }
 
         filter_data = function(a) {
-            return a.cache.length
+            return a.cache.length > 0;
         }
 
         sort_slaves = function(a, b) {
@@ -787,7 +789,7 @@ NeuralNetwork.prototype = {
         }
 
         filter_slaves = function(a) {
-            return a.assigned_power >= 10; // at least 10 points, or too slow.
+            return a.assigned_power > 0; // at least 10 points, or too slow.
         }
 
         in_cache = function(point, slave) {
@@ -801,8 +803,6 @@ NeuralNetwork.prototype = {
             return false;
 
         }
-
-        console.log("Initiating (NN)", this.id);
 
         var datamap = this.data.filter(filter_data)//sort(sort_data);
 
@@ -823,8 +823,6 @@ NeuralNetwork.prototype = {
             this.running = false;
             return
         }
-
-        
 
         var slaves_to_work = 0;
 
