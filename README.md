@@ -36,7 +36,7 @@ In a terminal, start redis
 $ redis-server &
 ```
 
-Start the Machine Learning server.  From the `MLitB/MLitB` directory, start the `node` application:
+Start the Machine Learning server.  From the `MLitB/MLITB` directory, start the `node` application:
 ```
 $ node app.js -h mlitb_host
 ```
@@ -60,7 +60,7 @@ MLitB is a prototype based on image classification.  The only data types underst
 
 #### Training
 
-To train, click `Add worker`, then choose `train` for their task.  Click `Restart` to begin transferring initial dataset to clients/workers. Click 'Pause' after the transfer has finished and click 'Restart' to start training.
+To train, click `Add worker`, then choose `train` for their task.  Click `Restart` to begin transferring initial dataset to clients/workers. Click `Pause` after the transfer has finished and click `Restart` to start training.
 
 ### Authors and Contributors
 MLitB is a collaborative effort between researchers at the University of Amsterdam with support from Amsterdam Data Science.
