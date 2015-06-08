@@ -15,7 +15,7 @@ Implications of this software paradigm include truly collaborative machine learn
 To install, clone the MLitB repository.  Then use the `node.js` package manager `npm` to install the required packages.  MLitB uses two servers, a master Machine Learning server (MLitB) and a data server (that for now only handled zipped image directories).
 
 ```
-$ cd MLitB/MLitB
+$ cd MLitB/MLITB
 $ npm i
 $ cd MLitB/imagezip
 $ npm i
@@ -45,6 +45,7 @@ Start the Data server.  From the `MLitB/imagezip` directory, start the `node` ap
 ```
 $ node app.js  -h mlitb_host
 ```
+
 Now open a tab in your browser to <http://mlitb_host:8000> (without specifying the host url the default is <http://localhost:8000/>).  Note that the data server will be running on port 8001.
 
 #### Create a new project
@@ -59,7 +60,7 @@ MLitB is a prototype based on image classification.  The only data types underst
 
 #### Training
 
-To train, click `Add Slave`, then choose `train` for their task.  Click `Restart` to begin training.
+To train, click `Add worker`, then choose `train` for their task.  Click `Restart` to begin transferring initial dataset to clients/workers. Click 'Pause' after the transfer has finished and click 'Restart' to start training.
 
 ### Authors and Contributors
 MLitB is a collaborative effort between researchers at the University of Amsterdam with support from Amsterdam Data Science.
